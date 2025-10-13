@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@audora/feature-home",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Acme home feature for React (Native)",
   "author": "Cedric van Putten <me@bycedric.com>",
   "license": "MIT",

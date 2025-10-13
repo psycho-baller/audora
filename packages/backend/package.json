@@ -1,6 +1,6 @@
 {
   "name": "@audora/backend",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
   "scripts": {
     "dev": "convex dev",
@@ -19,7 +19,6 @@
     "convex": "^1.25.0",
     "openai": "^4.45.0",
     "standardwebhooks": "^1.0.0",
-    "zed": "^0.1.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
