@@ -10,8 +10,8 @@ export const SignOutButton = () => {
   const handleSignOut = async () => {
     try {
       await signOut()
-      // Redirect to your desired page
-      router.replace('/')
+      // Redirect to sign-in page
+      router.replace('/(auth)/sign-in')
     } catch (err) {
       // See https://clerk.com/docs/guides/development/custom-flows/error-handling
       // for more info on error handling

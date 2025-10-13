@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { Redirect, Tabs, useRouter } from 'expo-router';
-import { useAuth } from '@clerk/clerk-expo';
+import { Tabs, useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 
 import { HapticTab } from '@/components/haptic-tab';
@@ -10,23 +9,16 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { isSignedIn } = useAuth();
   const { hasShareIntent } = useShareIntentContext();
   const router = useRouter();
 
   // Redirect to import screen when share intent is detected
   useEffect(() => {
-    if (hasShareIntent && isSignedIn) {
+    if (hasShareIntent) {
       router.push('/(tabs)/import');
     }
-  }, [hasShareIntent, isSignedIn]);
+  }, [hasShareIntent]);
 
-  if (!isSignedIn) {
-    console.log("not signed in")
-    return <Redirect href="/" />;
-  }
-
-  console.log("signed in")
   return (
     <Tabs
       screenOptions={{

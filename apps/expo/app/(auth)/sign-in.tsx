@@ -46,7 +46,7 @@ export default function Page() {
         if (createdSessionId) {
           setActive!({ session: createdSessionId })
           console.log("Session activated, navigating to home")
-          router.push('/')
+          router.replace('/(tabs)')
         } else {
           console.log("createdSessionId doesn't exist")
         }
@@ -72,7 +72,7 @@ export default function Page() {
               if (session?.currentTask) {
                 console.log(session?.currentTask)
               }
-              router.push('/')
+              router.replace('/(tabs)')
             },
           })
         } else {
