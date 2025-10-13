@@ -134,11 +134,11 @@ export const initiateCall = action({
       // Extract call ID from response
       // VAPI SDK returns different response types, so we handle both
       let callId: string | undefined;
-      
+
       if (response && typeof response === 'object') {
         callId = (response as any).id || (response as any).callId;
       }
-      
+
       if (!callId) {
         throw new Error("VAPI did not return a call ID");
       }

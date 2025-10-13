@@ -53,13 +53,13 @@ function extractKeywords(facts: string[]): string[] {
     const words = fact.toLowerCase()
       .replace(/[^\w\s]/g, '') // Remove punctuation
       .split(/\s+/)
-      .filter(word => 
+      .filter(word =>
         word.length > 4 && // At least 5 characters - more selective
         !stopWords.has(word) &&
         !/^\d+$/.test(word) && // Not just numbers
         !word.endsWith("ing") || word.length > 7 // Avoid short gerunds
       );
-    
+
     // Only add single words that are likely nouns/topics (5+ chars)
     const meaningfulWords = words.filter(w => w.length >= 5);
     keywords.push(...meaningfulWords);
@@ -69,8 +69,8 @@ function extractKeywords(facts: string[]): string[] {
       const word1 = words[i];
       const word2 = words[i + 1];
       // Both words must be substantial (5+ chars) and not stop words
-      if (!stopWords.has(word1) && !stopWords.has(word2) && 
-          word1.length >= 5 && word2.length >= 5) {
+      if (!stopWords.has(word1) && !stopWords.has(word2) &&
+        word1.length >= 5 && word2.length >= 5) {
         keywords.push(`${word1} ${word2}`);
       }
     }
@@ -255,11 +255,11 @@ export const getUserNetwork = query({
     });
 
     const keywordList = Array.from(allKeywords);
-    
+
     // Find canonical form for each keyword (group similar ones)
     keywordList.forEach(keyword => {
       let foundSimilar = false;
-      
+
       // Check if this keyword is similar to any existing canonical keyword
       for (const [canonical, _] of keywordNodeMap) {
         const canonicalName = canonical.replace("keyword:", "");
@@ -269,7 +269,7 @@ export const getUserNetwork = query({
           break;
         }
       }
-      
+
       // If no similar keyword found, this becomes a canonical keyword
       if (!foundSimilar) {
         const keywordId = `keyword:${keyword}`;
@@ -286,17 +286,17 @@ export const getUserNetwork = query({
     // Second pass: build connections using canonical keywords
     userList.forEach(user => {
       const usedKeywords = new Set<string>(); // Prevent duplicate connections from same user
-      
+
       user.keywords.forEach(keyword => {
         const canonicalId = keywordToCanonical.get(keyword);
         if (!canonicalId || usedKeywords.has(canonicalId)) return;
-        
+
         usedKeywords.add(canonicalId);
-        
+
         // Increment user count for this keyword
         const keywordNode = keywordNodeMap.get(canonicalId)!;
         keywordNode.userCount++;
-        
+
         // Create connection from user to keyword
         connections.push({
           source: user.id,
@@ -309,10 +309,10 @@ export const getUserNetwork = query({
     // Filter to only show keywords shared by at least 2 people
     const sharedKeywordNodes = Array.from(keywordNodeMap.values()).filter(kw => kw.userCount >= 2);
     const sharedKeywordIds = new Set(sharedKeywordNodes.map(kw => kw.id));
-    
+
     // Filter connections to only include shared keywords
     const sharedConnections = connections.filter(conn => sharedKeywordIds.has(conn.target));
-    
+
     console.log("Created", sharedKeywordNodes.length, "shared keyword nodes (filtered from", keywordNodeMap.size, "total)");
     console.log("Created", sharedConnections.length, "connections (filtered from", connections.length, "total)");
 

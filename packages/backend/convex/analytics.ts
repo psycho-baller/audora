@@ -78,7 +78,7 @@ export const analyzeUserSpeech = mutation({
     // 3. Repetition Detection
     const wordFrequency: Record<string, number> = {};
     const stopWords = new Set(["the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for"]);
-    
+
     words.forEach((word) => {
       if (!stopWords.has(word) && word.length > 3) {
         wordFrequency[word] = (wordFrequency[word] || 0) + 1;
@@ -141,10 +141,10 @@ export const analyzeUserSpeech = mutation({
     // 6. Calculate Scores (0-100)
     const fillerRate = (fillerInstances.length / wordCount) * 100;
     const clarityScore = Math.max(0, Math.min(100, 100 - fillerRate * 10));
-    
+
     const repetitionRate = repeatedWords.reduce((sum, w) => sum + w.count, 0) / wordCount;
     const concisenessScore = Math.max(0, Math.min(100, 100 - repetitionRate * 50));
-    
+
     const weakStarterRate = weakStarterCount / sentences.length;
     const confidenceScore = Math.max(0, Math.min(100, 100 - weakStarterRate * 100));
 
@@ -273,7 +273,7 @@ export const generateWeakWordSuggestions = action({
     console.log("User ID:", args.userId);
 
     const analytics = await ctx.runQuery(api.analytics.getAnalytics, args);
-    
+
     console.log("Analytics found:", analytics ? "Yes" : "No");
     console.log("Weak words count:", analytics?.weakWords?.length || 0);
 
@@ -335,7 +335,7 @@ export const generateWeakWordSuggestions = action({
       console.log("Updating analytics with suggestions...");
       const existingAnalytics = await ctx.runQuery(api.analytics.getAnalytics, args);
       if (existingAnalytics) {
-        const updatedWeakWords = existingAnalytics.weakWords.map((ww) => {
+        const updatedWeakWords = existingAnalytics.weakWords.map((ww: { word: string; sentence: string; suggestion?: string }) => {
           const suggestion = suggestions.find(
             (s) => s.word === ww.word && s.sentence === ww.sentence
           );
@@ -419,7 +419,7 @@ export const getUserDashboard = query({
     // Calculate aggregate stats
     const totalConversations = allConversations.length;
     const completedConversations = allConversations.filter(c => c.status === "ended").length;
-    
+
     // Average scores
     const avgClarity = allAnalytics.length > 0
       ? Math.round(allAnalytics.reduce((sum, a) => sum + a.scores.clarity, 0) / allAnalytics.length)
@@ -461,7 +461,7 @@ export const getUserDashboard = query({
       .query("conversationFacts")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
-    
+
     const wordFrequency: Record<string, number> = {};
     allFacts.forEach(cf => {
       cf.facts.forEach(fact => {
