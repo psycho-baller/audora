@@ -36,7 +36,9 @@ export default function SignUpScreen() {
         // For web, defaults to current path
         // For native, you must pass a scheme, like AuthSession.makeRedirectUri({ scheme, path })
         // For more info, see https://docs.expo.dev/versions/latest/sdk/auth-session/#authsessionmakeredirecturioptions
-        redirectUrl: AuthSession.makeRedirectUri(),
+        redirectUrl: AuthSession.makeRedirectUri({
+          scheme: 'audora',
+        }),
       })
 
       // If sign in was successful, set the active session

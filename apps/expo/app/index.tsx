@@ -5,6 +5,7 @@ import { SignOutButton } from '@/components/sign-out-button'
 
 export default function Page() {
   const { user } = useUser()
+  console.log("user", user)
 
   return (
     <View style={styles.container}>

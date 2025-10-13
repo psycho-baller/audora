@@ -30,15 +30,29 @@ export default function Page() {
 
   const onPress = useCallback(async () => {
     try {
+      console.log("onPress")
+      const redirectUrl = AuthSession.makeRedirectUri({
+        scheme: 'audora',
+
+      })
+      console.log("Redirect URL:", redirectUrl)
+
       // Start the authentication process by calling `startSSOFlow()`
-      const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
+      const { createdSessionId, setActive, signIn, signUp, authSessionResult } = await startSSOFlow({
         strategy: 'oauth_google',
+        authSessionOptions: {
+          showInRecents: true,
+        },
         // For web, defaults to current path
         // For native, you must pass a scheme, like AuthSession.makeRedirectUri({ scheme, path })
         // For more info, see https://docs.expo.dev/versions/latest/sdk/auth-session/#authsessionmakeredirecturioptions
-        redirectUrl: AuthSession.makeRedirectUri(),
+        redirectUrl,
       })
-
+      console.log("createdSessionId", createdSessionId)
+      console.log("setActive", setActive)
+      console.log("signIn", signIn)
+      console.log("signUp", signUp)
+      console.log("authSessionResult", authSessionResult)
       // If sign in was successful, set the active session
       if (createdSessionId) {
         setActive!({
@@ -56,6 +70,7 @@ export default function Page() {
           },
         })
       } else {
+        console.log("createdSessionId doesn't exist", createdSessionId)
         // If there is no `createdSessionId`,
         // there are missing requirements, such as MFA
         // See https://clerk.com/docs/guides/development/custom-flows/authentication/oauth-connections#handle-missing-requirements

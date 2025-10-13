@@ -22,9 +22,11 @@ export default function TabLayout() {
   }, [hasShareIntent, isSignedIn]);
 
   if (!isSignedIn) {
+    console.log("not signed in")
     return <Redirect href="/" />;
   }
 
+  console.log("signed in")
   return (
     <Tabs
       screenOptions={{
