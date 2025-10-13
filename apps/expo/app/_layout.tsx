@@ -5,7 +5,7 @@ import { ShareIntentProvider } from 'expo-share-intent';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { AuthProvider } from '@/providers/auth-provider';
+import ConvexClientProvider from '@/providers/convex-client-provider';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -16,7 +16,7 @@ export default function RootLayout() {
 
   return (
     <ShareIntentProvider>
-      <AuthProvider>
+      <ConvexClientProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -26,7 +26,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>
-      </AuthProvider>
+      </ConvexClientProvider>
     </ShareIntentProvider>
   );
 }
