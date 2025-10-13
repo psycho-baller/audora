@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "name": "@audora/monorepo",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:expo": "turbo dev --filter=\"{./apps/expo}...\"",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "build": "turbo build",
+    "build:expo": "turbo build --filter=\"...{./apps/expo}\""
+  },
+  "devDependencies": {
+    "turbo": "^2.5.8",
+    "typescript": "^5.9.3"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "tabWidth": 2,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  }
+}

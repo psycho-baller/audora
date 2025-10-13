@@ -1,0 +1,57 @@
+{
+  "private": true,
+  "name": "@audora/ui",
+  "version": "1.0.0",
+  "description": "Acme UI components for React Native",
+  "author": "Cedric van Putten <me@bycedric.com>",
+  "license": "MIT",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "build",
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint --ext js,ts,tsx .",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@audora/eslint-config": "workspace:*",
+    "@testing-library/react-native": "^13.2.0",
+    "@tsconfig/recommended": "^1.0.8",
+    "@types/jest": "^29.5.14",
+    "@types/react": "~19.1.12",
+    "babel-preset-expo": "~54.0.0",
+    "eslint": "^8.57.0",
+    "expo": "~54.0.1",
+    "jest": "^29.7.0",
+    "jest-expo": "~54.0.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.4",
+    "react-native-web": "~0.21.1"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-web": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native": {
+      "optional": true
+    },
+    "react-native-web": {
+      "optional": true
+    }
+  },
+  "eslintConfig": {
+    "extends": "@audora/eslint-config",
+    "ignorePatterns": [
+      "node_modules",
+      "build"
+    ]
+  },
+  "jest": {
+    "preset": "jest-expo"
+  }
+}
