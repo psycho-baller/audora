@@ -7,18 +7,18 @@ export default function ConversationsLayout() {
         headerShown: true,
       }}
     >
-      <Stack.Screen 
-        name="index" 
-        options={{ 
+      <Stack.Screen
+        name="index"
+        options={{
           title: 'Conversations',
-        }} 
+        }}
       />
-      <Stack.Screen 
-        name="import" 
-        options={{ 
+      <Stack.Screen
+        name="import"
+        options={{
           title: 'Import Audio',
-          presentation: 'card',
-        }} 
+          presentation: 'modal',
+        }}
       />
     </Stack>
   );
