@@ -262,7 +262,7 @@ export default function ImportAudio() {
             {/* Divider */}
             <View className="flex-row items-center my-5">
               <View className="flex-1 h-px bg-border" />
-              <Text className="text-xs font-semibold text-muted-foreground mx-3 uppercase tracking-wider">OR</Text>
+              <Text className="text-xs font-semibold text-muted-foreground mx-3 uppercase" >OR</Text>
               <View className="flex-1 h-px bg-border" />
             </View>
 
@@ -276,8 +276,8 @@ export default function ImportAudio() {
                 </Text>
               </View>
             ) : (
-              <View>
-                <Text className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Select a contact</Text>
+              <View className="flex flex-col gap-2">
+                <Text className="text-xs font-semibold text-muted-foreground mb-3 uppercase">Select a contact</Text>
                 {contacts.map((contact) => (
                   <TouchableOpacity
                     key={contact.contactId}
