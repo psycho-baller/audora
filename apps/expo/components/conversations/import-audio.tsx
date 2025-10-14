@@ -211,23 +211,24 @@ export default function ImportAudio() {
   if (stage === 'selecting-friend') {
     return (
       <View className="flex-1 bg-background">
-        <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
-          {/* File Info Card */}
-          {audioFile && (
-            <View className="flex-row items-center bg-card rounded-2xl p-4 mb-6 border border-border shadow-sm">
-              <View className="w-14 h-14 rounded-xl bg-primary/10 items-center justify-center mr-3">
-                <Text className="text-3xl">🎵</Text>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+          <View className="p-4">
+            {/* File Info Card */}
+            {audioFile && (
+              <View className="flex-row items-center bg-card rounded-2xl p-3 mb-6 border-2 border-border gap-4">
+                <View className="w-12 h-12 rounded-xl bg-primary/10 items-center justify-center">
+                  <Text className="text-3xl">🎵</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground mb-1" numberOfLines={1}>
+                    {audioFile.fileName}
+                  </Text>
+                  <Text className="text-sm text-muted-foreground">
+                    {((audioFile.size || 0) / 1024 / 1024).toFixed(2)} MB
+                  </Text>
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground mb-1" numberOfLines={1}>
-                  {audioFile.fileName}
-                </Text>
-                <Text className="text-sm text-muted-foreground">
-                  {((audioFile.size || 0) / 1024 / 1024).toFixed(2)} MB
-                </Text>
-              </View>
-            </View>
-          )}
+            )}
 
           {/* Conversation Type Selection */}
           <View className="mb-6">
@@ -311,21 +312,24 @@ export default function ImportAudio() {
               </View>
             )}
           </View>
+        </View>
+        </ScrollView>
 
-          {/* Action Button */}
+        {/* Action Button - Fixed at bottom */}
+        <View className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
           <TouchableOpacity
-            className={`w-full rounded-xl py-6 items-center justify-center mt-4 ${
+            className={`w-full rounded-xl p-4 items-center justify-center ${
               (!selectedFriend && !isSoloConversation) ? 'bg-muted' : 'bg-primary'
             }`}
             onPress={handleStartImport}
             disabled={!selectedFriend && !isSoloConversation}
             activeOpacity={0.7}
           >
-            <Text className="text-primary-foreground text-2xl font-bold">
+            <Text className="text-primary-foreground text-2xl font-bold" >
               {(!selectedFriend && !isSoloConversation) ? 'Select an option' : 'Start Import'}
             </Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </View>
     );
   }
