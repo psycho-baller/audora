@@ -12,4 +12,4 @@ config.cacheStores = [
   new FileStore({ root: path.join(__dirname, 'node_modules', '.cache', 'metro') }),
 ];
 
-module.exports = withNativewind(config);
+module.exports = withNativewind(config, { input: './global.css' });
