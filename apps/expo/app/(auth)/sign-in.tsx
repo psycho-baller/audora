@@ -1,10 +1,12 @@
-import { useCallback, useEffect } from 'react'
-import * as WebBrowser from 'expo-web-browser'
-import * as AuthSession from 'expo-auth-session'
 import { useOAuth, useSSO } from '@clerk/clerk-expo'
-import { View, Button, Platform, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import * as AuthSession from 'expo-auth-session'
 import { useRouter } from 'expo-router'
+import * as WebBrowser from 'expo-web-browser'
+import { useCallback, useEffect } from 'react'
+import { Platform, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+
+import { Button } from '@/components/button'
 
 // Preloads the browser for Android devices to reduce authentication load time
 // See: https://docs.expo.dev/guides/authentication/#improving-user-experience
@@ -37,13 +39,13 @@ export default function Page() {
   const onPress = useCallback(async () => {
     try {
       console.log("onPress - Platform:", Platform.OS)
-      
+
       if (Platform.OS === 'android') {
         // Android: Use useOAuth
         const { createdSessionId, setActive } = await startOAuthFlow()
-        
+
         console.log("createdSessionId", createdSessionId)
-        
+
         if (createdSessionId) {
           setActive!({ session: createdSessionId })
           console.log("Session activated, navigating to home")
@@ -62,10 +64,10 @@ export default function Page() {
             scheme: 'audora',
           }),
         })
-        
+
         console.log("createdSessionId", createdSessionId)
         console.log("authSessionResult", authSessionResult)
-        
+
         if (createdSessionId) {
           setActive!({
             session: createdSessionId,
