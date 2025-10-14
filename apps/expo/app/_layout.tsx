@@ -9,6 +9,8 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import ConvexClientProvider from '@/providers/convex-client-provider';
 
+import "../global.css"
+
 function RootLayoutNav() {
   const { isSignedIn, isLoaded } = useAuth();
   const segments = useSegments();
