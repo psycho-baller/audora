@@ -1,42 +1,46 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Slot, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { ShareIntentProvider } from 'expo-share-intent';
 import { useAuth } from '@clerk/clerk-expo';
-import { useEffect } from 'react';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { Redirect, Slot, useSegments } from 'expo-router';
+import { ShareIntentProvider, useShareIntent } from 'expo-share-intent';
+import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import ConvexClientProvider from '@/providers/convex-client-provider';
 
-import "../global.css"
+import "../global.css";
 
 function RootLayoutNav() {
+  useShareIntent()
   const { isSignedIn, isLoaded } = useAuth();
   const segments = useSegments();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoaded) return;
+  // Wait for auth to load
+  if (!isLoaded) {
+    return null;
+  }
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const inTabsGroup = segments[0] === '(tabs)';
+  const inAuthGroup = segments[0] === '(auth)';
+  const inTabsGroup = segments[0] === '(tabs)';
 
-    if (isSignedIn && inAuthGroup) {
-      // Redirect authenticated users away from auth screens
-      router.replace('/(tabs)/conversations');
-    } else if (!isSignedIn && inTabsGroup) {
-      // Redirect unauthenticated users to sign in
-      router.replace('/(auth)/sign-in');
-    } else if (!isSignedIn && !inAuthGroup && !inTabsGroup) {
-      // Initial load: redirect to appropriate screen
-      router.replace('/(auth)/sign-in');
-    } else if (isSignedIn && !inAuthGroup && !inTabsGroup) {
-      // Initial load for authenticated users
-      router.replace('/(tabs)/conversations');
-    }
+  // Redirect authenticated users away from auth screens
+  if (isSignedIn && inAuthGroup) {
+    return <Redirect href="/(tabs)/conversations" />;
+  }
 
-  }, [isSignedIn, segments, isLoaded]);
+  // Redirect unauthenticated users to sign in
+  if (!isSignedIn && inTabsGroup) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  // Initial load: redirect to appropriate screen
+  if (!isSignedIn && !inAuthGroup && !inTabsGroup) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  if (isSignedIn && !inAuthGroup && !inTabsGroup) {
+    return <Redirect href="/(tabs)/conversations" />;
+  }
 
   return <Slot />;
 }
