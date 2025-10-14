@@ -19,6 +19,14 @@
     "development": {
       "extends": "monorepo",
       "distribution": "internal",
+      "developmentClient": true,
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "extends": "monorepo",
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
       }

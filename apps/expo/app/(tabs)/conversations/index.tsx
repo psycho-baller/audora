@@ -15,25 +15,28 @@ export default function ConversationsScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <View style={{ flexDirection: 'row', gap: 8, marginLeft: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/conversations/import')}
             disabled={isCreating}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f0f0f0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600' }}>📤 Import</Text>
+            // style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f0f0f0', borderRadius: 8 }}
+            >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: 'white', paddingHorizontal: 8 }}>📤  Import</Text>
           </TouchableOpacity>
         </View>
       ),
       headerRight: () => (
-        <View style={{ flexDirection: 'row', gap: 8, marginRight: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
             onPress={handleStartRecording}
             disabled={isCreating}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#007AFF', borderRadius: 8 }}>
+            // style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#007AFF', borderRadius: 8 }}
+            // className="bg-primary"
+            >
             {isCreating ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
-              <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>➕ New</Text>
+              <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', paddingHorizontal: 8 }}>New chat</Text>
             )}
           </TouchableOpacity>
         </View>

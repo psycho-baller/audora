@@ -79,6 +79,29 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        // "build": {
+        //   "experimental": {
+        //     "ios": {
+        //       "appExtensions": [
+        //         {
+        //           "targetName": "ShareExtension",
+        //           "bundleIdentifier": "com.ramimaalouf.audora.share-extension",
+        //           "entitlements": {
+        //             "com.apple.security.application-groups": [
+        //               "group.com.ramimaalouf.audora"
+        //             ]
+        //           }
+        //         }
+        //       ]
+        //     }
+        //   }
+        // },
+        "projectId": "78ec57bd-0204-429b-84c4-1d5b3fe8d6d6"
+      }
     }
   }
 }
