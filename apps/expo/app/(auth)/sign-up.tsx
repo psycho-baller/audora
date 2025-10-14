@@ -2,7 +2,8 @@ import { useCallback, useEffect } from 'react'
 import * as WebBrowser from 'expo-web-browser'
 import * as AuthSession from 'expo-auth-session'
 import { useOAuth, useSSO } from '@clerk/clerk-expo'
-import { View, Button, Platform } from 'react-native'
+import { View, Button, Platform, StyleSheet } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 
 // Preloads the browser for Android devices to reduce authentication load time
@@ -46,7 +47,7 @@ export default function SignUpScreen() {
         if (createdSessionId) {
           setActive!({ session: createdSessionId })
           console.log("Session activated, navigating to home")
-          router.replace('/(tabs)')
+          router.replace('/(tabs)/conversations')
         } else {
           console.log("createdSessionId doesn't exist")
         }
@@ -72,7 +73,7 @@ export default function SignUpScreen() {
               if (session?.currentTask) {
                 console.log(session?.currentTask)
               }
-              router.replace('/(tabs)')
+              router.replace('/(tabs)/conversations')
             },
           })
         } else {
@@ -85,8 +86,23 @@ export default function SignUpScreen() {
   }, [router, startOAuthFlow, startSSOFlow])
 
   return (
-    <View>
-      <Button title="Sign up with Google" onPress={onPress} />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Button title="Sign up with Google" onPress={onPress} />
+      </View>
+    </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+})

@@ -24,7 +24,7 @@ function RootLayoutNav() {
 
     if (isSignedIn && inAuthGroup) {
       // Redirect authenticated users away from auth screens
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/conversations');
     } else if (!isSignedIn && inTabsGroup) {
       // Redirect unauthenticated users to sign in
       router.replace('/(auth)/sign-in');
@@ -33,8 +33,9 @@ function RootLayoutNav() {
       router.replace('/(auth)/sign-in');
     } else if (isSignedIn && !inAuthGroup && !inTabsGroup) {
       // Initial load for authenticated users
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/conversations');
     }
+
   }, [isSignedIn, segments, isLoaded]);
 
   return <Slot />;

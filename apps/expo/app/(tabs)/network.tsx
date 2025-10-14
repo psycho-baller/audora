@@ -56,16 +56,7 @@ export default function NetworkScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} className="bg-background" edges={['top']}>
-      {/* Header */}
-      <View className="border-b border-border bg-card/50 px-4 py-6">
-        <Text className="text-2xl font-bold text-foreground">Network</Text>
-        <Text className="text-sm text-muted-foreground mt-1">
-          People you've connected with across conversations
-        </Text>
-      </View>
-
-      {/* Content */}
+    <SafeAreaView style={styles.container} className="bg-background" edges={['bottom']}>
       <ScrollView className="px-4 py-6">
         {connections === undefined ? (
           <View className="flex-1 items-center justify-center py-12">

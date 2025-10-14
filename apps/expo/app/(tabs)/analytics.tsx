@@ -8,7 +8,7 @@ export default function AnalyticsScreen() {
 
   if (!dashboardData) {
     return (
-      <SafeAreaView style={styles.container} className="bg-background" edges={['top']}>
+      <SafeAreaView style={styles.container} className="bg-background" edges={['bottom']}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" />
           <Text className="text-muted-foreground mt-4">Loading analytics...</Text>
@@ -23,16 +23,7 @@ export default function AnalyticsScreen() {
   const wordsPerMin = overview.totalMinutes > 0 ? Math.round(overview.totalWords / overview.totalMinutes) : 0;
 
   return (
-    <SafeAreaView style={styles.container} className="bg-background" edges={['top']}>
-      {/* Header */}
-      <View className="border-b border-border bg-card/50 px-4 py-6">
-        <Text className="text-2xl font-bold text-foreground">Analytics</Text>
-        <Text className="text-sm text-muted-foreground mt-1">
-          Track your communication performance
-        </Text>
-      </View>
-
-      {/* Content */}
+    <SafeAreaView style={styles.container} className="bg-background" edges={['bottom']}>
       <ScrollView className="px-4 py-6">
         {/* Overview Cards */}
         <View className="gap-3 mb-6">

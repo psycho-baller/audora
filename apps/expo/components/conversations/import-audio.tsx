@@ -23,7 +23,7 @@ type ProcessingStage =
   | 'complete'
   | 'error';
 
-export default function ImportScreen() {
+export default function ImportAudio() {
   const { hasShareIntent, shareIntent, resetShareIntent, error: shareError } = useShareIntentContext();
   const router = useRouter();
 
@@ -156,7 +156,7 @@ export default function ImportScreen() {
             text: 'View Conversation',
             onPress: () => {
               resetShareIntent();
-              router.replace(`/(tabs)`); // Navigate to conversations list
+              router.replace('/(tabs)/conversations');
             },
           },
         ]
@@ -213,39 +213,45 @@ export default function ImportScreen() {
     return (
       <View style={styles.container}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Import Audio Conversation</Text>
-            <Text style={styles.subtitle}>
-              {audioFile ? `File: ${audioFile.fileName}` : 'Loading...'}
-            </Text>
-            {audioFile && (
-              <Text style={styles.fileSize}>
-                Size: {((audioFile.size || 0) / 1024 / 1024).toFixed(2)} MB
-              </Text>
-            )}
-          </View>
+          {/* File Info Card */}
+          {audioFile && (
+            <View style={styles.fileCard}>
+              <View style={styles.fileIconContainer}>
+                <Text style={styles.fileIcon}>🎵</Text>
+              </View>
+              <View style={styles.fileDetails}>
+                <Text style={styles.fileName} numberOfLines={1}>
+                  {audioFile.fileName}
+                </Text>
+                <Text style={styles.fileSize}>
+                  {((audioFile.size || 0) / 1024 / 1024).toFixed(2)} MB
+                </Text>
+              </View>
+            </View>
+          )}
 
-          {/* Friend Selection */}
+          {/* Conversation Type Selection */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Conversation Type</Text>
-            <Text style={styles.sectionSubtitle}>Who was in this conversation?</Text>
+            <Text style={styles.sectionTitle}>Who was in this conversation?</Text>
+            <Text style={styles.sectionSubtitle}>
+              Select the person you were talking with, or mark it as a solo recording
+            </Text>
 
             {/* Solo Conversation Option */}
             <TouchableOpacity
               style={[
-                styles.contactItem,
-                styles.soloOption,
-                isSoloConversation && styles.contactItemSelected,
+                styles.optionCard,
+                isSoloConversation && styles.optionCardSelected,
               ]}
               onPress={handleSoloSelect}
+              activeOpacity={0.7}
             >
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>🎙️</Text>
+              <View style={styles.optionIconContainer}>
+                <Text style={styles.optionIcon}>🎙️</Text>
               </View>
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>Solo Conversation</Text>
-                <Text style={styles.contactEmail}>Just me talking to myself</Text>
+              <View style={styles.optionContent}>
+                <Text style={styles.optionTitle}>Solo Recording</Text>
+                <Text style={styles.optionDescription}>Just me talking</Text>
               </View>
               {isSoloConversation && (
                 <View style={styles.checkmark}>
@@ -254,25 +260,34 @@ export default function ImportScreen() {
               )}
             </TouchableOpacity>
 
-            <Text style={styles.orDivider}>OR</Text>
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
+            {/* Contacts List */}
             {contacts.length === 0 ? (
               <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>👥</Text>
                 <Text style={styles.emptyText}>No contacts found</Text>
                 <Text style={styles.emptySubtext}>
-                  Add friends to your network first
+                  Add friends to your network to tag them in conversations
                 </Text>
               </View>
             ) : (
               <View style={styles.contactsList}>
+                <Text style={styles.contactsHeader}>Select a contact</Text>
                 {contacts.map((contact) => (
                   <TouchableOpacity
                     key={contact.contactId}
                     style={[
-                      styles.contactItem,
-                      selectedFriend === contact.contactId && styles.contactItemSelected,
+                      styles.optionCard,
+                      selectedFriend === contact.contactId && styles.optionCardSelected,
                     ]}
                     onPress={() => handleFriendSelect(contact.contactId)}
+                    activeOpacity={0.7}
                   >
                     {contact.image ? (
                       <Image source={{ uri: contact.image }} style={styles.avatar} />
@@ -283,9 +298,11 @@ export default function ImportScreen() {
                         </Text>
                       </View>
                     )}
-                    <View style={styles.contactInfo}>
-                      <Text style={styles.contactName}>{contact.name || 'Unknown'}</Text>
-                      <Text style={styles.contactEmail}>{contact.email}</Text>
+                    <View style={styles.optionContent}>
+                      <Text style={styles.optionTitle}>{contact.name || 'Unknown'}</Text>
+                      <Text style={styles.optionDescription} numberOfLines={1}>
+                        {contact.email}
+                      </Text>
                     </View>
                     {selectedFriend === contact.contactId && (
                       <View style={styles.checkmark}>
@@ -303,6 +320,7 @@ export default function ImportScreen() {
             <TouchableOpacity
               style={[styles.button, styles.buttonSecondary]}
               onPress={handleCancel}
+              activeOpacity={0.7}
             >
               <Text style={styles.buttonSecondaryText}>Cancel</Text>
             </TouchableOpacity>
@@ -314,8 +332,11 @@ export default function ImportScreen() {
               ]}
               onPress={handleStartImport}
               disabled={!selectedFriend && !isSoloConversation}
+              activeOpacity={0.7}
             >
-              <Text style={styles.buttonPrimaryText}>Import</Text>
+              <Text style={styles.buttonPrimaryText}>
+                {(!selectedFriend && !isSoloConversation) ? 'Select an option' : 'Start Import'}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -327,7 +348,10 @@ export default function ImportScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.processingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <View style={styles.processingIconContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+        
         <Text style={styles.processingTitle}>{statusMessage}</Text>
         
         {/* Progress Bar */}
@@ -339,9 +363,13 @@ export default function ImportScreen() {
         {/* Stage Indicators */}
         <View style={styles.stagesContainer}>
           <View style={styles.stageItem}>
-            <View style={[styles.stageDot, (stage === 'transcribing' || stage === 'analyzing' || stage === 'complete') && styles.stageDotComplete]} />
+            <View style={[
+              styles.stageDot,
+              (stage === 'transcribing' || stage === 'analyzing' || stage === 'complete') && styles.stageDotComplete
+            ]} />
             <Text style={styles.stageText}>Upload</Text>
           </View>
+          <View style={styles.stageLine} />
           <View style={styles.stageItem}>
             <View style={[
               styles.stageDot,
@@ -349,6 +377,7 @@ export default function ImportScreen() {
             ]} />
             <Text style={styles.stageText}>Transcribe</Text>
           </View>
+          <View style={styles.stageLine} />
           <View style={styles.stageItem}>
             <View style={[styles.stageDot, stage === 'complete' && styles.stageDotComplete]} />
             <Text style={styles.stageText}>Analyze</Text>
@@ -356,9 +385,11 @@ export default function ImportScreen() {
         </View>
 
         {stage === 'transcribing' && (
-          <Text style={styles.hint}>
-            This may take a few minutes depending on the audio length
-          </Text>
+          <View style={styles.hintContainer}>
+            <Text style={styles.hint}>
+              ⏱️ This may take a few minutes depending on the audio length
+            </Text>
+          </View>
         )}
       </View>
     </View>
@@ -368,99 +399,116 @@ export default function ImportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 16,
+    paddingBottom: 32,
   },
-  header: {
+  fileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 8,
+  fileIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#007AFF15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
+  fileIcon: {
+    fontSize: 28,
+  },
+  fileDetails: {
+    flex: 1,
+  },
+  fileName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
     marginBottom: 4,
   },
   fileSize: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 14,
+    color: '#666',
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 8,
   },
   sectionSubtitle: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 16,
+    marginBottom: 20,
+    lineHeight: 20,
   },
-  contactsList: {
-    gap: 12,
-  },
-  contactItem: {
+  optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  contactItemSelected: {
+  optionCardSelected: {
     borderColor: '#007AFF',
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#007AFF08',
   },
-  avatar: {
+  optionIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
+  optionIcon: {
+    fontSize: 24,
   },
-  contactInfo: {
+  optionContent: {
     flex: 1,
   },
-  contactName: {
+  optionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#1a1a1a',
     marginBottom: 2,
   },
-  contactEmail: {
+  optionDescription: {
     fontSize: 14,
     color: '#666',
   },
   checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -470,9 +518,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  emptyState: {
-    padding: 32,
+  divider: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  dividerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9ca3af',
+    marginHorizontal: 12,
+  },
+  contactsList: {
+    gap: 0,
+  },
+  contactsHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    borderStyle: 'dashed',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
   },
   emptyText: {
     fontSize: 16,
@@ -482,17 +586,8 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
-  },
-  soloOption: {
-    marginBottom: 16,
-  },
-  orDivider: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#999',
+    color: '#9ca3af',
     textAlign: 'center',
-    marginVertical: 16,
   },
   actions: {
     flexDirection: 'row',
@@ -504,17 +599,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
   },
   buttonPrimary: {
     backgroundColor: '#007AFF',
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonSecondary: {
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#007AFF',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#e5e7eb',
+    shadowOpacity: 0,
   },
   buttonPrimaryText: {
     color: '#fff',
@@ -522,7 +625,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   buttonSecondaryText: {
-    color: '#007AFF',
+    color: '#1a1a1a',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -530,21 +633,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 32,
+  },
+  processingIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#007AFF15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   processingTitle: {
-    marginTop: 24,
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: '#1a1a1a',
     textAlign: 'center',
+    marginBottom: 24,
   },
   progressBarContainer: {
     width: '100%',
     height: 8,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#e5e7eb',
     borderRadius: 4,
-    marginTop: 24,
     overflow: 'hidden',
   },
   progressBar: {
@@ -553,24 +664,33 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#666',
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
   },
   stagesContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
-    marginTop: 32,
+    marginTop: 40,
+    paddingHorizontal: 20,
   },
   stageItem: {
     alignItems: 'center',
   },
+  stageLine: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#e5e7eb',
+    marginHorizontal: 8,
+  },
   stageDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#e0e0e0',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#e5e7eb',
     marginBottom: 8,
   },
   stageDotComplete: {
@@ -578,13 +698,17 @@ const styles = StyleSheet.create({
   },
   stageText: {
     fontSize: 12,
+    fontWeight: '500',
     color: '#666',
   },
+  hintContainer: {
+    marginTop: 32,
+    paddingHorizontal: 24,
+  },
   hint: {
-    marginTop: 24,
     fontSize: 14,
-    color: '#999',
+    color: '#666',
     textAlign: 'center',
-    paddingHorizontal: 32,
+    lineHeight: 20,
   },
 });

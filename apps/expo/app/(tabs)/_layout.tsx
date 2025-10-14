@@ -15,7 +15,7 @@ export default function TabLayout() {
   // Redirect to import screen when share intent is detected
   useEffect(() => {
     if (hasShareIntent) {
-      router.push('/(tabs)/import');
+      router.push('/(tabs)/conversations/import');
     }
   }, [hasShareIntent]);
 
@@ -23,14 +23,21 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
+        headerShown: true,
         tabBarButton: HapticTab,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="conversations"
+        options={{
           title: 'Conversations',
+          headerShown: false,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="message.fill" color={color} />,
         }}
       />
@@ -46,12 +53,6 @@ export default function TabLayout() {
         options={{
           title: 'Analytics',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="import"
-        options={{
-          href: null, // Hide from tab bar
         }}
       />
     </Tabs>
