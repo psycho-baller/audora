@@ -1,21 +1,20 @@
-import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
-import { useShareIntentContext } from 'expo-share-intent';
-import { useRouter } from 'expo-router';
-import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '@audora/backend/convex/_generated/api';
 import type { Id } from '@audora/backend/convex/_generated/dataModel';
+import { useAction, useMutation, useQuery } from 'convex/react';
+import { useRouter } from 'expo-router';
+import { useShareIntentContext } from 'expo-share-intent';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-type ProcessingStage = 
+type ProcessingStage =
   | 'selecting-friend'
   | 'uploading'
   | 'transcribing'
@@ -36,7 +35,7 @@ export default function ImportAudio() {
 
   // Get user's network/contacts
   const contacts = useQuery(api.network.list) || [];
-  
+
   // Mutations and actions
   const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
   const processImportedAudio = useAction(api.mobileImport.processImportedAudio);
@@ -115,7 +114,7 @@ export default function ImportAudio() {
 
       // Get upload URL from Convex
       const uploadUrl = await generateUploadUrl();
-      
+
       // Upload to Convex storage
       const uploadResult = await fetch(uploadUrl, {
         method: 'POST',
@@ -211,19 +210,19 @@ export default function ImportAudio() {
 
   if (stage === 'selecting-friend') {
     return (
-      <View style={styles.container}>
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <View className="flex-1 bg-background">
+        <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
           {/* File Info Card */}
           {audioFile && (
-            <View style={styles.fileCard}>
-              <View style={styles.fileIconContainer}>
-                <Text style={styles.fileIcon}>🎵</Text>
+            <View className="flex-row items-center bg-card rounded-2xl p-4 mb-6 border border-border shadow-sm">
+              <View className="w-14 h-14 rounded-xl bg-primary/10 items-center justify-center mr-3">
+                <Text className="text-3xl">🎵</Text>
               </View>
-              <View style={styles.fileDetails}>
-                <Text style={styles.fileName} numberOfLines={1}>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground mb-1" numberOfLines={1}>
                   {audioFile.fileName}
                 </Text>
-                <Text style={styles.fileSize}>
+                <Text className="text-sm text-muted-foreground">
                   {((audioFile.size || 0) / 1024 / 1024).toFixed(2)} MB
                 </Text>
               </View>
@@ -231,82 +230,80 @@ export default function ImportAudio() {
           )}
 
           {/* Conversation Type Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Who was in this conversation?</Text>
-            <Text style={styles.sectionSubtitle}>
+          <View className="mb-6">
+            <Text className="text-xl font-bold text-foreground mb-2">Who was in this conversation?</Text>
+            <Text className="text-sm text-muted-foreground mb-5 leading-5">
               Select the person you were talking with, or mark it as a solo recording
             </Text>
 
             {/* Solo Conversation Option */}
             <TouchableOpacity
-              style={[
-                styles.optionCard,
-                isSoloConversation && styles.optionCardSelected,
-              ]}
+              className={`flex-row items-center bg-card rounded-2xl p-3 border-2 gap-4 ${
+                isSoloConversation ? 'border-primary bg-primary/5' : 'border-border'
+              }`}
               onPress={handleSoloSelect}
               activeOpacity={0.7}
             >
-              <View style={styles.optionIconContainer}>
-                <Text style={styles.optionIcon}>🎙️</Text>
+              <View className="w-12 h-12 rounded-xl bg-muted items-center justify-center">
+                <Text className="text-3xl">🎙️</Text>
               </View>
-              <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>Solo Recording</Text>
-                <Text style={styles.optionDescription}>Just me talking</Text>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground mb-1">Solo Recording</Text>
+                <Text className="text-sm text-muted-foreground">Just me talking</Text>
               </View>
               {isSoloConversation && (
-                <View style={styles.checkmark}>
-                  <Text style={styles.checkmarkText}>✓</Text>
+                <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2">
+                  <Text className="text-white text-lg font-bold">✓</Text>
                 </View>
               )}
             </TouchableOpacity>
 
             {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
+            <View className="flex-row items-center my-5">
+              <View className="flex-1 h-px bg-border" />
+              <Text className="text-xs font-semibold text-muted-foreground mx-3 uppercase tracking-wider">OR</Text>
+              <View className="flex-1 h-px bg-border" />
             </View>
 
             {/* Contacts List */}
             {contacts.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>👥</Text>
-                <Text style={styles.emptyText}>No contacts found</Text>
-                <Text style={styles.emptySubtext}>
+              <View className="items-center py-10 px-6 bg-card rounded-2xl border-2 border-dashed border-border">
+                <Text className="text-5xl mb-3">👥</Text>
+                <Text className="text-base font-semibold text-foreground mb-1">No contacts found</Text>
+                <Text className="text-sm text-muted-foreground text-center">
                   Add friends to your network to tag them in conversations
                 </Text>
               </View>
             ) : (
-              <View style={styles.contactsList}>
-                <Text style={styles.contactsHeader}>Select a contact</Text>
+              <View>
+                <Text className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Select a contact</Text>
                 {contacts.map((contact) => (
                   <TouchableOpacity
                     key={contact.contactId}
-                    style={[
-                      styles.optionCard,
-                      selectedFriend === contact.contactId && styles.optionCardSelected,
-                    ]}
+                    className={`flex-row items-center bg-card rounded-2xl p-3 border-2 gap-4 ${
+                      selectedFriend === contact.contactId ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
                     onPress={() => handleFriendSelect(contact.contactId)}
                     activeOpacity={0.7}
                   >
                     {contact.image ? (
-                      <Image source={{ uri: contact.image }} style={styles.avatar} />
+                      <Image source={{ uri: contact.image }} className="w-12 h-12 rounded-xl" />
                     ) : (
-                      <View style={styles.avatarPlaceholder}>
-                        <Text style={styles.avatarText}>
+                      <View className="w-12 h-12 rounded-xl bg-primary items-center justify-center mr-4">
+                        <Text className="text-white text-xl font-bold">
                           {contact.name?.charAt(0) || contact.email?.charAt(0) || '?'}
                         </Text>
                       </View>
                     )}
-                    <View style={styles.optionContent}>
-                      <Text style={styles.optionTitle}>{contact.name || 'Unknown'}</Text>
-                      <Text style={styles.optionDescription} numberOfLines={1}>
+                    <View className="flex-1">
+                      <Text className="text-base font-semibold text-foreground mb-1">{contact.name || 'Unknown'}</Text>
+                      <Text className="text-sm text-muted-foreground" numberOfLines={1}>
                         {contact.email}
                       </Text>
                     </View>
                     {selectedFriend === contact.contactId && (
-                      <View style={styles.checkmark}>
-                        <Text style={styles.checkmarkText}>✓</Text>
+                      <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2">
+                        <Text className="text-white text-lg font-bold">✓</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -315,30 +312,19 @@ export default function ImportAudio() {
             )}
           </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonSecondary]}
-              onPress={handleCancel}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.buttonSecondaryText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.buttonPrimary,
-                (!selectedFriend && !isSoloConversation) && styles.buttonDisabled,
-              ]}
-              onPress={handleStartImport}
-              disabled={!selectedFriend && !isSoloConversation}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.buttonPrimaryText}>
-                {(!selectedFriend && !isSoloConversation) ? 'Select an option' : 'Start Import'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {/* Action Button */}
+          <TouchableOpacity
+            className={`w-full rounded-xl py-6 items-center justify-center mt-4 ${
+              (!selectedFriend && !isSoloConversation) ? 'bg-muted' : 'bg-primary'
+            }`}
+            onPress={handleStartImport}
+            disabled={!selectedFriend && !isSoloConversation}
+            activeOpacity={0.7}
+          >
+            <Text className="text-primary-foreground text-2xl font-bold">
+              {(!selectedFriend && !isSoloConversation) ? 'Select an option' : 'Start Import'}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
     );
@@ -346,47 +332,47 @@ export default function ImportAudio() {
 
   // Processing stages
   return (
-    <View style={styles.container}>
-      <View style={styles.processingContainer}>
-        <View style={styles.processingIconContainer}>
+    <View className="flex-1 bg-background">
+      <View className="flex-1 justify-center items-center px-8">
+        <View className="w-20 h-20 rounded-full bg-primary/10 items-center justify-center mb-6">
           <ActivityIndicator size="large" color="#007AFF" />
         </View>
-        
-        <Text style={styles.processingTitle}>{statusMessage}</Text>
-        
+
+        <Text className="text-lg font-semibold text-foreground text-center mb-6">{statusMessage}</Text>
+
         {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBar, { width: `${progress}%` }]} />
+        <View className="w-full h-2 bg-muted rounded-full overflow-hidden">
+          <View className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
         </View>
-        <Text style={styles.progressText}>{progress}%</Text>
+        <Text className="mt-3 text-base font-semibold text-primary">{progress}%</Text>
 
         {/* Stage Indicators */}
-        <View style={styles.stagesContainer}>
-          <View style={styles.stageItem}>
-            <View style={[
-              styles.stageDot,
-              (stage === 'transcribing' || stage === 'analyzing' || stage === 'complete') && styles.stageDotComplete
-            ]} />
-            <Text style={styles.stageText}>Upload</Text>
+        <View className="flex-row items-center justify-center w-full mt-10 px-5">
+          <View className="items-center">
+            <View className={`w-4 h-4 rounded-full mb-2 ${
+              (stage === 'transcribing' || stage === 'analyzing' || stage === 'complete') ? 'bg-primary' : 'bg-muted'
+            }`} />
+            <Text className="text-xs font-medium text-muted-foreground">Upload</Text>
           </View>
-          <View style={styles.stageLine} />
-          <View style={styles.stageItem}>
-            <View style={[
-              styles.stageDot,
-              (stage === 'analyzing' || stage === 'complete') && styles.stageDotComplete,
-            ]} />
-            <Text style={styles.stageText}>Transcribe</Text>
+          <View className="w-10 h-0.5 bg-border mx-2" />
+          <View className="items-center">
+            <View className={`w-4 h-4 rounded-full mb-2 ${
+              (stage === 'analyzing' || stage === 'complete') ? 'bg-primary' : 'bg-muted'
+            }`} />
+            <Text className="text-xs font-medium text-muted-foreground">Transcribe</Text>
           </View>
-          <View style={styles.stageLine} />
-          <View style={styles.stageItem}>
-            <View style={[styles.stageDot, stage === 'complete' && styles.stageDotComplete]} />
-            <Text style={styles.stageText}>Analyze</Text>
+          <View className="w-10 h-0.5 bg-border mx-2" />
+          <View className="items-center">
+            <View className={`w-4 h-4 rounded-full mb-2 ${
+              stage === 'complete' ? 'bg-primary' : 'bg-muted'
+            }`} />
+            <Text className="text-xs font-medium text-muted-foreground">Analyze</Text>
           </View>
         </View>
 
         {stage === 'transcribing' && (
-          <View style={styles.hintContainer}>
-            <Text style={styles.hint}>
+          <View className="mt-8 px-6">
+            <Text className="text-sm text-muted-foreground text-center leading-5">
               ⏱️ This may take a few minutes depending on the audio length
             </Text>
           </View>
@@ -395,320 +381,3 @@ export default function ImportAudio() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  fileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  fileIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: '#007AFF15',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  fileIcon: {
-    fontSize: 28,
-  },
-  fileDetails: {
-    flex: 1,
-  },
-  fileName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  fileSize: {
-    fontSize: 14,
-    color: '#666',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  optionCardSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF08',
-  },
-  optionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  optionIcon: {
-    fontSize: 24,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: '#666',
-  },
-  checkmark: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dividerText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#9ca3af',
-    marginHorizontal: 12,
-  },
-  contactsList: {
-    gap: 0,
-  },
-  contactsHeader: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    marginRight: 12,
-  },
-  avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 40,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderStyle: 'dashed',
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-  },
-  buttonPrimary: {
-    backgroundColor: '#007AFF',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonSecondary: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  buttonDisabled: {
-    backgroundColor: '#e5e7eb',
-    shadowOpacity: 0,
-  },
-  buttonPrimaryText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonSecondaryText: {
-    color: '#1a1a1a',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  processingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  processingIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF15',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  processingTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  progressBarContainer: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#007AFF',
-    borderRadius: 4,
-  },
-  progressText: {
-    marginTop: 12,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  stagesContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    marginTop: 40,
-    paddingHorizontal: 20,
-  },
-  stageItem: {
-    alignItems: 'center',
-  },
-  stageLine: {
-    width: 40,
-    height: 2,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 8,
-  },
-  stageDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#e5e7eb',
-    marginBottom: 8,
-  },
-  stageDotComplete: {
-    backgroundColor: '#007AFF',
-  },
-  stageText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#666',
-  },
-  hintContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  hint: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
