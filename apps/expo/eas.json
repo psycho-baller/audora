@@ -20,6 +20,9 @@
       "extends": "monorepo",
       "distribution": "internal",
       "developmentClient": true,
+      "ios": {
+        "simulator": true
+      },
       "android": {
         "buildType": "apk"
       }
@@ -29,6 +32,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "production": {

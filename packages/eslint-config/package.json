@@ -10,6 +10,7 @@
     "index.js"
   ],
   "scripts": {
+    "build": "echo 'No build needed for eslint-config'",
     "lint": "eslint --ext js,ts,tsx ."
   },
   "dependencies": {

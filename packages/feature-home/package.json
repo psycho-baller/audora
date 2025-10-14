@@ -12,6 +12,7 @@
     "src"
   ],
   "scripts": {
+    "build": "echo 'No build needed for feature-home'",
     "lint": "eslint --ext js,ts,tsx .",
     "test": "jest"
   },

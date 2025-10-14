@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ramimaalouf.audora"
+      "bundleIdentifier": "com.ramimaalouf.audora",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -74,7 +77,9 @@
             "text/*"
           ]
         }
-      ]
+      ],
+      "expo-font"
+      // "./plugins/with-share-extension-pods"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -83,6 +88,7 @@
     "extra": {
       "router": {},
       "eas": {
+        "projectId": "78ec57bd-0204-429b-84c4-1d5b3fe8d6d6"
         // "build": {
         //   "experimental": {
         //     "ios": {
@@ -99,8 +105,7 @@
         //       ]
         //     }
         //   }
-        // },
-        "projectId": "78ec57bd-0204-429b-84c4-1d5b3fe8d6d6"
+        // }
       }
     }
   }
