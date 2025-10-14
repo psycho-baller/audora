@@ -8,11 +8,15 @@ import { api } from "./_generated/api";
  * Process imported audio file from mobile app
  * This is a simplified version that processes a single audio file
  * (React Native doesn't have Web Audio API for splitting)
+ * 
+ * Supports both:
+ * - Conversations with a friend (when friendId is provided)
+ * - Solo conversations/self-talk (when friendId is omitted)
  */
 export const processImportedAudio = action({
   args: {
     storageId: v.id("_storage"),
-    friendId: v.id("users"),
+    friendId: v.optional(v.id("users")),
     location: v.optional(v.string()),
   },
   returns: v.object({
@@ -34,10 +38,13 @@ export const processImportedAudio = action({
       throw new Error("Current user not found");
     }
 
-    // Step 2: Get friend details
-    const friend = await ctx.runQuery(api.users.get, { id: args.friendId });
-    if (!friend) {
-      throw new Error("Friend not found");
+    // Step 2: Get friend details (if provided)
+    let friend = null;
+    if (args.friendId) {
+      friend = await ctx.runQuery(api.users.get, { id: args.friendId });
+      if (!friend) {
+        throw new Error("Friend not found");
+      }
     }
 
     // Step 3: Create conversation
@@ -46,12 +53,16 @@ export const processImportedAudio = action({
       location: args.location || "Imported from Mobile",
     });
 
-    // Step 4: Link conversation to friend
-    console.log("Linking conversation to friend...");
-    await ctx.runMutation(api.conversations.linkConversationToFriend, {
-      conversationId: conversation.id,
-      friendId: args.friendId,
-    });
+    // Step 4: Link conversation to friend (if provided)
+    if (args.friendId) {
+      console.log("Linking conversation to friend...");
+      await ctx.runMutation(api.conversations.linkConversationToFriend, {
+        conversationId: conversation.id,
+        friendId: args.friendId,
+      });
+    } else {
+      console.log("Solo conversation - no friend to link");
+    }
 
     // Step 5: Save audio storage ID
     console.log("Saving audio storage ID...");
@@ -60,17 +71,49 @@ export const processImportedAudio = action({
       storageId: args.storageId,
     });
 
-    // Step 6: Transcribe and analyze using existing batch transcription
-    console.log("Starting batch transcription and analysis...");
+    // Step 6: Transcribe based on conversation type
     try {
-      await ctx.runAction(api.speechmaticsBatch.batchTranscribe, {
-        storageId: args.storageId,
-        conversationId: conversation.id,
-        initiatorName: currentUser.name || "You",
-        scannerName: friend.name || "Friend",
-        userEmail: currentUser.email,
-        userName: currentUser.name,
-      });
+      if (args.friendId) {
+        // Multi-speaker conversation: use Speechmatics with diarization
+        console.log("Starting batch transcription and analysis with Speechmatics...");
+        await ctx.runAction(api.speechmaticsBatch.batchTranscribe, {
+          storageId: args.storageId,
+          conversationId: conversation.id,
+          initiatorName: currentUser.name || "You",
+          scannerName: friend?.name || "Friend",
+          userEmail: currentUser.email,
+          userName: currentUser.name,
+        });
+      } else {
+        // Solo conversation: use Whisper for simple transcription
+        console.log("Starting solo transcription with Whisper...");
+        const whisperResult = await ctx.runAction(api.whisperTranscription.transcribeSoloAudio, {
+          storageId: args.storageId,
+        });
+
+        // Structure the transcript for solo conversation
+        const transcript = [{
+          userId: currentUser._id,
+          text: whisperResult.text,
+        }];
+
+        // Save the transcript to database
+        await ctx.runMutation(api.conversations.saveTranscriptData, {
+          conversationId: conversation.id,
+          transcript,
+          S1_facts: [], // No fact extraction for solo conversations
+          S2_facts: [],
+          initiatorName: currentUser.name || "You",
+          scannerName: "Self",
+          summary: "Solo conversation transcript",
+        });
+
+        // Mark conversation as ended
+        await ctx.runMutation(api.conversations.updateStatus, {
+          conversationId: conversation.id,
+          status: "ended",
+        });
+      }
 
       console.log("Mobile audio import completed successfully");
       return {
@@ -92,11 +135,15 @@ export const processImportedAudio = action({
 /**
  * Process imported audio file in chunks (for larger files)
  * This version processes the audio in multiple chunks to handle longer recordings
+ * 
+ * Supports both:
+ * - Conversations with a friend (when friendId is provided)
+ * - Solo conversations/self-talk (when friendId is omitted)
  */
 export const processImportedAudioInChunks = action({
   args: {
     storageIds: v.array(v.id("_storage")),
-    friendId: v.id("users"),
+    friendId: v.optional(v.id("users")),
     location: v.optional(v.string()),
   },
   returns: v.object({
@@ -112,10 +159,13 @@ export const processImportedAudioInChunks = action({
       throw new Error("Current user not found");
     }
 
-    // Step 2: Get friend details
-    const friend = await ctx.runQuery(api.users.get, { id: args.friendId });
-    if (!friend) {
-      throw new Error("Friend not found");
+    // Step 2: Get friend details (if provided)
+    let friend = null;
+    if (args.friendId) {
+      friend = await ctx.runQuery(api.users.get, { id: args.friendId });
+      if (!friend) {
+        throw new Error("Friend not found");
+      }
     }
 
     // Step 3: Create conversation
@@ -124,12 +174,16 @@ export const processImportedAudioInChunks = action({
       location: args.location || "Imported from Mobile",
     });
 
-    // Step 4: Link conversation to friend
-    console.log("Linking conversation to friend...");
-    await ctx.runMutation(api.conversations.linkConversationToFriend, {
-      conversationId: conversation.id,
-      friendId: args.friendId,
-    });
+    // Step 4: Link conversation to friend (if provided)
+    if (args.friendId) {
+      console.log("Linking conversation to friend...");
+      await ctx.runMutation(api.conversations.linkConversationToFriend, {
+        conversationId: conversation.id,
+        friendId: args.friendId,
+      });
+    } else {
+      console.log("Solo conversation - no friend to link");
+    }
 
     // Step 5: Save first audio chunk's storage ID (for playback)
     console.log("Saving audio storage ID...");
@@ -138,67 +192,112 @@ export const processImportedAudioInChunks = action({
       storageId: args.storageIds[0],
     });
 
-    // Step 6: Process each chunk
-    const allTranscripts: Array<{ speaker: string; text: string }> = [];
-    let allS1Facts: string[] = [];
-    let allS2Facts: string[] = [];
-    let allSummaries: string[] = [];
+    // Step 6: Process each chunk based on conversation type
+    if (args.friendId) {
+      // Multi-speaker conversation: use Speechmatics
+      const allTranscripts: Array<{ speaker: string; text: string }> = [];
+      let allS1Facts: string[] = [];
+      let allS2Facts: string[] = [];
+      let allSummaries: string[] = [];
 
-    for (let i = 0; i < args.storageIds.length; i++) {
-      const chunkNum = i + 1;
-      const storageId = args.storageIds[i];
+      for (let i = 0; i < args.storageIds.length; i++) {
+        const chunkNum = i + 1;
+        const storageId = args.storageIds[i];
 
-      console.log(`Processing chunk ${chunkNum}/${args.storageIds.length}...`);
+        console.log(`Processing chunk ${chunkNum}/${args.storageIds.length}...`);
 
-      try {
-        // Transcribe chunk only (no DB save)
-        const chunkResult = await ctx.runAction(api.speechmaticsBatch.transcribeChunkOnly, {
-          storageId,
-        });
+        try {
+          // Transcribe chunk only (no DB save)
+          const chunkResult = await ctx.runAction(api.speechmaticsBatch.transcribeChunkOnly, {
+            storageId,
+          });
 
-        // Combine results
-        allTranscripts.push(...chunkResult.transcript);
-        allS1Facts.push(...chunkResult.S1_facts);
-        allS2Facts.push(...chunkResult.S2_facts);
-        allSummaries.push(chunkResult.summary);
+          // Combine results
+          allTranscripts.push(...chunkResult.transcript);
+          allS1Facts.push(...chunkResult.S1_facts);
+          allS2Facts.push(...chunkResult.S2_facts);
+          allSummaries.push(chunkResult.summary);
 
-        console.log(`Chunk ${chunkNum} processed successfully`);
-      } catch (error: any) {
-        console.error(`Failed to process chunk ${chunkNum}:`, error);
-        throw new Error(`Failed to process chunk ${chunkNum}: ${error.message}`);
+          console.log(`Chunk ${chunkNum} processed successfully`);
+        } catch (error: any) {
+          console.error(`Failed to process chunk ${chunkNum}:`, error);
+          throw new Error(`Failed to process chunk ${chunkNum}: ${error.message}`);
+        }
       }
+
+      // Deduplicate facts
+      allS1Facts = [...new Set(allS1Facts)];
+      allS2Facts = [...new Set(allS2Facts)];
+
+      // Combine summaries
+      const combinedSummary = allSummaries.length > 1
+        ? `Combined conversation summary:\n\n${allSummaries.map((s, i) => `Part ${i + 1}: ${s}`).join('\n\n')}`
+        : allSummaries[0] || "Conversation imported from mobile app.";
+
+      console.log("All chunks processed! Saving combined results...");
+
+      // Map speakers to user IDs
+      const transcriptWithUserIds = allTranscripts.map(turn => {
+        const userId = turn.speaker === "S1" ? currentUser._id : args.friendId!;
+        return {
+          userId: userId as Id<"users">,
+          text: turn.text,
+        };
+      });
+
+      // Save combined transcript data to database
+      await ctx.runMutation(api.conversations.saveTranscriptData, {
+        conversationId: conversation.id,
+        transcript: transcriptWithUserIds,
+        S1_facts: allS1Facts,
+        S2_facts: allS2Facts,
+        initiatorName: currentUser.name || "You",
+        scannerName: friend?.name || "Friend",
+        summary: combinedSummary,
+      });
+    } else {
+      // Solo conversation: use Whisper for each chunk
+      const allTexts: string[] = [];
+
+      for (let i = 0; i < args.storageIds.length; i++) {
+        const chunkNum = i + 1;
+        const storageId = args.storageIds[i];
+
+        console.log(`Processing solo chunk ${chunkNum}/${args.storageIds.length}...`);
+
+        try {
+          const whisperResult = await ctx.runAction(api.whisperTranscription.transcribeSoloAudio, {
+            storageId,
+          });
+
+          allTexts.push(whisperResult.text);
+          console.log(`Chunk ${chunkNum} transcribed successfully`);
+        } catch (error: any) {
+          console.error(`Failed to process chunk ${chunkNum}:`, error);
+          throw new Error(`Failed to process chunk ${chunkNum}: ${error.message}`);
+        }
+      }
+
+      console.log("All chunks processed! Saving combined results...");
+
+      // Combine all text into one transcript entry
+      const combinedText = allTexts.join("\n\n");
+      const transcript = [{
+        userId: currentUser._id,
+        text: combinedText,
+      }];
+
+      // Save the transcript to database
+      await ctx.runMutation(api.conversations.saveTranscriptData, {
+        conversationId: conversation.id,
+        transcript,
+        S1_facts: [], // No fact extraction for solo conversations
+        S2_facts: [],
+        initiatorName: currentUser.name || "You",
+        scannerName: "Self",
+        summary: "Solo conversation transcript",
+      });
     }
-
-    // Step 7: Deduplicate facts
-    allS1Facts = [...new Set(allS1Facts)];
-    allS2Facts = [...new Set(allS2Facts)];
-
-    // Step 8: Combine summaries
-    const combinedSummary = allSummaries.length > 1
-      ? `Combined conversation summary:\n\n${allSummaries.map((s, i) => `Part ${i + 1}: ${s}`).join('\n\n')}`
-      : allSummaries[0] || "Conversation imported from mobile app.";
-
-    console.log("All chunks processed! Saving combined results...");
-
-    // Step 9: Map speakers to user IDs
-    const transcriptWithUserIds = allTranscripts.map(turn => {
-      const userId = turn.speaker === "S1" ? currentUser._id : args.friendId;
-      return {
-        userId: userId as Id<"users">,
-        text: turn.text,
-      };
-    });
-
-    // Step 10: Save combined transcript data to database
-    await ctx.runMutation(api.conversations.saveTranscriptData, {
-      conversationId: conversation.id,
-      transcript: transcriptWithUserIds,
-      S1_facts: allS1Facts,
-      S2_facts: allS2Facts,
-      initiatorName: currentUser.name || "You",
-      scannerName: friend.name || "Friend",
-      summary: combinedSummary,
-    });
 
     console.log("Mobile audio import completed successfully");
     return {

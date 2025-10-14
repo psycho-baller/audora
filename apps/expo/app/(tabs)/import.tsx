@@ -28,9 +28,10 @@ export default function ImportScreen() {
   const router = useRouter();
 
   const [selectedFriend, setSelectedFriend] = useState<Id<"users"> | null>(null);
+  const [isSoloConversation, setIsSoloConversation] = useState(false);
   const [stage, setStage] = useState<ProcessingStage>('selecting-friend');
   const [progress, setProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('Select a friend to continue');
+  const [statusMessage, setStatusMessage] = useState('Select a friend or choose solo conversation');
   const [audioFile, setAudioFile] = useState<any>(null);
 
   // Get user's network/contacts
@@ -88,11 +89,17 @@ export default function ImportScreen() {
 
   const handleFriendSelect = (friendId: Id<"users">) => {
     setSelectedFriend(friendId);
+    setIsSoloConversation(false);
+  };
+
+  const handleSoloSelect = () => {
+    setSelectedFriend(null);
+    setIsSoloConversation(true);
   };
 
   const handleStartImport = async () => {
-    if (!selectedFriend || !audioFile) {
-      Alert.alert('Error', 'Please select a friend and ensure an audio file is loaded.');
+    if ((!selectedFriend && !isSoloConversation) || !audioFile) {
+      Alert.alert('Error', 'Please select a friend or solo conversation, and ensure an audio file is loaded.');
       return;
     }
 
@@ -131,7 +138,7 @@ export default function ImportScreen() {
 
       const result = await processImportedAudio({
         storageId: storageId as Id<"_storage">,
-        friendId: selectedFriend,
+        friendId: selectedFriend || undefined,
         location: 'Imported from Mobile',
       });
 
@@ -167,7 +174,8 @@ export default function ImportScreen() {
             onPress: () => {
               setStage('selecting-friend');
               setProgress(0);
-              setStatusMessage('Select a friend to continue');
+              setStatusMessage('Select a friend or choose solo conversation');
+              setIsSoloConversation(false);
             },
           },
           {
@@ -220,8 +228,33 @@ export default function ImportScreen() {
 
           {/* Friend Selection */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Friend</Text>
-            <Text style={styles.sectionSubtitle}>Who was in this conversation with you?</Text>
+            <Text style={styles.sectionTitle}>Select Conversation Type</Text>
+            <Text style={styles.sectionSubtitle}>Who was in this conversation?</Text>
+
+            {/* Solo Conversation Option */}
+            <TouchableOpacity
+              style={[
+                styles.contactItem,
+                styles.soloOption,
+                isSoloConversation && styles.contactItemSelected,
+              ]}
+              onPress={handleSoloSelect}
+            >
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>🎙️</Text>
+              </View>
+              <View style={styles.contactInfo}>
+                <Text style={styles.contactName}>Solo Conversation</Text>
+                <Text style={styles.contactEmail}>Just me talking to myself</Text>
+              </View>
+              {isSoloConversation && (
+                <View style={styles.checkmark}>
+                  <Text style={styles.checkmarkText}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.orDivider}>OR</Text>
 
             {contacts.length === 0 ? (
               <View style={styles.emptyState}>
@@ -277,10 +310,10 @@ export default function ImportScreen() {
               style={[
                 styles.button,
                 styles.buttonPrimary,
-                !selectedFriend && styles.buttonDisabled,
+                (!selectedFriend && !isSoloConversation) && styles.buttonDisabled,
               ]}
               onPress={handleStartImport}
-              disabled={!selectedFriend}
+              disabled={!selectedFriend && !isSoloConversation}
             >
               <Text style={styles.buttonPrimaryText}>Import</Text>
             </TouchableOpacity>
@@ -450,6 +483,16 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: '#999',
+  },
+  soloOption: {
+    marginBottom: 16,
+  },
+  orDivider: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#999',
+    textAlign: 'center',
+    marginVertical: 16,
   },
   actions: {
     flexDirection: 'row',

@@ -241,7 +241,7 @@ export const batchTranscribe = action({
 
     // Step 5: Convert transcript turns with userIds for storage
     const transcriptWithUserIds = transcriptTurns.map(turn => ({
-      speaker: turn.speaker,
+      // speaker: turn.speaker,
       userId: (speakerToUserIdMap[turn.speaker] || conversation.initiatorUserId) as Id<"users">,
       text: turn.text,
     }));

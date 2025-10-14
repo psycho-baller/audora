@@ -22,6 +22,7 @@ import type * as transcription from "../transcription.js";
 import type * as userConnections from "../userConnections.js";
 import type * as users from "../users.js";
 import type * as vapi from "../vapi.js";
+import type * as whisperTranscription from "../whisperTranscription.js";
 
 import type {
   ApiFromModules,
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   userConnections: typeof userConnections;
   users: typeof users;
   vapi: typeof vapi;
+  whisperTranscription: typeof whisperTranscription;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
