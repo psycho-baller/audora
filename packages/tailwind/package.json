@@ -9,7 +9,6 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "echo 'No build needed for tailwind-config'",
     "lint": "echo 'No linting configured'"
   },
   "dependencies": {

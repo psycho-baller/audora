@@ -12,7 +12,6 @@
     "src"
   ],
   "scripts": {
-    "build": "echo 'No build needed for ui'",
     "lint": "eslint --ext js,ts,tsx .",
     "test": "jest"
   },
