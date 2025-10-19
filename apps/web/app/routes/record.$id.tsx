@@ -1,11 +1,11 @@
-import { useParams, useNavigate } from "react-router";
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
-import { MoveUpLeft, Loader2, AlertCircle } from "lucide-react";
-import PendingView from "../components/recording/PendingView";
-import CurrentView from "../components/recording/CurrentView";
+import { AlertCircle, Loader2, MoveUpLeft } from "lucide-react";
+import { useNavigate, useParams } from "react-router";
 import CompletedView from "../components/recording/CompletedView";
+import CurrentView from "../components/recording/CurrentView";
+import PendingView from "../components/recording/PendingView";
 import { Button } from "../components/ui/button";
 
 export default function ConversationPage() {
@@ -91,7 +91,7 @@ export default function ConversationPage() {
             className="p-2 rounded-lg hover:bg-muted transition-colors group">
             <MoveUpLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
           </button>
-          
+
           <div className="flex items-center gap-3">
             <div className="text-right">
               <h1 className="text-sm font-semibold text-foreground">

@@ -1,9 +1,9 @@
-import { useParams, useSearchParams, useNavigate } from "react-router";
-import { useAuth, SignIn } from "@clerk/react-router";
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
+import { SignIn, useAuth } from "@clerk/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
 import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 
 export default function JoinPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();

@@ -1,24 +1,24 @@
 "use client";
+import { api } from "@audora/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
   Area,
   AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 export default function AnalyticsDashboard() {
@@ -106,7 +106,7 @@ export default function AnalyticsDashboard() {
             <PolarAngleAxis dataKey="metric" tick={{ fill: '#9ca3af' }} />
             <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
             <Radar name="Your Score" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-            <Tooltip 
+            <Tooltip
               contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
               labelStyle={{ color: '#fff' }}
             />
@@ -138,7 +138,7 @@ export default function AnalyticsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="conversation" stroke="#9ca3af" label={{ value: 'Recent Conversations', position: 'insideBottom', offset: -5, fill: '#9ca3af' }} />
                 <YAxis stroke="#9ca3af" domain={[0, 100]} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
                   labelStyle={{ color: '#fff' }}
                 />
@@ -162,7 +162,7 @@ export default function AnalyticsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="conversation" stroke="#9ca3af" label={{ value: 'Recent Conversations', position: 'insideBottom', offset: -5, fill: '#9ca3af' }} />
                 <YAxis stroke="#9ca3af" />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
                   labelStyle={{ color: '#fff' }}
                 />
@@ -185,7 +185,7 @@ export default function AnalyticsDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis type="number" stroke="#9ca3af" />
               <YAxis dataKey="word" type="category" width={100} stroke="#9ca3af" />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
                 labelStyle={{ color: '#fff' }}
               />
@@ -212,16 +212,16 @@ export default function AnalyticsDashboard() {
                     <p className="text-white font-medium">{conv.location || "Conversation"}</p>
                     <p className="text-sm text-gray-400">
                       {conv.startedAt ? new Date(conv.startedAt).toLocaleDateString() : "Unknown date"} •{" "}
-                      {conv.endedAt && conv.startedAt 
-                        ? `${Math.round((conv.endedAt - conv.startedAt) / 60000)} min` 
+                      {conv.endedAt && conv.startedAt
+                        ? `${Math.round((conv.endedAt - conv.startedAt) / 60000)} min`
                         : "In progress"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    conv.status === "ended" 
-                      ? "bg-green-500/20 text-green-400" 
+                    conv.status === "ended"
+                      ? "bg-green-500/20 text-green-400"
                       : "bg-yellow-500/20 text-yellow-400"
                   }`}>
                     {conv.status}

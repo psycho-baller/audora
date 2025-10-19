@@ -1,18 +1,18 @@
 "use client";
-import { useQuery, useAction } from "convex/react";
+import { api } from "@audora/backend/convex/_generated/api";
 import { useAuth } from "@clerk/react-router";
+import { useAction, useQuery } from "convex/react";
+import { Calendar, CreditCard, ExternalLink, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Calendar, CreditCard, ExternalLink, Loader2 } from "lucide-react";
-import { api } from "../../convex/_generated/api";
-import { useState } from "react";
 
 export default function SubscriptionStatus() {
   const { isSignedIn } = useAuth();

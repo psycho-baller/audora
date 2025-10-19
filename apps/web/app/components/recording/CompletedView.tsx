@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Play, Pause, Download, Users, Clock, TrendingUp, Sparkles, Phone, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
-import SpeechAnalytics from "../analytics/SpeechAnalytics";
-import { Button } from "../ui/button";
-import { PhoneNumberDialog } from "../network/PhoneNumberDialog";
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { Clock, Download, Loader2, Pause, Phone, Play, Sparkles, TrendingUp, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import SpeechAnalytics from "../analytics/SpeechAnalytics";
+import { PhoneNumberDialog } from "../network/PhoneNumberDialog";
+import { Button } from "../ui/button";
 
 interface CompletedViewProps {
   conversationId: string;

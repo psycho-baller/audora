@@ -1,7 +1,7 @@
-import { MessageSquare, Clock, ChevronRight, Inbox } from "lucide-react";
-import { useNavigate } from "react-router";
+import { api } from "@audora/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { ChevronRight, Clock, Inbox, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router";
 
 interface ConversationHistoryProps {
   className?: string;
@@ -87,11 +87,11 @@ export default function ConversationHistory({
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              
+
               <h3 className="text-sm font-semibold text-foreground mb-2 line-clamp-1">
                 {getConversationTitle(conversation)}
               </h3>
-              
+
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
                 <span>{formatDate(conversation._creationTime)}</span>

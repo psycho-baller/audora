@@ -1,18 +1,18 @@
 "use client";
-import { useQuery, useMutation } from "convex/react";
+import { api } from "@audora/backend/convex/_generated/api";
 import { useAuth } from "@clerk/react-router";
+import { useMutation, useQuery } from "convex/react";
+import { ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "~/components/ui/card";
-import { CheckCircle, ArrowRight, Loader2 } from "lucide-react";
-import { api } from "../../convex/_generated/api";
-import { useEffect } from "react";
 
 export default function Success() {
   const { isSignedIn } = useAuth();
@@ -71,7 +71,7 @@ export default function Success() {
             Your payment was successful and your subscription is now active.
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           <div className="bg-muted rounded-lg p-6 text-left">
             <h3 className="font-semibold text-lg mb-4">Subscription Details</h3>

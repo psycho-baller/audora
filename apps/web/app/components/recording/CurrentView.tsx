@@ -1,14 +1,14 @@
-import { Clock, Mic, Users } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import type { Id } from "../../../convex/_generated/dataModel";
-import { useAction, useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useUser } from "@clerk/react-router";
 import { RealtimeClient } from "@speechmatics/real-time-client";
-import WaitingView from "./WaitingView";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { Clock, Mic, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import BubbleField from "../BubbleField";
 import CircleBlobs from "../CircleBlobs";
-import { toast } from "sonner";
+import WaitingView from "./WaitingView";
 
 interface TranscriptWord {
   content: string;

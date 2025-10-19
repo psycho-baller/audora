@@ -1,7 +1,7 @@
+import { api } from "@audora/backend/convex/_generated/api";
 import { useAuth } from "@clerk/react-router";
 import { useMutation } from "convex/react";
 import { useEffect, useRef } from "react";
-import { api } from "../../convex/_generated/api";
 
 /**
  * UserSync component ensures that authenticated users are created/updated

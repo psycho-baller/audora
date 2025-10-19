@@ -1,12 +1,12 @@
 "use client";
 
+import { api } from "@audora/backend/convex/_generated/api";
+import { useQuery } from "convex/react";
+import { ArrowUpRight, Loader2, Users } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
-import { Loader2, Users, ArrowUpRight } from "lucide-react";
 
 function formatRelativeTime(timestamp: number) {
   const differenceMs = Date.now() - timestamp;

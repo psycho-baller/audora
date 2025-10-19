@@ -7,7 +7,6 @@ import Footer from "~/components/homepage/footer";
 import HowItWorksSection from "~/components/homepage/how-it-works";
 import Integrations from "~/components/homepage/integrations";
 import TechnologiesSection from "~/components/homepage/technologies";
-import { api } from "../../convex/_generated/api";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
@@ -15,9 +14,9 @@ export function meta({}: Route.MetaArgs) {
   const description =
     "Your on-device speech reflection app. Become a more intentional, articulate communicator and unlock deeper relationships through better conversations.";
   const keywords = "Communication, Speech Analysis, Relationships, AI Coaching, Privacy-First, Connection, Conversation Skills";
-  const siteUrl = "https://www.linkmaxing.com/";
+  const siteUrl = "https://getaudora.app";
   const imageUrl =
-    "https://jdj14ctwppwprnqu.public.blob.vercel-storage.com/rsk-image-FcUcfBMBgsjNLo99j3NhKV64GT2bQl.png";
+    "/images/hero.png";
 
   return [
     { title },

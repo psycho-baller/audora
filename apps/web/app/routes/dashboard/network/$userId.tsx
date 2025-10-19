@@ -1,27 +1,27 @@
 "use client";
 
+import { useAction, useQuery } from "convex/react";
+import {
+    ArrowLeft,
+    Calendar,
+    Clock,
+    FileText,
+    Loader2,
+    MapPin,
+    MessageSquare,
+    Phone,
+    TrendingUp
+} from "lucide-react";
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useQuery, useAction } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import ConnectionGraph from "~/components/network/ConnectionGraph";
+import { PhoneNumberDialog } from "~/components/network/PhoneNumberDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { PhoneNumberDialog } from "~/components/network/PhoneNumberDialog";
-import ConnectionGraph from "~/components/network/ConnectionGraph";
-import { toast } from "sonner";
-import {
-  Loader2,
-  ArrowLeft,
-  Clock,
-  MessageSquare,
-  Calendar,
-  MapPin,
-  TrendingUp,
-  FileText,
-  Phone
-} from "lucide-react";
+import { api } from "../@audora/backend/convex/_generated/api";
+import type { Id } from "../@audora/backend/convex/_generated/dataModel";
 
 function getInitials(name?: string | null, email?: string | null) {
   if (name && name.trim().length > 0) {

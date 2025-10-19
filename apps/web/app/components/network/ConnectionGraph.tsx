@@ -1,8 +1,7 @@
 "use client";
-import { useCallback, useRef, useState, useEffect, lazy, Suspense } from "react";
+import { api } from "@audora/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 // Lazy load ForceGraph2D to avoid SSR issues
 const ForceGraph2D = lazy(() => import("react-force-graph-2d"));

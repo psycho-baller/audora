@@ -1,17 +1,17 @@
 "use client";
 
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
+import { useUser } from "@clerk/react-router";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { ArrowLeft, CheckCircle, Loader2, Upload, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Upload, Users, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
-import { useUser } from "@clerk/react-router";
 
 // Helper function to split audio file into chunks
 async function splitAudioIntoChunks(file: File, chunkDurationMinutes: number = 5): Promise<Blob[]> {
@@ -155,7 +155,7 @@ export default function ImportConversationPage() {
     if (file) {
       // Check if it's a text file (dev mode feature)
       const isTextFile = file.name.endsWith('.txt') || file.type === 'text/plain';
-      
+
       if (!isTextFile) {
         // Validate audio file type
         const validTypes = ["audio/mp3", "audio/mpeg", "audio/wav", "audio/m4a", "audio/mp4", "audio/webm"];
