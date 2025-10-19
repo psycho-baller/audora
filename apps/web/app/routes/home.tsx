@@ -16,7 +16,7 @@ export function meta({}: Route.MetaArgs) {
   const keywords = "Communication, Speech Analysis, Relationships, AI Coaching, Privacy-First, Connection, Conversation Skills";
   const siteUrl = "https://getaudora.app";
   const imageUrl =
-    "/images/hero.png";
+    "/logo.png";
 
   return [
     { title },
