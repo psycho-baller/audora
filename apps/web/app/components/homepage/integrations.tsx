@@ -47,14 +47,14 @@ export default function IntegrationsSection({
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
           <Button size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
-            <Link to={primaryButtonLink} prefetch="viewport">
+            <Link to={primaryButtonLink} prefetch="viewport" target="_blank" rel="noopener noreferrer">
               {primaryButtonText}
             </Link>
           </Button>
           <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
-            <Link to="#features">
+            <a href="https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb" target="_blank" rel="noopener noreferrer">
               Learn More
-            </Link>
+            </a>
           </Button>
         </div>
       </div>
