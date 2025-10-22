@@ -2,7 +2,7 @@
 
 **Your Personal Communication Coach - Powered by AI**
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL%203.0-blue.svg)](LICENSE)
 [![Convex](https://img.shields.io/badge/backend-Convex-orange)](https://convex.dev)
 [![React](https://img.shields.io/badge/web-React%20Router%20v7-blue)](https://reactrouter.com)
 [![React Native](https://img.shields.io/badge/mobile-React%20Native%20%2B%20Expo-purple)](https://expo.dev)

@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Acme eslint configuration for React Native",
   "author": "Cedric van Putten <me@bycedric.com>",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "main": "index.js",
   "files": [
     "index.js"

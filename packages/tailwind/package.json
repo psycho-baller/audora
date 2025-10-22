@@ -7,7 +7,7 @@
     "./theme": "./theme.css",
     "./postcss-config": "./postcss-config.js"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "scripts": {
     "lint": "echo 'No linting configured'"
   },
