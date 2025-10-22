@@ -34,7 +34,7 @@ Think of it as a personal communication coach that helps you "maxx out how you l
 
 Before starting, you need to install these tools on your computer:
 
-1. **Node.js** (version 18 or higher)
+1. **Node.js** (version 24)
    - Download from: <https://nodejs.org/>
    - This is a JavaScript runtime that lets you run the project
    - Check if installed: Open terminal and type `node --version`
