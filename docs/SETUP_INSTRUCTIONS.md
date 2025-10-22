@@ -1,14 +1,34 @@
 # Quick Setup Instructions
 
-## Required Environment Variable
+## Required Environment Variables
 
-Add this to your `.env.local` file:
+### For Web App
+
+Copy the example file and fill in your values:
 
 ```bash
-SPEECHMATICS_API_KEY=your_speechmatics_api_key_here
+cp apps/web/.env.example apps/web/.env.local
 ```
 
-Get your API key from: https://portal.speechmatics.com/
+Then edit `apps/web/.env.local` with your actual values. See `apps/web/.env.example` for required variables.
+
+### For Backend (Convex)
+
+Set environment variables using the Convex CLI:
+
+```bash
+cd packages/backend
+
+# Required
+npx convex env set OPENAI_API_KEY "your_openai_api_key"
+
+# Optional - for real-time transcription
+npx convex env set SPEECHMATICS_API_KEY "your_speechmatics_api_key"
+```
+
+Get your Speechmatics API key from: https://portal.speechmatics.com/
+
+**Note**: See `packages/backend/.env.example` for all available backend environment variables.
 
 ## Installation
 
