@@ -501,7 +501,6 @@ If something doesn't work:
 3. **Check Convex logs**: `npx convex logs`
 4. **Try restarting** the dev server
 5. **Reset the project**: `pnpm reset` (clears caches and reinstalls)
-6. **Full reset** if needed: `pnpm reset:full` (also removes lock file)
 
 ### Common Issues
 

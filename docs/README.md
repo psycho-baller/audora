@@ -1,6 +1,6 @@
 # 📚 Audora Documentation Index
 
-Welcome to the Audora documentation! This index will help you find the right guide for your needs.
+Welcome to the Audora documentation! This guide will help you get started with the project.
 
 ## 🚀 Getting Started
 
@@ -28,6 +28,12 @@ Quick setup guides for specific platforms:
 
 ### Understanding the Project
 
+- **[Main README](../README.md)** - Project overview and features
+  - What Audora does
+  - Feature list
+  - Quick start
+  - Tech stack
+
 - **[Architecture Overview](../ARCHITECTURE.md)** - Deep dive into the tech stack
   - High-level architecture
   - Monorepo structure
@@ -35,69 +41,12 @@ Quick setup guides for specific platforms:
   - Data flow examples
   - Key concepts
 
-- **[Main README](../README.md)** - Project overview and features
-  - What Audora does
-  - Feature list
-  - Use cases
-
 ### Setup & Configuration
 
-- **[Setup Instructions](./SETUP_INSTRUCTIONS.md)** - Detailed configuration guide
-  - API keys setup
+- **[Setup Instructions](./SETUP_INSTRUCTIONS.md)** - Quick configuration guide
   - Environment variables
-  - Authentication configuration
-  - Production deployment
-
----
-
-## 🔧 Feature Documentation
-
-### Core Features
-
-- **[Audio Import Flow](./AUDIO_IMPORT_FEATURE.md)** - Import audio files from other apps
-  - Architecture and flow
-  - API functions
-  - Error handling
-  - Testing guide
-
-- **[Audio Chunking](./AUDIO_CHUNKING_FEATURE.md)** - Process large audio files
-  - Chunking strategy
-  - Implementation details
-  - Performance considerations
-
-### Transcription & Analysis
-
-- **[Speechmatics Integration](./SPEECHMATICS_INTEGRATION.md)** - Real-time transcription
-  - Setup guide
-  - API usage
-  - Best practices
-
-- **[Speaker Diarization](./SPEAKER_DIARIZATION.md)** - Identify who said what
-  - How it works
-  - Configuration
-  - Troubleshooting
-
-- **[Batch Transcription](./BATCH_TRANSCRIBE_UPDATE.md)** - Process pre-recorded audio
-  - Batch processing flow
-  - API reference
-  - Error handling
-
-### Advanced Features
-
-- **[VAPI Calling Setup](./VAPI_CALLING_SETUP.md)** - Voice AI phone calls
-  - Setup instructions
-  - Integration guide
-  - Use cases
-
-- **[Relationship Analytics](./FEATURE_RELATIONSHIP_ANALYTICS.md)** - Track connections
-  - Knowledge graph
-  - Relationship insights
-  - Data visualization
-
-- **[Conversation Call Feature](./CONVERSATION_CALL_FEATURE.md)** - AI conversation reflection
-  - How it works
-  - Implementation
-  - Best practices
+  - API keys setup
+  - Running the app
 
 ---
 
@@ -126,35 +75,28 @@ Quick setup guides for specific platforms:
 - **Location**: `apps/web/`
 - **Framework**: React Router v7
 - **Quick Start**: [QUICK_START_WEB.md](./QUICK_START_WEB.md)
-- **Key Files**:
-  - `app/routes/` - Page routes
-  - `app/components/` - UI components
-  - `.env.local` - Environment variables
+- **Environment**: Copy `apps/web/.env.example` to `apps/web/.env.local`
 
 ### Mobile App
 
 - **Location**: `apps/expo/`
 - **Framework**: React Native + Expo
 - **Quick Start**: [QUICK_START_MOBILE.md](./QUICK_START_MOBILE.md)
-- **Key Files**:
-  - `app/(tabs)/` - Tab screens
-  - `app/(auth)/` - Auth screens
-  - `components/` - UI components
-  - `.env.local` - Environment variables
+- **Environment**: Copy `apps/expo/.env.example` to `apps/expo/.env.local`
 
 ### Backend
 
 - **Location**: `packages/backend/`
 - **Platform**: Convex
+- **Environment**: See `packages/backend/.env.example` for available variables
 - **Key Files**:
   - `convex/schema.ts` - Database schema
   - `convex/conversations.ts` - Conversation functions
   - `convex/transcription.ts` - AI processing
-  - `convex/analytics.ts` - Speech analytics
 
 ---
 
-## 🎓 Learning Resources
+## 🎓 Learning Path
 
 ### For Beginners
 
@@ -163,14 +105,6 @@ Quick setup guides for specific platforms:
 3. Follow a [Quick Start Guide](./QUICK_START_WEB.md)
 4. Explore the codebase
 5. Try making small changes
-
-### For Contributors
-
-1. Read [Development Guide](./DEVELOPMENT.md)
-2. Check [Architecture Overview](../ARCHITECTURE.md)
-3. Review feature documentation
-4. Look at existing code
-5. Start with small improvements
 
 ### External Resources
 
@@ -183,7 +117,7 @@ Quick setup guides for specific platforms:
 
 ---
 
-## 🗺️ Documentation Map
+## 🗺️ Documentation Structure
 
 ```
 audora/
@@ -195,36 +129,10 @@ audora/
 │
 └── docs/
     ├── README.md                 # This file (documentation index)
-    │
-    ├── Quick Start Guides
     ├── QUICK_START_WEB.md       # Web app quick start
     ├── QUICK_START_MOBILE.md    # Mobile app quick start
-    │
-    ├── Setup & Configuration
-    ├── SETUP.md                  # Detailed setup guide
-    ├── SETUP_INSTRUCTIONS.md     # Additional setup notes
-    ├── DEVELOPMENT.md            # Development workflows
-    │
-    └── Feature Documentation
-        ├── AUDIO_IMPORT_FEATURE.md
-        ├── AUDIO_CHUNKING_FEATURE.md
-        ├── SPEECHMATICS_INTEGRATION.md
-        ├── SPEAKER_DIARIZATION.md
-        ├── BATCH_TRANSCRIBE_UPDATE.md
-        ├── VAPI_CALLING_SETUP.md
-        ├── FEATURE_RELATIONSHIP_ANALYTICS.md
-        └── CONVERSATION_CALL_FEATURE.md
+    └── SETUP_INSTRUCTIONS.md     # Additional setup notes
 ```
-
----
-
-## 🤝 Contributing to Documentation
-
-Found an error or want to improve the docs?
-
-1. Edit the relevant markdown file
-2. Submit a pull request
-3. Help make Audora more accessible!
 
 ---
 
@@ -233,7 +141,6 @@ Found an error or want to improve the docs?
 - **Can't find what you're looking for?** Check the [FAQ](../FAQ.md)
 - **Having issues?** See [Troubleshooting Guide](../TROUBLESHOOTING.md)
 - **Still stuck?** Open a GitHub issue
-- **Want to chat?** Join the [Convex Discord](https://convex.dev/community)
 
 ---
 
