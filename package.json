@@ -18,6 +18,8 @@
     "reset": "pnpm clean && rm -rf pnpm-lock.yaml && pnpm install"
   },
   "devDependencies": {
+    "@react-router/dev": "^7.9.4",
+    "react-router": "link:@vercel/react-router",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   },
