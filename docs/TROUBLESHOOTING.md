@@ -431,7 +431,7 @@ When all else fails:
 # Option 1: Quick reset (clears caches and reinstalls)
 pnpm reset
 
-# Option 2: Manual cleanup
+# Option 3: Manual cleanup
 rm -rf node_modules
 rm -rf .turbo
 rm -rf apps/web/node_modules
@@ -501,7 +501,7 @@ npx convex --version
 
 - [Getting Started Guide](./GETTING_STARTED.md)
 - [Architecture Overview](./ARCHITECTURE.md)
-- [Feature-specific docs](./docs/)
+- [Documentation Index](./README.md)
 
 ### Check official docs
 

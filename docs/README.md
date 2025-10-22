@@ -8,7 +8,7 @@ Welcome to the Audora documentation! This guide will help you get started with t
 
 Start here if you're new to React, React Native, or Convex:
 
-- **[Complete Getting Started Guide](../GETTING_STARTED.md)** - Step-by-step setup from scratch
+- **[Complete Getting Started Guide](./GETTING_STARTED.md)** - Step-by-step setup from scratch
   - What is Audora?
   - Prerequisites and installation
   - Understanding the tech stack
@@ -28,13 +28,13 @@ Quick setup guides for specific platforms:
 
 ### Understanding the Project
 
-- **[Main README](../README.md)** - Project overview and features
+- **[Main README](../README.md)** - Project overview and features (in root)
   - What Audora does
   - Feature list
   - Quick start
   - Tech stack
 
-- **[Architecture Overview](../ARCHITECTURE.md)** - Deep dive into the tech stack
+- **[Architecture Overview](./ARCHITECTURE.md)** - Deep dive into the tech stack
   - High-level architecture
   - Monorepo structure
   - Technology explanations
@@ -52,7 +52,7 @@ Quick setup guides for specific platforms:
 
 ## 🐛 Troubleshooting & Help
 
-- **[Troubleshooting Guide](../TROUBLESHOOTING.md)** - Solutions to common problems
+- **[Troubleshooting Guide](./TROUBLESHOOTING.md)** - Solutions to common problems
   - Installation issues
   - Convex issues
   - Authentication problems
@@ -60,7 +60,7 @@ Quick setup guides for specific platforms:
   - Mobile app issues
   - API errors
 
-- **[FAQ](../FAQ.md)** - Frequently asked questions
+- **[FAQ](./FAQ.md)** - Frequently asked questions
   - General questions
   - Technology questions
   - Development questions
@@ -100,8 +100,8 @@ Quick setup guides for specific platforms:
 
 ### For Beginners
 
-1. Start with [Getting Started Guide](../GETTING_STARTED.md)
-2. Read [Architecture Overview](../ARCHITECTURE.md)
+1. Start with [Getting Started Guide](./GETTING_STARTED.md)
+2. Read [Architecture Overview](./ARCHITECTURE.md)
 3. Follow a [Quick Start Guide](./QUICK_START_WEB.md)
 4. Explore the codebase
 5. Try making small changes
@@ -122,15 +122,16 @@ Quick setup guides for specific platforms:
 ```
 audora/
 ├── README.md                      # Main project overview
-├── GETTING_STARTED.md            # Complete beginner's guide
-├── ARCHITECTURE.md               # Tech stack deep dive
-├── TROUBLESHOOTING.md            # Common issues & solutions
-├── FAQ.md                        # Frequently asked questions
 │
 └── docs/
     ├── README.md                 # This file (documentation index)
-    ├── QUICK_START_WEB.md       # Web app quick start
-    ├── QUICK_START_MOBILE.md    # Mobile app quick start
+    ├── ONBOARDING.md             # Team onboarding checklist
+    ├── GETTING_STARTED.md        # Complete beginner's guide
+    ├── ARCHITECTURE.md           # Tech stack deep dive
+    ├── TROUBLESHOOTING.md        # Common issues & solutions
+    ├── FAQ.md                    # Frequently asked questions
+    ├── QUICK_START_WEB.md        # Web app quick start
+    ├── QUICK_START_MOBILE.md     # Mobile app quick start
     └── SETUP_INSTRUCTIONS.md     # Additional setup notes
 ```
 
@@ -138,8 +139,8 @@ audora/
 
 ## 📞 Need Help?
 
-- **Can't find what you're looking for?** Check the [FAQ](../FAQ.md)
-- **Having issues?** See [Troubleshooting Guide](../TROUBLESHOOTING.md)
+- **Can't find what you're looking for?** Check the [FAQ](./FAQ.md)
+- **Having issues?** See [Troubleshooting Guide](./TROUBLESHOOTING.md)
 - **Still stuck?** Open a GitHub issue
 
 ---

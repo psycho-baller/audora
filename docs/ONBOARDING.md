@@ -35,11 +35,9 @@ Welcome to the Audora team! This checklist will help you get set up and producti
 
 Start by understanding what Audora is and how it works:
 
-- [ ] Read [README.md](./README.md) - Project overview
+- [ ] Read [README.md](../README.md) - Project overview (in root)
 - [ ] Read [GETTING_STARTED.md](./GETTING_STARTED.md) - Complete setup guide
 - [ ] Skim [ARCHITECTURE.md](./ARCHITECTURE.md) - Tech stack overview
-
-**Time estimate**: 20-30 minutes
 
 ---
 

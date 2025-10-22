@@ -60,11 +60,11 @@ Audora helps you **understand and improve how you speak**, with the ultimate goa
 
 **New team member?** Start here:
 
-👉 **[Onboarding Checklist](./ONBOARDING.md)** - Complete setup checklist for new team members (2-3 hours)
+👉 **[Onboarding Checklist](./docs/ONBOARDING.md)** - Complete setup checklist for new team members (2-3 hours)
 
 **New to React, React Native, or Convex?** Read this:
 
-👉 **[Complete Beginner's Guide](./GETTING_STARTED.md)** - Step-by-step setup with explanations
+👉 **[Complete Beginner's Guide](./docs/GETTING_STARTED.md)** - Step-by-step setup with explanations
 
 **Already familiar with the stack?** Quick setup:
 
@@ -76,7 +76,7 @@ pnpm install
 cd packages/backend
 npx convex dev
 
-# Configure environment variables (see GETTING_STARTED.md)
+# Configure environment variables (see docs/GETTING_STARTED.md)
 
 # Run everything
 pnpm dev
@@ -93,9 +93,9 @@ pnpm dev
 
 ### For Beginners
 
-- **[Getting Started Guide](./GETTING_STARTED.md)** - Complete setup for beginners
-- **[Architecture Overview](./ARCHITECTURE.md)** - Understanding the tech stack
-- **[Troubleshooting](./TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Getting Started Guide](./docs/GETTING_STARTED.md)** - Complete setup for beginners
+- **[Architecture Overview](./docs/ARCHITECTURE.md)** - Understanding the tech stack
+- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ### For Developers
 

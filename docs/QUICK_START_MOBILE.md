@@ -294,9 +294,9 @@ apps/expo/
 
 ## Next Steps
 
-- Read [Architecture Overview](../ARCHITECTURE.md) to understand how it works
+- Read [Architecture Overview](./ARCHITECTURE.md) to understand how it works
 - Explore the code in `apps/expo/app/`
-- Check [Troubleshooting Guide](../TROUBLESHOOTING.md) for common issues
+- Check [Troubleshooting Guide](./TROUBLESHOOTING.md) for common issues
 - Try modifying a screen or adding a new component
 
 ## Building for Production

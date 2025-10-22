@@ -173,9 +173,9 @@ npx convex dev
 
 ## Next Steps
 
-- Read [Architecture Overview](../ARCHITECTURE.md) to understand how it works
+- Read [Architecture Overview](./ARCHITECTURE.md) to understand how it works
 - Explore the code in `apps/web/app/routes/`
-- Check [Troubleshooting Guide](../TROUBLESHOOTING.md) for common issues
+- Check [Troubleshooting Guide](./TROUBLESHOOTING.md) for common issues
 - Try adding a new page or component
 
 Happy coding! 🚀
