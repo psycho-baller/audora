@@ -20,8 +20,8 @@ import { PhoneNumberDialog } from "~/components/network/PhoneNumberDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { api } from "../@audora/backend/convex/_generated/api";
-import type { Id } from "../@audora/backend/convex/_generated/dataModel";
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
 
 function getInitials(name?: string | null, email?: string | null) {
   if (name && name.trim().length > 0) {
