@@ -4,7 +4,7 @@ This guide will help you run just the mobile application.
 
 ## Prerequisites
 
-- Node.js 18+ installed
+- Node.js 24 installed
 - pnpm installed (`npm install -g pnpm`)
 - Convex account (free at <https://convex.dev>)
 - Clerk account (free at <https://clerk.com>)

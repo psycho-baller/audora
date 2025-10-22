@@ -33,8 +33,8 @@ npm install -g pnpm
 **Solution**:
 
 1. Check your Node version: `node --version`
-2. Install Node 18 or higher from <https://nodejs.org/>
-3. Or use nvm: `nvm install 18 && nvm use 18`
+2. Install Node 24 from <https://nodejs.org/>
+3. Or use nvm: `nvm install 24 && nvm use 24`
 
 ### Permission errors during install
 
@@ -480,7 +480,7 @@ npx convex env list
 ### Verify versions
 
 ```bash
-node --version    # Should be 18+
+node --version    # Should be 24
 pnpm --version    # Should be 8+
 npx convex --version
 ```
@@ -515,7 +515,7 @@ npx convex --version
 
 Before asking for help, verify:
 
-- [ ] Node.js 18+ installed
+- [ ] Node.js 24 installed
 - [ ] pnpm installed
 - [ ] Dependencies installed (`pnpm install`)
 - [ ] Convex running (`npx convex dev`)

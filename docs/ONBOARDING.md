@@ -6,7 +6,7 @@ Welcome to the Audora team! This checklist will help you get set up and producti
 
 ### Required Software
 
-- [ ] **Node.js 18+** installed ([nodejs.org](https://nodejs.org/))
+- [ ] **Node.js 24** installed ([nodejs.org](https://nodejs.org/))
   - Verify: `node --version`
 - [ ] **pnpm** installed
   - Install: `npm install -g pnpm`
