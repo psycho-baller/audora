@@ -14,8 +14,8 @@
     "build:expo": "turbo build --filter=\"...{./apps/expo}\"",
     "build:web": "turbo build --filter=\"...{./apps/web}\"",
     "build:backend": "turbo build --filter=\"...{./packages/backend}\"",
-    "clean": "rm -rf pnpm-lock.yaml node_modules .turbo apps/web/node_modules apps/web/.turbo apps/expo/node_modules apps/expo/.turbo apps/expo/.expo packages/backend/node_modules packages/backend/.turbo packages/*/node_modules packages/*/.turbo",
-    "reset": "pnpm clean && rm -rf node_modules/.cache apps/web/node_modules/.cache apps/expo/node_modules/.cache && pnpm install"
+    "clean": "rm -rf node_modules .turbo apps/web/node_modules apps/web/.turbo apps/expo/node_modules apps/expo/.turbo apps/expo/.expo packages/backend/node_modules packages/backend/.turbo packages/*/node_modules packages/*/.turbo",
+    "reset": "pnpm clean && rm -rf pnpm-lock.yaml && pnpm install"
   },
   "devDependencies": {
     "turbo": "^2.5.8",
