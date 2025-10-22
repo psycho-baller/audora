@@ -41,9 +41,7 @@ Start by understanding what Audora is and how it works:
 
 ---
 
-## 🛠️ Step 2: Initial Setup
-
-### Clone and Install
+## 🛠️ Step 2: Clone and Install
 
 - [ ] Clone the repository
 
@@ -58,28 +56,6 @@ Start by understanding what Audora is and how it works:
   pnpm install
   ```
 
-### Set Up Convex Backend
-
-- [ ] Navigate to backend
-
-  ```bash
-  cd packages/backend
-  ```
-
-- [ ] Login to Convex
-
-  ```bash
-  npx convex login
-  ```
-
-- [ ] Start Convex dev server
-
-  ```bash
-  npx convex dev
-  ```
-
-- [ ] Copy the `CONVEX_URL` that appears (you'll need this)
-
 ---
 
 ## 🔐 Step 3: Configure Authentication
@@ -91,6 +67,12 @@ Start by understanding what Audora is and how it works:
 - [ ] Choose "Email" and "Google" as sign-in methods
 - [ ] Copy your **Publishable Key** (starts with `pk_test_`)
 - [ ] Copy your **Secret Key** (starts with `sk_test_`)
+
+### Set Up Convex
+
+- [ ] Go to [dashboard.convex.dev](https://dashboard.convex.dev)
+- [ ] Create a new project
+- [ ] Copy your **Deployment URL** (you'll need this for environment variables)
 
 ### Connect Clerk to Convex
 
@@ -129,9 +111,35 @@ Start by understanding what Audora is and how it works:
   - `EXPO_PUBLIC_CONVEX_URL` - From Convex dashboard
   - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` - From Clerk
 
-### Backend (Convex)
+---
 
-- [ ] Set OpenAI API key
+## 🚀 Step 5: Run the Development Servers
+
+### Start Convex Backend
+
+- [ ] Navigate to backend
+
+  ```bash
+  cd packages/backend
+  ```
+
+- [ ] Login to Convex (if not already logged in)
+
+  ```bash
+  npx convex login
+  ```
+
+- [ ] Start Convex dev server
+
+  ```bash
+  npx convex dev
+  ```
+
+- [ ] Wait for Convex to sync your schema and functions
+
+### Set Backend Environment Variables
+
+- [ ] In a new terminal, set OpenAI API key
 
   ```bash
   cd packages/backend
@@ -143,12 +151,6 @@ Start by understanding what Audora is and how it works:
   ```bash
   npx convex env set SPEECHMATICS_API_KEY "your_key"
   ```
-
-**Time estimate**: 10-15 minutes
-
----
-
-## 🚀 Step 5: Run the Application
 
 ### Start Web App
 
@@ -276,26 +278,3 @@ Before you start working on tasks:
 - [ ] Can you see data in Convex dashboard?
 - [ ] Do you understand the monorepo structure?
 - [ ] Have you read the architecture docs?
-- [ ] Do you know where to find help?
-
----
-
-## 🎉 You're Ready
-
-**Total estimated setup time**: 2-3 hours
-
-You're now ready to start contributing to Audora! If you have any questions:
-
-1. Check the documentation
-2. Ask your team members
-3. Open a GitHub issue
-4. Join the Convex Discord
-
-**Next steps:**
-
-- Pick up your first task
-- Ask questions when stuck
-- Make your first PR
-- Help improve the docs!
-
-Welcome to the team! 🚀
