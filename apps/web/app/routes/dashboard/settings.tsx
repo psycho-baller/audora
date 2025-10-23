@@ -11,6 +11,10 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<"profile" | "network" | "subscription">("profile");
   const [copied, setCopied] = useState(false);
   const currentUser = useQuery(api.users.getCurrentUser);
+  const usersInvitedByMe = useQuery(
+    api.users.getUsersInvitedBy,
+    currentUser?.inviteCode ? { code: currentUser.inviteCode } : "skip"
+  );
 
   const handleCopyCode = () => {
     if (currentUser?.inviteCode) {
@@ -127,6 +131,44 @@ export default function Page() {
                   ) : (
                     <div className="text-gray-400">Loading your invite code...</div>
                   )}
+                </div>
+
+                {/* Referral Stats Section */}
+                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-xl font-semibold text-white mb-2">Referral Stats</h3>
+                  <p className="text-gray-400 mb-4">
+                    Track who you've invited to the platform.
+                  </p>
+                  
+                  {currentUser?.invitedByCode && (
+                    <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700 rounded-lg">
+                      <p className="text-sm text-blue-300">
+                        You were invited by code: <span className="font-mono font-bold">{currentUser.invitedByCode}</span>
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                      <span className="text-gray-300">Users you've invited:</span>
+                      <span className="text-2xl font-bold text-blue-400">
+                        {usersInvitedByMe?.length || 0}
+                      </span>
+                    </div>
+                    
+                    {usersInvitedByMe && usersInvitedByMe.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-400 mb-2">Recent invites:</p>
+                        <div className="space-y-1">
+                          {usersInvitedByMe.slice(0, 5).map((user) => (
+                            <div key={user._id} className="text-sm text-gray-300 p-2 bg-gray-900 rounded">
+                              {user.name || user.email || "Anonymous"}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

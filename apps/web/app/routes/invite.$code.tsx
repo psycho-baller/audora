@@ -29,7 +29,8 @@ export async function loader(args: Route.LoaderArgs) {
   }
 
   // Set cookie and redirect to sign-in
-  const cookieValue = `invite_code=${code}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`;
+  // Note: Removed HttpOnly so client-side UserSync can read it for referral tracking (3 months)
+  const cookieValue = `invite_code=${code}; Secure; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30 * 2}`;
 
   console.log("cookieValue", cookieValue);
   throw redirect("/sign-in?redirect_url=/dashboard", {

@@ -133,6 +133,17 @@ export const getUserByInviteCode = query({
   },
 });
 
+export const getUsersInvitedBy = query({
+  args: { code: v.string() },
+  handler: async (ctx, args) => {
+    const users = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("invitedByCode"), args.code))
+      .collect();
+    return users;
+  },
+});
+
 export const updatePhoneNumber = mutation({
   args: {
     userId: v.id("users"),

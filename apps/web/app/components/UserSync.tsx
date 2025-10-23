@@ -26,8 +26,10 @@ export function UserSync() {
     // Only sync when signed in and haven't synced yet
     if (isSignedIn && !syncedRef.current) {
       const invitedByCode = getCookie("invite_code");
+      console.log("UserSync: invitedByCode from cookie:", invitedByCode);
       upsertUser({ invitedByCode: invitedByCode || undefined })
         .then(() => {
+          console.log("UserSync: User synced successfully with invitedByCode:", invitedByCode);
           syncedRef.current = true;
         })
         .catch((error) => {
