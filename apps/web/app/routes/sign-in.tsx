@@ -19,7 +19,7 @@ export async function loader(args: Route.LoaderArgs) {
     throw redirect("/dashboard");
   }
 
-  const isProd = process.env.NODE_ENV === "development";
+  const isProd = process.env.NODE_ENV === "production";
 
   // In production, check for invite code or allowlist
   if (isProd) {
