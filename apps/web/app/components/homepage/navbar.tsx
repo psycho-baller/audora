@@ -18,7 +18,7 @@ const isProduction = process.env.NODE_ENV === "production";
 export const Navbar = ({
   loaderData,
 }: {
-  loaderData?: { isSignedIn: boolean; hasActiveSubscription: boolean };
+  loaderData?: { isSignedIn: boolean; hasActiveSubscription: boolean; hasInvite: boolean };
 }) => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -146,20 +146,7 @@ export const Navbar = ({
                 >
                   <Github className="w-5 h-5" />
                 </Link> */}
-                {isProduction ? (
-                  <>
-                    {/* <Button asChild variant="outline" size="sm">
-                      <Link to="/manifesto" prefetch="viewport">
-                        <span>Our Mission</span>
-                      </Link>
-                    </Button> */}
-                    <Button asChild size="sm">
-                      <Link to="/waitlist" prefetch="viewport">
-                        <span>Join Waitlist</span>
-                      </Link>
-                    </Button>
-                  </>
-                ) : loaderData?.isSignedIn ? (
+                {loaderData?.isSignedIn ? (
                   <div className="flex items-center gap-3">
                     <Button asChild size="sm">
                       <Link to={dashboardLink} prefetch="viewport">
@@ -168,7 +155,7 @@ export const Navbar = ({
                     </Button>
                     <UserButton />
                   </div>
-                ) : (
+                ) : loaderData?.hasInvite ? (
                   <>
                     <Button
                       asChild
@@ -195,10 +182,16 @@ export const Navbar = ({
                       className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
                     >
                       <Link to="/sign-up" prefetch="viewport">
-                        <span>{dashboardText}</span>
+                        <span>Get Started</span>
                       </Link>
                     </Button>
                   </>
+                ) : (
+                  <Button asChild size="sm">
+                    <Link to="/waitlist" prefetch="viewport">
+                      <span>Join Waitlist</span>
+                    </Link>
+                  </Button>
                 )}
               </div>
             </div>

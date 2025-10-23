@@ -7,23 +7,28 @@ const isProduction = process.env.NODE_ENV === "production";
 export default function IntegrationsSection({
   loaderData,
 }: {
-  loaderData?: { isSignedIn: boolean; hasActiveSubscription: boolean };
+  loaderData?: { isSignedIn: boolean; hasActiveSubscription: boolean; hasInvite: boolean };
 }) {
-  const primaryButtonLink = isProduction
-    ? "/waitlist"
-    : loaderData?.isSignedIn
-      ? loaderData?.hasActiveSubscription
-        ? "/dashboard"
-        : "/pricing"
-      : "/sign-up";
+  // If user is signed in, show dashboard/pricing
+  // If user has invite, show sign-up/sign-in buttons
+  // Otherwise, show waitlist
+  const showAuthButtons = !loaderData?.isSignedIn && loaderData?.hasInvite;
+  
+  const primaryButtonLink = loaderData?.isSignedIn
+    ? loaderData?.hasActiveSubscription
+      ? "/dashboard"
+      : "/pricing"
+    : showAuthButtons
+      ? "/sign-up"
+      : "/waitlist";
 
-  const primaryButtonText = isProduction
-    ? "Join Waitlist"
-    : loaderData?.isSignedIn
-      ? loaderData?.hasActiveSubscription
-        ? "Go to Dashboard"
-        : "Start Connecting Better"
-      : "Start Your Journey";
+  const primaryButtonText = loaderData?.isSignedIn
+    ? loaderData?.hasActiveSubscription
+      ? "Go to Dashboard"
+      : "Start Connecting Better"
+    : showAuthButtons
+      ? "Sign Up"
+      : "Join Waitlist";
 
   return (
     <>
@@ -46,16 +51,33 @@ export default function IntegrationsSection({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
-          <Button size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
-            <Link to={primaryButtonLink} prefetch="viewport" target="_blank" rel="noopener noreferrer">
-              {primaryButtonText}
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
-            <a href="https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb" target="_blank" rel="noopener noreferrer">
-              Learn More
-            </a>
-          </Button>
+          {showAuthButtons ? (
+            <>
+              <Button size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                <Link to="/sign-up" prefetch="viewport">
+                  Sign Up
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                <Link to="/sign-in" prefetch="viewport">
+                  Login
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                <Link to={primaryButtonLink} prefetch="viewport" target="_blank" rel="noopener noreferrer">
+                  {primaryButtonText}
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                <a href="https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb" target="_blank" rel="noopener noreferrer">
+                  Learn More
+                </a>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </section>
