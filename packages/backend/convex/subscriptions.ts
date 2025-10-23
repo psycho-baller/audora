@@ -263,7 +263,7 @@ export const createCheckoutSession = action({
 
     // If user doesn't exist, create them
     if (!user) {
-      user = await ctx.runMutation(api.users.upsertUser);
+      user = await ctx.runMutation(api.users.upsertUser, {});
 
       if (!user) {
         throw new Error("Failed to create user");

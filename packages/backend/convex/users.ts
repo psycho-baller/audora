@@ -49,8 +49,28 @@ export const findUserByToken = query({
   },
 });
 
+async function generateUniqueInviteCode(ctx: any): Promise<string> {
+  const maxAttempts = 20;
+  for (let i = 0; i < maxAttempts; i++) {
+    const code = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_invite_code", (q: any) => q.eq("inviteCode", code))
+      .unique();
+    if (!existing) {
+      return code;
+    }
+  }
+  throw new Error("Failed to generate unique invite code after 20 attempts");
+}
+
 export const upsertUser = mutation({
-  handler: async (ctx) => {
+  args: {
+    invitedByCode: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
@@ -82,17 +102,33 @@ export const upsertUser = mutation({
     }
 
     console.log("User does not exist, creating...");
+    // Generate unique invite code
+    const inviteCode = await generateUniqueInviteCode(ctx);
+
     // Create new user
     const userId = await ctx.db.insert("users", {
       name: identity.name,
       email: identity.email,
       image: identity.pictureUrl,
       tokenIdentifier: identity.subject,
+      inviteCode,
+      invitedByCode: args.invitedByCode,
     });
 
-    console.log("User created");
+    console.log("User created with invite code:", inviteCode);
     const user = await ctx.db.get(userId);
     console.log("User created", user);
+    return user;
+  },
+});
+
+export const getUserByInviteCode = query({
+  args: { code: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_invite_code", (q) => q.eq("inviteCode", args.code))
+      .unique();
     return user;
   },
 });

@@ -89,7 +89,7 @@ export const claimScanner = mutation({
 
     if (!user) {
       // Create user if not found
-      user = await ctx.runMutation(api.users.upsertUser);
+      user = await ctx.runMutation(api.users.upsertUser, {});
       if (!user) {
         throw new Error("Failed to create user");
       }

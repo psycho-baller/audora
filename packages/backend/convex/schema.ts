@@ -8,9 +8,12 @@ export default defineSchema({
     image: v.optional(v.string()),
     tokenIdentifier: v.string(),
     phoneNumber: v.optional(v.string()),
+    inviteCode: v.optional(v.string()),
+    invitedByCode: v.optional(v.string()),
   })
     .index("by_token", ["tokenIdentifier"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_invite_code", ["inviteCode"]),
   subscriptions: defineTable({
     userId: v.optional(v.string()),
     polarId: v.optional(v.string()),

@@ -3,6 +3,14 @@ import { useAuth } from "@clerk/react-router";
 import { useMutation } from "convex/react";
 import { useEffect, useRef } from "react";
 
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+  return null;
+}
+
 /**
  * UserSync component ensures that authenticated users are created/updated
  * in the Convex database when they sign in with Clerk.
@@ -17,7 +25,8 @@ export function UserSync() {
   useEffect(() => {
     // Only sync when signed in and haven't synced yet
     if (isSignedIn && !syncedRef.current) {
-      upsertUser()
+      const invitedByCode = getCookie("invite_code");
+      upsertUser({ invitedByCode: invitedByCode || undefined })
         .then(() => {
           syncedRef.current = true;
         })
@@ -32,7 +41,7 @@ export function UserSync() {
     if (!isSignedIn) {
       syncedRef.current = false;
     }
-  }, []);
+  }, [isSignedIn, upsertUser]);
 
   // This component doesn't render anything
   return null;
