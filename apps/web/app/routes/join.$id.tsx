@@ -1,9 +1,57 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { SignIn, useAuth } from "@clerk/react-router";
+import { ConvexHttpClient } from "convex/browser";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { redirect, useNavigate, useParams, useSearchParams } from "react-router";
+import type { Route } from "./+types/join.$id";
+
+export async function loader(args: Route.LoaderArgs) {
+  const { id } = args.params;
+  const url = new URL(args.request.url);
+  const conversationCode = url.searchParams.get("code");
+
+  // If there's a conversation code, automatically set the platform invite cookie
+  // This allows users to sign in via QR code without visiting /invite/:code first
+  if (conversationCode && id) {
+    try {
+      const convex = new ConvexHttpClient(process.env.VITE_CONVEX_URL!);
+      
+      // Get the conversation to find the initiator
+      const conversation = await convex.query(api.conversations.get, { 
+        id: id as Id<"conversations"> 
+      });
+
+      if (conversation) {
+        // Get the initiator's user to find their platform invite code
+        const initiator = await convex.query(api.users.get, { 
+          id: conversation.initiatorUserId 
+        });
+
+        if (initiator?.inviteCode) {
+          // Set the platform invite cookie so user can sign in
+          // This is the same cookie set by /invite/:code
+          const cookieValue = `invite_code=${initiator.inviteCode}; Secure; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30 * 2}`;
+          
+          console.log("Auto-setting platform invite cookie from conversation initiator:", initiator.inviteCode);
+          
+          // Return with cookie set - page will render normally
+          return new Response(null, {
+            headers: {
+              "Set-Cookie": cookieValue,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to auto-set invite cookie:", error);
+      // Continue anyway - user can still try to sign in
+    }
+  }
+
+  return null;
+}
 
 export default function JoinPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
