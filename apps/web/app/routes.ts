@@ -30,5 +30,6 @@ export default [
   index("routes/home.tsx"),
   route("waitlist", "routes/waitlist.tsx"),
   route("manifesto", "routes/manifesto.tsx"),
+  route("speech-feedback", "routes/speech-feedback.tsx"),
   ...authRoutes,
 ] satisfies RouteConfig;
