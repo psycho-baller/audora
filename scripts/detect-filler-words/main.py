@@ -2,11 +2,19 @@ import time
 import subprocess
 from pocketsphinx import LiveSpeech
 
-# Define the keyword to listen for
-keyword = "like"
-
-# Set up LiveSpeech for keyword spotting
-speech = LiveSpeech(keyphrase=keyword, kws_threshold=1e-10)
+# Define filler words to detect
+filler_words = {
+    "like",
+    "um",
+    "uh",
+    "you know",
+    "so",
+    "basically",
+    "literally",
+    "actually",
+}
+# Set up LiveSpeech for continuous recognition (no keyphrase)
+speech = LiveSpeech()
 
 # Cooldown period in seconds to prevent frequent sound plays
 cooldown = 1
@@ -26,8 +34,13 @@ def play_error_sound():
 # Continuously listen for the keyword and play sound when detected
 try:
     for phrase in speech:
-        if phrase:
-            print(f"Detected: {phrase}")
-            play_error_sound()
+        text = str(phrase).lower()
+        print(f"Transcribed: {text}")
+        # Check if any filler word is in the transcription
+        for filler in filler_words:
+            if filler in text:
+                print(f" ⚠️ Filler word detected: '{filler}'")
+                play_error_sound()
+                break  # Only play sound once per phrase
 except KeyboardInterrupt:
     print("Stopping...")
