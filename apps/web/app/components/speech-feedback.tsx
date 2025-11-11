@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Navbar } from "~/components/homepage/navbar";
@@ -9,6 +9,44 @@ export function SpeechFeedback() {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const navigate = useNavigate();
+
+  // Check for pending file upload after login redirect
+  useEffect(() => {
+    const checkPendingUpload = async () => {
+      const pendingFileData = sessionStorage.getItem('pendingAudioUpload');
+      if (pendingFileData) {
+        try {
+          const { fileName, fileType, fileData } = JSON.parse(pendingFileData);
+          
+          // Convert base64 back to File
+          const byteString = atob(fileData.split(',')[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: fileType });
+          const file = new File([blob], fileName, { type: fileType });
+          
+          setAudioFile(file);
+          sessionStorage.removeItem('pendingAudioUpload');
+          
+          // Automatically start processing
+          setIsUploading(true);
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          
+          // TODO: Replace with actual upload logic
+          // After successful upload, navigate to results/dashboard
+          navigate("/dashboard");
+        } catch (error) {
+          console.error('Failed to restore pending upload:', error);
+          sessionStorage.removeItem('pendingAudioUpload');
+        }
+      }
+    };
+    
+    checkPendingUpload();
+  }, [navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,13 +78,20 @@ export function SpeechFeedback() {
   const handleUpload = async () => {
     if (!audioFile) return;
 
-    setIsUploading(true);
-
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // After "upload", redirect to signup
-    navigate("/sign-up");
+    // Store file data in sessionStorage before redirecting to login
+    const reader = new FileReader();
+    reader.onload = () => {
+      const fileData = {
+        fileName: audioFile.name,
+        fileType: audioFile.type,
+        fileData: reader.result as string,
+      };
+      sessionStorage.setItem('pendingAudioUpload', JSON.stringify(fileData));
+      
+      // Redirect to sign-in with return URL
+      navigate(`/sign-in?redirect_url=${encodeURIComponent('/speech-feedback')}`);
+    };
+    reader.readAsDataURL(audioFile);
   };
 
   return (
