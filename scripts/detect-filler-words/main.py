@@ -1,12 +1,6 @@
 import time
+import subprocess
 from pocketsphinx import LiveSpeech
-from pygame import mixer
-
-# Initialize pygame mixer
-mixer.init()
-
-# Load the error sound
-error_sound = mixer.Sound("error.mp3")
 
 # Define the keyword to listen for
 keyword = "like"
@@ -24,7 +18,8 @@ def play_error_sound():
     global last_played
     current_time = time.time()
     if current_time - last_played > cooldown:
-        error_sound.play()
+        # Use macOS's built-in afplay command (non-blocking)
+        subprocess.Popen(["afplay", "error.mp3"])
         last_played = current_time
 
 
@@ -36,4 +31,3 @@ try:
             play_error_sound()
 except KeyboardInterrupt:
     print("Stopping...")
-    mixer.quit()
