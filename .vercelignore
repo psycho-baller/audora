@@ -1,0 +1,38 @@
+# Python virtual environments
+.venv/
+**/.venv/
+**/venv/
+
+# Node modules
+**/node_modules/
+
+# Build artifacts
+**/.turbo/
+**/.expo/
+**/build/
+**/web-build/
+**/__generated__/
+builds/**
+
+# macOS app (not needed for web deployment)
+apps/macos/
+apps/expo/
+
+# Scripts directory
+scripts/
+
+# Development files
+**/.DS_Store
+**/*.log
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment files
+**/.env.local
+**/.env
+
+# Vercel
+.vercel/

@@ -1,18 +1,5 @@
 {
-  "private": true,
-  "name": "@audora/eslint-config",
-  "version": "0.0.1",
-  "description": "Acme eslint configuration for React Native",
-  "author": "Cedric van Putten <me@bycedric.com>",
-  "license": "GPL-3.0-only",
-  "main": "index.js",
-  "files": [
-    "index.js"
-  ],
-  "scripts": {
-    "build": "echo 'No build needed for eslint-config'",
-    "lint": "eslint --ext js,ts,tsx ."
-  },
+  "author": "rami maalouf <ramim66809@gmail.com>",
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
@@ -20,7 +7,19 @@
     "eslint-config-universe": "^15.0.3",
     "prettier": "^3.4.2"
   },
+  "description": "Audora eslint configuration for React Native",
   "eslintConfig": {
     "extends": "."
-  }
+  },
+  "files": [
+    "index.js"
+  ],
+  "license": "GPL-3.0-only",
+  "main": "index.js",
+  "name": "@audora/eslint-config",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --ext js,ts,tsx ."
+  },
+  "version": "0.0.1"
 }
