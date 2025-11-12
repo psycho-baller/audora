@@ -1,0 +1,3 @@
+[submodule "apps/macos"]
+	path = apps/macos
+	url = https://github.com/psycho-baller/audora-macos
