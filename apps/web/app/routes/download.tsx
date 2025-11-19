@@ -15,9 +15,10 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function DownloadPage() {
-  // TODO: Once first release is published, change this to:
+  // TODO: Replace with actual .dmg URL once release is published:
   // const downloadUrl = "https://github.com/psycho-baller/audora/releases/latest/download/audora.dmg";
-  const downloadUrl = "https://github.com/psycho-baller/audora/releases";
+  // For now, using test file from public folder:
+  const downloadUrl = "/test-download.png";
   const githubUrl = "https://github.com/psycho-baller/audora";
   const macOsRepoUrl = "https://github.com/psycho-baller/audora-macos";
   const calComUrl = "https://cal.com/rami-maalouf/";
@@ -38,9 +39,9 @@ export default function DownloadPage() {
             </p>
             <div className="flex gap-4 justify-center">
               <Button size="lg" asChild className="gap-2">
-                <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+                <a href={downloadUrl} download="audora-test.png">
                   <Download className="w-5 h-5" />
-                  View Releases
+                  Download for macOS
                 </a>
               </Button>
               <Button size="lg" variant="outline" asChild className="gap-2">
@@ -51,24 +52,20 @@ export default function DownloadPage() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              Open-source • Privacy-first • Self-hosted
+              Open-source • Privacy-first • Locally stored
             </p>
-            <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg max-w-2xl mx-auto">
+            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg max-w-2xl mx-auto">
               <p className="text-sm text-center">
-                📦 <strong>macOS app coming soon!</strong> The first release is being prepared. Check{" "}
-                <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  releases page
-                </a>{" "}
-                for updates or{" "}
-                <a href={macOsRepoUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  build from source
+                💻 <strong>Not on Mac?</strong> Join our waitlist to get notified when we launch on your platform.{" "}
+                <a href="/waitlist" className="text-primary hover:underline font-semibold">
+                  Join Waitlist
                 </a>
               </p>
             </div>
           </div>
 
           {/* Action Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <div className="grid md:grid-cols-3 gap-6 mb-24">
             {/* Star on GitHub Card */}
             <div className="bg-card border rounded-lg p-8 hover:border-primary/50 transition-colors">
               <div className="bg-yellow-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
@@ -122,7 +119,7 @@ export default function DownloadPage() {
           </div>
 
           {/* Features Grid */}
-          <div className="mb-16">
+          <div className="mb-24">
             <h2 className="text-3xl font-bold mb-10 text-center">What You'll Get</h2>
             <div className="grid md:grid-cols-2 gap-8">
               {/* Filler Word Detection */}
@@ -232,7 +229,7 @@ export default function DownloadPage() {
           </div>
 
           {/* Build Instructions */}
-          <div className="text-center mb-16 bg-card border rounded-lg p-6 max-w-3xl mx-auto">
+          <div className="text-center mb-24 bg-card border rounded-lg p-6 max-w-3xl mx-auto">
             <h3 className="text-lg font-semibold mb-3">Want to build from source?</h3>
             <p className="text-sm text-muted-foreground mb-4">
               The macOS app is open-source. You can build and run it yourself!
