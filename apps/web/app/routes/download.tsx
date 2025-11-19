@@ -34,7 +34,7 @@ export default function DownloadPage() {
               Download Audora
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Your open-source AI communication coach. Available for macOS 14+
+              Your open-source AI communication coach. Available for macOS
             </p>
             <div className="flex gap-4 justify-center">
               <Button size="lg" asChild className="gap-2">
