@@ -1,7 +1,14 @@
+import { useEffect } from "react";
 import { Calendar, DollarSign, Download, Star } from "lucide-react";
 import Footer from "~/components/homepage/footer";
 import { Navbar } from "~/components/homepage/navbar";
 import { Button } from "~/components/ui/button";
+import {
+  CAL_COM_URL,
+  GITHUB_URL,
+  MACOS_REPO_URL,
+  OPENAI_KEYS_URL,
+} from "~/lib/constants";
 import type { Route } from "./+types/download";
 
 export function meta({}: Route.MetaArgs) {
@@ -15,14 +22,18 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function DownloadPage() {
-  // TODO: Replace with actual .dmg URL once release is published:
-  // const downloadUrl = "https://github.com/psycho-baller/audora/releases/latest/download/audora.dmg";
-  // For now, using test file from public folder:
-  const downloadUrl = "/test-download.png";
-  const githubUrl = "https://github.com/psycho-baller/audora";
-  const macOsRepoUrl = "https://github.com/psycho-baller/audora-macos";
-  const calComUrl = "https://cal.com/rami-maalouf/";
-  const openAiKeysUrl = "https://platform.openai.com/api-keys";
+  const DOWNLOAD_URL = "/test-download.png";
+  const DOWNLOAD_FILE_NAME = "audora-test.png";
+
+  useEffect(() => {
+    const link = document.createElement("a");
+    link.href = DOWNLOAD_URL;
+    link.download = DOWNLOAD_FILE_NAME;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
 
   return (
     <>
@@ -35,17 +46,17 @@ export default function DownloadPage() {
               Download Audora
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Your open-source AI communication coach. Available for macOS
+              Your open-source AI communication coach. Available now on macOS.
             </p>
             <div className="flex gap-4 justify-center">
               <Button size="lg" asChild className="gap-2">
-                <a href={downloadUrl} download="audora-test.png">
+                <a href={DOWNLOAD_URL} download={DOWNLOAD_FILE_NAME}>
                   <Download className="w-5 h-5" />
                   Download for macOS
                 </a>
               </Button>
               <Button size="lg" variant="outline" asChild className="gap-2">
-                <a href={githubUrl} target="_blank" rel="noopener noreferrer">
+                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
                   <Star className="w-5 h-5" />
                   Star on GitHub
                 </a>
@@ -76,7 +87,7 @@ export default function DownloadPage() {
                 Consider starring the project to show support and help others discover it.
               </p>
               <Button asChild className="w-full bg-yellow-500 hover:bg-yellow-600 text-black gap-2">
-                <a href={githubUrl} target="_blank" rel="noopener noreferrer">
+                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
                   <Star className="w-4 h-4" />
                   Star on GitHub
                 </a>
@@ -86,14 +97,14 @@ export default function DownloadPage() {
             {/* Book a Call Card */}
             <div className="bg-card border rounded-lg p-8 hover:border-primary/50 transition-colors">
               <div className="bg-blue-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                <Calendar className="w-7 h-7 text-blue-500" />
+                <Calendar className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Book a Call</h3>
               <p className="text-muted-foreground mb-6">
                 I would love to walk you through the setup and hear your thoughts.
               </p>
               <Button asChild className="w-full gap-2">
-                <a href={calComUrl} target="_blank" rel="noopener noreferrer">
+                <a href={CAL_COM_URL} target="_blank" rel="noopener noreferrer">
                   <Calendar className="w-4 h-4" />
                   Schedule a Call
                 </a>
@@ -109,8 +120,12 @@ export default function DownloadPage() {
               <p className="text-muted-foreground mb-6">
                 You'll need it to transcribe and generate enhanced notes. (~$0.20/hour)
               </p>
-              <Button asChild variant="outline" className="w-full gap-2 border-green-500/50 hover:bg-green-500/10">
-                <a href={openAiKeysUrl} target="_blank" rel="noopener noreferrer">
+              <Button
+                asChild
+                variant="outline"
+                className="w-full gap-2 border-green-500/50 hover:bg-green-600 dark:hover:bg-green-700 bg-green-500 dark:bg-green-600"
+              >
+                <a href={OPENAI_KEYS_URL} target="_blank" rel="noopener noreferrer">
                   <DollarSign className="w-4 h-4" />
                   Get API Key
                 </a>
@@ -243,7 +258,7 @@ export default function DownloadPage() {
             </div>
             <p className="text-xs text-muted-foreground mt-3">
               See the{" "}
-              <a href={macOsRepoUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              <a href={MACOS_REPO_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                 README
               </a>{" "}
               for build instructions
@@ -258,7 +273,7 @@ export default function DownloadPage() {
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Button asChild size="lg" className="gap-2">
-                <a href={calComUrl} target="_blank" rel="noopener noreferrer">
+                <a href={CAL_COM_URL} target="_blank" rel="noopener noreferrer">
                   <Calendar className="w-5 h-5" />
                   Schedule a Call
                 </a>
@@ -276,4 +291,3 @@ export default function DownloadPage() {
     </>
   );
 }
-
