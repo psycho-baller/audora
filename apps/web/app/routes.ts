@@ -30,5 +30,6 @@ export default [
   index("routes/home.tsx"),
   route("waitlist", "routes/waitlist.tsx"),
   route("manifesto", "routes/manifesto.tsx"),
+  route("download", "routes/download.tsx"),
   ...authRoutes,
 ] satisfies RouteConfig;
