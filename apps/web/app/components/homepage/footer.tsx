@@ -9,7 +9,7 @@ export default function FooterSection() {
             <h3 className="text-2xl font-bold">Audora</h3>
           </Link>
           <p className="text-muted-foreground text-sm mt-2">
-            Transform how you connect. Because human connection is the strongest force in the world.
+            Your Personal AI Communication Coach
           </p>
         </div>
 

@@ -13,7 +13,7 @@ export default function IntegrationsSection({
   // If user has invite, show sign-up/sign-in buttons
   // Otherwise, show waitlist
   const showAuthButtons = !loaderData?.isSignedIn && loaderData?.hasInvite;
-  
+
   const primaryButtonLink = loaderData?.isSignedIn
     ? loaderData?.hasActiveSubscription
       ? "/dashboard"
@@ -42,11 +42,12 @@ export default function IntegrationsSection({
           </h1>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-semibold mb-6 md:mb-8">
             <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Communicate better. Connect deeper.
+              Your Personal AI Communication Coach
             </span>
           </h2>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Privacy-first, real-time speech coaching to help you master the art of communication and build stronger relationships.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+            Get the communication feedback you've never had access to. Private, personalized coaching
+            for every virtual meeting—helping you develop the skills that shape your opportunities.
           </p>
         </div>
 

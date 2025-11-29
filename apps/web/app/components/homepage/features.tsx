@@ -1,54 +1,44 @@
-import { 
-  MessageSquare, 
-  Brain, 
-  Zap, 
-  Shield, 
-  TrendingUp, 
-  Phone, 
-  Network, 
-  Clock 
+import {
+  MessageSquare,
+  Brain,
+  Zap,
+  Shield,
+  TrendingUp,
+  Phone,
+  Network,
+  Clock
 } from "lucide-react";
 
 const features = [
   {
-    icon: MessageSquare,
-    title: "Real-Time Speech Analysis",
-    description: "On-device transcription analyzes your conversations as they happen. Track filler words, pacing, pauses, and sentence structure.",
-  },
-  {
-    icon: Brain,
-    title: "Intelligent Feedback",
-    description: "Personalized insights on redundancy, weak phrasing, and vague language. See exactly how your words affect your connections.",
-  },
-  {
-    icon: Zap,
-    title: "Context-Aware Suggestions",
-    description: "Smart rewording suggestions and coaching tips. Communicate with clarity and intention in the moment.",
-  },
-  {
     icon: Shield,
     title: "Privacy-First Architecture",
-    description: "Everything works on-device. Your conversations stay private—no data leaves unless you opt-in.",
+    description: "Everything processes on-device. Your conversations never leave your computer unless you choose to share them. Complete privacy, always.",
   },
   {
     icon: Phone,
-    title: "AI Conversation Reflection",
-    description: "Reflect with AI after each conversation. Learn about yourself, the other person, and key topics for next time.",
+    title: "Listens to Your Virtual Meetings",
+    description: "Starting with virtual meetings, Audora transcribes and analyzes your calls in real-time, all on your device.",
   },
   {
-    icon: Network,
-    title: "Relationship Network Mapping",
-    description: "Visualize your connections and track patterns over time. See how relationships evolve.",
+    icon: Brain,
+    title: "Actionable Feedback After Calls",
+    description: "Get clear insights on your communication patterns—filler words, pacing, clarity, and tone. Know exactly what to improve.",
+  },
+  {
+    icon: Zap,
+    title: "Focus on One Thing at a Time",
+    description: "Pick one specific area to work on for your next meeting. Focused improvement is how real change happens.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Pre-Meeting Preparation",
+    description: "Before each meeting, get reminded of your focus area. Go in prepared and intentional instead of reactive.",
   },
   {
     icon: TrendingUp,
-    title: "Growth Analytics",
-    description: "Track improvements over time. Watch filler words decrease and clarity increase.",
-  },
-  {
-    icon: Clock,
-    title: "Speaker Diarization",
-    description: "Real-time speaker identification. Precise turn-by-turn analysis for deeper insights.",
+    title: "Track Your Progress",
+    description: "Watch yourself improve over time. See patterns change, skills develop, and confidence build with every conversation.",
   },
 ];
 
@@ -58,10 +48,10 @@ export default function FeaturesSection() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Everything you need to connect better
+            What You Get
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Cutting-edge AI meets privacy-first design. Unlock deeper relationships through better communication.
+            Private, on-device coaching to help you communicate better in every meeting.
           </p>
         </div>
 
@@ -87,7 +77,7 @@ export default function FeaturesSection() {
 
         <div className="mt-12 md:mt-16 text-center">
           <p className="text-muted-foreground text-sm max-w-3xl mx-auto">
-            <span className="font-semibold">Coming Soon:</span> Emotional tone detection, conversation challenges, 
+            <span className="font-semibold">Coming Soon:</span> Emotional tone detection, conversation challenges,
             long-term memory tracking, community integrations, and wearable mode.
           </p>
         </div>

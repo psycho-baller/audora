@@ -8,19 +8,23 @@ export default function ContentSection() {
       <div className="mx-auto max-w-5xl px-6">
         <div className="grid gap-6 md:grid-cols-2 md:gap-12">
           <h2 className="text-4xl font-medium">
-            A mirror for how you talk. So you can maxx out how you link.
+            The quality of your communication shapes your life
           </h2>
           <div className="space-y-6">
             <p>
-              Most people don't realize how much they get in their own way. Filler words. Rambling. Vague language.
-              <span className="font-bold"> It's not what you say—it's how you say it.</span>
+              Yet most people never receive meaningful feedback on how they communicate.
+              In high-stakes moments—interviews, presentations, important meetings—{" "}
+              <span className="font-bold">it's nearly impossible to know how you're actually coming across.</span>
             </p>
             <p>
-              Audora shows you exactly how your words affect your connections. Get real-time feedback.
-              Improve your clarity. Build deeper relationships through better conversations.
+              Without feedback, you repeat the same patterns for years. The same filler words.
+              The same unclear explanations. The same missed opportunities.
+            </p>
+            <p>
+              We track our fitness, sleep, and productivity. <span className="font-bold">Why not the skill that impacts everything else?</span>
             </p>
             <p className="text-muted-foreground text-sm">
-              Privacy-first. On-device. Your conversations stay yours.
+              Audora gives you the communication feedback you've never had access to—private, personalized, and always available.
             </p>
             <Button
               asChild
