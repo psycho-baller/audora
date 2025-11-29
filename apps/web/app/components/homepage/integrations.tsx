@@ -42,12 +42,12 @@ export default function IntegrationsSection({
           </h1>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-semibold mb-6 md:mb-8">
             <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Your Personal AI Communication Coach
+              The First Private AI Communication OS
             </span>
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            Get the communication feedback you've never had access to. Private, personalized coaching
-            for every virtual meeting—helping you develop the skills that shape your opportunities.
+            For founders navigating investor pitches, fundraising calls, and high-stakes conversations.
+            Get the communication coaching you need to win.
           </p>
         </div>
 
