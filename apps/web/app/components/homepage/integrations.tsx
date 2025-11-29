@@ -46,8 +46,7 @@ export default function IntegrationsSection({
             </span>
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            For founders navigating investor pitches, fundraising calls, and high-stakes conversations.
-            Get the communication coaching you need to win.
+            Track, improve, and master the skill that impacts every area of your life
           </p>
         </div>
 
