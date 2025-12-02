@@ -11,9 +11,39 @@ export const addEmailToWaitlist = action({
     if (!notionApiKey) throw new Error("NOTION_API_KEY environment variable not found.");
     if (!notionDatasourceId) throw new Error("NOTION_WAITLIST_DATASOURCE_ID environment variable not found.");
 
+    const checkEmailPayload = {
+      filter: {
+        property: "Email",
+        email: {
+          contains: args.email
+        }
+      }
+    }
+    
+    // should prolly create an interface for this and "deserialize" the response
+    const checkEmailResponse = await fetch(`https://api.notion.com/v1/data_sources/${notionDatasourceId}/query`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${notionApiKey}`,
+        "Notion-Version": "2025-09-03",
+      },
+      body: JSON.stringify(checkEmailPayload),
+    })
+    
+    if (!checkEmailResponse.ok) {
+      const text = await checkEmailResponse.text();
+      throw new Error(`Notion API error ${checkEmailResponse.status}: ${text}`);
+    }
+
+    const checkEmailData = await checkEmailResponse.json();
+    if (checkEmailData.results.length > 0) {
+      return { pageId: checkEmailData.results[0].id, alreadyAdded: true };
+    }
+    
     const date = new Date().toISOString();
 
-    const payload = {
+    const addEmailPayload = {
       parent: { type: "data_source_id", data_source_id: notionDatasourceId },
       properties: {
         Email: { type: "title", title: [
@@ -28,22 +58,22 @@ export const addEmailToWaitlist = action({
     };
 
     // creating a new entry in waitlist with email and datetime
-    const res = await fetch("https://api.notion.com/v1/pages", {
+    const addEmailResponse = await fetch("https://api.notion.com/v1/pages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${notionApiKey}`,
-        "Notion-Version": "2022-06-28",
+        "Notion-Version": "2022-06-28", // we should prolly update this to the 2025-09-03 version, for now it works
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(addEmailPayload),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Notion API error ${res.status}: ${text}`);
+    if (!addEmailResponse.ok) {
+      const text = await addEmailResponse.text();
+      throw new Error(`Notion API error ${addEmailResponse.status}: ${text}`);
     }
 
-    const data = await res.json();
-    return { pageId: data.id }; // the id of the row added
+    const addEmailData = await addEmailResponse.json();
+    return { pageId: addEmailData.id, alreadyAdded: false }; // the id of the row added
   },
 });
