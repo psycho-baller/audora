@@ -1,7 +1,6 @@
-import { Link } from "react-router";
-import { Button } from "~/components/ui/button";
-import { Navbar } from "~/components/homepage/navbar";
 import Footer from "~/components/homepage/footer";
+import { Navbar } from "~/components/homepage/navbar";
+import { WaitlistInput } from "~/components/homepage/waitlist-input";
 import type { Route } from "./+types/manifesto";
 
 export function meta({}: Route.MetaArgs) {
@@ -33,16 +32,16 @@ export default function Manifesto() {
                 <h2 className="text-3xl font-semibold">The Gap</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Your communication shapes your opportunities more than almost anything else.
-                  The job offers, the relationships, the doors that open or stay closed.
+                  The job offers, the relationships, the doors that open or stay closed. Yet we treat it like a fixed trait, something you either have or you don't.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Yet most people go their entire lives without getting real feedback on how they communicate.
-                  In the moments that matter most—interviews, presentations, important conversations—you're
-                  essentially flying blind.
+                  But here's the truth: <strong>how you speak is just a collection of habits you've built over the years</strong>.
+                  If you're monotone, or you get nervous and speak too fast, or you struggle to articulate your ideas clearly, these aren't flaws.
+                  They're habits. And habits can be rebuilt.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  So you repeat the same patterns. The same filler words. The same unclear explanations.
-                  Year after year. Not because you're lazy, but because <strong>no one's ever shown you what to fix</strong>.
+                  The thing is, changing habits we've built over years is hard. You can't just decide to "speak better" and expect it to happen.
+                  But <strong>with the right feedback, grounded in scientific and psychological research</strong>, you can systematically rebuild these habits.
                 </p>
               </section>
 
@@ -57,7 +56,7 @@ export default function Manifesto() {
                     and gives you clear, actionable feedback afterward.
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
-                    You pick one thing to work on. Not ten—just one. Before your next meeting, you get reminded.
+                    You pick one thing to work on. Before your next meeting, you get reminded.
                     Over time, you watch yourself improve.
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
@@ -79,12 +78,8 @@ export default function Manifesto() {
                 <p className="text-muted-foreground leading-relaxed">
                   We're starting small, focused on getting the core right. Join us early if you want to help shape what comes next.
                 </p>
-                <div className="pt-4">
-                  <Button size="lg" asChild>
-                    <Link to="/waitlist">
-                      Join the Waitlist
-                    </Link>
-                  </Button>
+                <div className="pt-10">
+                  <WaitlistInput />
                 </div>
               </section>
             </div>

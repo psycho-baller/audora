@@ -186,7 +186,13 @@ export const Navbar = ({
                       </Link>
                     </Button>
                   </>
-                ) : null}
+                ) : (
+                  <Button asChild size="sm">
+                    <Link to="/survey" prefetch="viewport">
+                      <span>Become an early adopter</span>
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
