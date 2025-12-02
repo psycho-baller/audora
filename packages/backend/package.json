@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.50",
     "@getzep/zep-cloud": "^3.5.0",
+    "@notionhq/client": "^5.4.0",
     "@polar-sh/sdk": "^0.35.4",
     "@speechmatics/auth": "^0.1.0",
     "@speechmatics/batch-client": "^5.1.0",
