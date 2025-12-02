@@ -14,7 +14,6 @@ type Props = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
-  surveyUrl?: string;
   onClose?: () => void;
 };
 
@@ -27,7 +26,7 @@ export function WaitlistSuccessDialog({
   const [internalOpen, setInternalOpen] = React.useState(false);
   const controlled = open !== undefined;
   const isOpen = controlled ? open : internalOpen;
-  const surveyUrl = "https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb"
+  const surveyUrl = "https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb";
 
   const setOpen = (next: boolean) => {
     if (controlled) onOpenChange?.(next);

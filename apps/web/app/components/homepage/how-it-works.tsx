@@ -44,7 +44,6 @@ export default function HowItWorksSection({
   onJoinedWaitlist?: () => void;
 }) {
   const addEmail = useAction(api.homepage.addEmailToWaitlist);
-  
   return (
     <section id="how-it-works" className="py-16 md:py-32">
       <div className="mx-auto max-w-6xl px-6">
