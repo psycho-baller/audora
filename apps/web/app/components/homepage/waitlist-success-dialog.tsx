@@ -26,7 +26,7 @@ export function WaitlistSuccessDialog({
   const [internalOpen, setInternalOpen] = React.useState(false);
   const controlled = open !== undefined;
   const isOpen = controlled ? open : internalOpen;
-  const surveyUrl = "https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb";
+  const surveyUrl = "https://app.formbricks.com/s/cmikz8vnu8hxlad01g9gp707t";
 
   const setOpen = (next: boolean) => {
     if (controlled) onOpenChange?.(next);
@@ -39,7 +39,7 @@ export function WaitlistSuccessDialog({
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>You’re officially on the waitlist!</DialogTitle>
+          <DialogTitle>You're officially on the waitlist!</DialogTitle>
           <DialogDescription>
             As an early supporter, you can unlock 50% off the Pro plan by completing our survey.
             Your feedback genuinely helps us build a better Audora for you.
