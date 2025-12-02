@@ -73,7 +73,7 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={cn(
-              "bg-transparent dark:bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm flex-1",
+              "bg-transparent dark:bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm flex-1 shadow-none",
               "placeholder:text-muted-foreground/60"
             )}
             disabled={submitting || joined}
@@ -87,7 +87,7 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
             disabled={!isValidEmail(email) || submitting || busy || joined}
             className={cn(
               "rounded-full",
-              "bg-primary text-primary-foreground hover:bg-primary/90 ",
+              "bg-primary text-primary-foreground hover:bg-primary/90 text-md",
               "transition-all"
             )}
           >
@@ -103,7 +103,7 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
 
         {!error && !joined && (
           <p className="text-xs text-muted-foreground text-center">
-            Enter your email to get started
+            Join the waitlist for early access
           </p>
         )}
 
