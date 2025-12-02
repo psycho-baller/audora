@@ -2,13 +2,14 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 
 export const addEmailToWaitlist = action({
-  args: {email: v.string()},
+  args: { email: v.string() },
   handler: async (ctx, args) => {
     // for more info on how to get the datasource, visit:
     // https://developers.notion.com/docs/working-with-databases
     const notionDatasourceId = process.env.NOTION_WAITLIST_DATASOURCE_ID;
     const notionApiKey = process.env.NOTION_API_KEY;
-    if (!notionApiKey || !notionDatasourceId) throw new Error("error: Notion environment variables not found.");
+    if (!notionApiKey) throw new Error("NOTION_API_KEY environment variable not found.");
+    if (!notionDatasourceId) throw new Error("NOTION_WAITLIST_DATASOURCE_ID environment variable not found.");
 
     const date = new Date().toISOString();
 
@@ -43,6 +44,6 @@ export const addEmailToWaitlist = action({
     }
 
     const data = await res.json();
-    return { pageId: data.id } // the id of the row added
+    return { pageId: data.id }; // the id of the row added
   },
-}); 
+});

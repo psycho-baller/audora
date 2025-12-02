@@ -38,6 +38,7 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
       setShowSuccess(true);
     } catch (err: any) {
       setError(err?.message || "Failed. Try again.");
+      setJoinedInternal(false);
     } finally {
       setSubmitting(false);
     }
@@ -82,6 +83,8 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
               )}
               disabled={submitting || joined}
               aria-invalid={!!error}
+              aria-describedBy={error ? "email-error" : undefined}
+              aria-label="Email address for waitlist"
             />
             <Button
               type="submit"
