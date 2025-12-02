@@ -91,8 +91,12 @@ export default function IntegrationsSection({
                   busy={false}
                   joined={joinedWaitlist}
                   onSubmit={async (email) => {
-                    await addEmail({ email });
+                    const res = await addEmail({ email });
+                    if (res.alreadyAdded) {
+                      return { alreadyAdded: true };
+                    }
                     onJoinedWaitlist?.();
+                    return { alreadyAdded: false };
                   }}
                 />
               <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">

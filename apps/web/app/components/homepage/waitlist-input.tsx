@@ -6,7 +6,7 @@ import { WaitlistSuccessDialog } from "./waitlist-success-dialog";
 
 type WaitlistInputProps = {
   className?: string;
-  onSubmit?: (email: string) => Promise<void> | void;
+  onSubmit?: (email: string) => Promise<{ alreadyAdded?: boolean } | void>;
   busy?: boolean;
   joined?: boolean; // controlled flag
 };
@@ -33,11 +33,19 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
 
     try {
       setSubmitting(true);
-      await onSubmit?.(email.trim());
+      const result = await onSubmit?.(email.trim());
+
+      if (result && result.alreadyAdded) {
+        // Show message but do not mark as newly joined or open success dialog
+        setError("That email is already on the waitlist.");
+        setJoinedInternal(true); // optionally mark as joined so button disables
+        return;
+      }
+
       setJoinedInternal(true);
       setShowSuccess(true);
-    } catch (err: any) {
-      setError(err?.message || "Failed. Try again.");
+    } catch {
+      setError("There was an issue with processing the request. Please try again.");
       setJoinedInternal(false);
     } finally {
       setSubmitting(false);
@@ -83,7 +91,7 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
               )}
               disabled={submitting || joined}
               aria-invalid={!!error}
-              aria-describedBy={error ? "email-error" : undefined}
+              aria-describedby={error ? "email-error" : undefined}
               aria-label="Email address for waitlist"
             />
             <Button
@@ -103,7 +111,7 @@ export function WaitlistInput({ className, onSubmit, busy, joined: joinedProp }:
           </div>
 
           {error && (
-            <p className="text-xs text-destructive" role="alert">
+            <p className="text-xs text-destructive text-center" role="alert">
               {error}
             </p>
           )}

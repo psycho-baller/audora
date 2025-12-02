@@ -111,8 +111,12 @@ export default function HowItWorksSection({
                   busy={false}
                   joined={joinedWaitlist}
                   onSubmit={async (email) => {
-                    await addEmail({ email });
+                    const res = await addEmail({ email });
+                    if (res.alreadyAdded) {
+                      return { alreadyAdded: true };
+                    }
                     onJoinedWaitlist?.();
+                    return { alreadyAdded: false };
                   }}
                 />
               <a
