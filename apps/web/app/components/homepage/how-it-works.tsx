@@ -98,11 +98,11 @@ export default function HowItWorksSection({
 
         {/* Call to Action */}
         <div className="mt-16 text-center">
-          <div className="inline-block rounded-lg bg-primary/5 border border-primary/20 px-6 py-8 max-w-2xl">
+          <div className="max-w-2xl mx-auto">
             <h3 className="text-2xl font-semibold mb-3">
               Ready to Master Your Communication?
             </h3>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-6">
               We're focused on building the most useful communication tool possible.
               Join us early and help shape what we build next.
             </p>
