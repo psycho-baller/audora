@@ -1,18 +1,26 @@
+import { api } from "@audora/backend/convex/_generated/api";
+import { useAction } from "convex/react";
 import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Navbar } from "./navbar";
+import { WaitlistInput } from "./waitlist-input";
 
 const isProduction = process.env.NODE_ENV === "production";
 
 export default function IntegrationsSection({
   loaderData,
+  joinedWaitlist,
+  onJoinedWaitlist,
 }: {
   loaderData?: { isSignedIn: boolean; hasActiveSubscription: boolean; hasInvite: boolean };
+  joinedWaitlist?: boolean;
+  onJoinedWaitlist?: () => void;
 }) {
   // If user is signed in, show dashboard/pricing
   // If user has invite, show sign-up/sign-in buttons
   // Otherwise, show waitlist
   const showAuthButtons = !loaderData?.isSignedIn && loaderData?.hasInvite;
+  const addEmail = useAction(api.homepage.addEmailToWaitlist);
 
   const primaryButtonLink = loaderData?.isSignedIn
     ? loaderData?.hasActiveSubscription
@@ -64,7 +72,7 @@ export default function IntegrationsSection({
                 </Link>
               </Button>
             </>
-          ) : (
+          ) : loaderData?.isSignedIn ? (
             <>
               <Button size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
                 <Link to={primaryButtonLink} prefetch="viewport" target="_blank" rel="noopener noreferrer">
@@ -77,6 +85,22 @@ export default function IntegrationsSection({
                 </a>
               </Button>
             </>
+          ) : (
+            <div className="w-full flex flex-col items-center gap-4">
+              <WaitlistInput
+                  busy={false}
+                  joined={joinedWaitlist}
+                  onSubmit={async (email) => {
+                    await addEmail({ email });
+                    onJoinedWaitlist?.();
+                  }}
+                />
+              <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                <a href="https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb" target="_blank" rel="noopener noreferrer">
+                  Learn More
+                </a>
+              </Button>
+            </div>
           )}
         </div>
       </div>

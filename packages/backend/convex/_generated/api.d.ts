@@ -10,8 +10,8 @@
 
 import type * as analytics from "../analytics.js";
 import type * as conversations from "../conversations.js";
+import type * as homepage from "../homepage.js";
 import type * as http from "../http.js";
-import type * as landingpage from "../landingpage.js";
 import type * as migrations from "../migrations.js";
 import type * as mobileImport from "../mobileImport.js";
 import type * as network from "../network.js";
@@ -42,8 +42,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   conversations: typeof conversations;
+  homepage: typeof homepage;
   http: typeof http;
-  landingpage: typeof landingpage;
   migrations: typeof migrations;
   mobileImport: typeof mobileImport;
   network: typeof network;
