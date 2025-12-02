@@ -1,0 +1,63 @@
+import * as React from "react";
+import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+
+type Props = {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
+  surveyUrl?: string;
+  onClose?: () => void;
+};
+
+export function WaitlistSuccessDialog({
+  open,
+  onOpenChange,
+  trigger,
+  onClose,
+}: Props) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const controlled = open !== undefined;
+  const isOpen = controlled ? open : internalOpen;
+  const surveyUrl = "https://www.linkedin.com/posts/rami-m_social-anxiety-is-a-skill-issue-and-no-this-activity-7385010725607342081-zsVb"
+
+  const setOpen = (next: boolean) => {
+    if (controlled) onOpenChange?.(next);
+    else setInternalOpen(next);
+    if (!next) onClose?.();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>You’re officially on the waitlist!</DialogTitle>
+          <DialogDescription>
+            As an early supporter, you can unlock 50% off the Pro plan by completing our survey.
+            Your feedback genuinely helps us build a better Audora for you.
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter>
+          <Button asChild>
+            <a href={surveyUrl} target="_blank" rel="noopener noreferrer">
+              Take the survey
+            </a>
+          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

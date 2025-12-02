@@ -1,6 +1,6 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 // import { fetchAction, fetchQuery } from "convex/nextjs";
-
+import * as React from "react";
 import ContentSection from "~/components/homepage/content";
 import FeaturesSection from "~/components/homepage/features";
 import Footer from "~/components/homepage/footer";
@@ -90,12 +90,20 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  const [joinedWaitlist, setJoinedWaitlist] = React.useState(false);
   return (
     <>
-      <Integrations loaderData={loaderData} />
+      <Integrations
+        loaderData={loaderData}
+        joinedWaitlist={joinedWaitlist}
+        onJoinedWaitlist={() => setJoinedWaitlist(true)}
+      />
       <ContentSection />
       <FeaturesSection />
-      <HowItWorksSection />
+      <HowItWorksSection
+        joinedWaitlist={joinedWaitlist}
+        onJoinedWaitlist={() => setJoinedWaitlist(true)}
+      />
       <TechnologiesSection />
       <Footer />
     </>
