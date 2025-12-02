@@ -27,6 +27,7 @@ export function WaitlistSuccessDialog({
   const controlled = open !== undefined;
   const isOpen = controlled ? open : internalOpen;
   const surveyUrl = "https://app.formbricks.com/s/cmikz8vnu8hxlad01g9gp707t";
+  const surveyButtonRef = React.useRef<HTMLAnchorElement>(null);
 
   const setOpen = (next: boolean) => {
     if (controlled) onOpenChange?.(next);
@@ -37,7 +38,12 @@ export function WaitlistSuccessDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent>
+      <DialogContent
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          surveyButtonRef.current?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>You're officially on the waitlist!</DialogTitle>
           <DialogDescription>
@@ -47,13 +53,18 @@ export function WaitlistSuccessDialog({
         </DialogHeader>
 
         <DialogFooter>
-          <Button asChild>
-            <a href={surveyUrl} target="_blank" rel="noopener noreferrer">
-              Take the survey
-            </a>
-          </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Close
+          </Button>
+          <Button asChild>
+            <a
+              ref={surveyButtonRef}
+              href={surveyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Take the survey
+            </a>
           </Button>
         </DialogFooter>
       </DialogContent>
