@@ -10,7 +10,7 @@ import TechnologiesSection from "~/components/homepage/technologies";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
-  const title = "Audora - Transform How You Connect";
+  const title = "Audora - your AI communication coach";
   const description =
     "Your on-device speech reflection app. Become a more intentional, articulate communicator and unlock deeper relationships through better conversations.";
   const keywords = "Communication, Speech Analysis, Relationships, AI Coaching, Privacy-First, Connection, Conversation Skills";
