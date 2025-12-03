@@ -12,7 +12,7 @@ import type { Route } from "./+types/home";
 export function meta({}: Route.MetaArgs) {
   const title = "Audora - your AI communication coach";
   const description =
-    "Your on-device speech reflection app. Become a more intentional, articulate communicator and unlock deeper relationships through better conversations.";
+    "The First Private AI Communication OS. Track, improve, and master the skill that impacts every area of your life";
   const keywords = "Communication, Speech Analysis, Relationships, AI Coaching, Privacy-First, Connection, Conversation Skills, AI Communication Coach, AI Communication Coach App, Improve your communication, self-improvement";
   const siteUrl = "https://getaudora.app";
   const imageUrl =
