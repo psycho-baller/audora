@@ -63,6 +63,7 @@ export default defineSchema({
     endedAt: v.optional(v.number()),
     summary: v.optional(v.string()),
     audioStorageId: v.optional(v.id("_storage")),
+    speakerMap: v.optional(v.any()), // Maps userId to speaker label (e.g., { userId1: "Speaker 1" })
   })
     .index("by_initiator", ["initiatorUserId"])
     .index("by_scanner", ["scannerUserId"])
@@ -75,6 +76,7 @@ export default defineSchema({
     userId: v.id("users"),
     text: v.string(),
     order: v.number(),
+    timestamp: v.optional(v.number()), // Timestamp in seconds from start of conversation
   })
     .index("by_conversation_and_order", ["conversationId", "order"])
     .index("by_user", ["userId"])
