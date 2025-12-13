@@ -1,8 +1,8 @@
 import {
-  type RouteConfig,
-  index,
-  layout,
-  route,
+    type RouteConfig,
+    index,
+    layout,
+    route,
 } from "@react-router/dev/routes";
 
 const authRoutes = [
@@ -17,6 +17,7 @@ const authRoutes = [
     route("dashboard", "routes/dashboard/index.tsx"),
     route("dashboard/conversations", "routes/record.tsx"),
     route("dashboard/conversations/:id", "routes/record.$id.tsx"),
+    route("dashboard/view/:id", "routes/dashboard/view.$id.tsx"),
     route("dashboard/import", "routes/dashboard/import.tsx"),
     route("dashboard/analytics", "routes/dashboard/analytics.tsx"),
     route("dashboard/chat", "routes/dashboard/chat.tsx"),

@@ -229,12 +229,30 @@ export const get = query({
       endedAt: v.optional(v.number()),
       summary: v.optional(v.string()),
       audioStorageId: v.optional(v.id("_storage")),
+      speakerMap: v.optional(v.any()),
     }),
     v.null()
   ),
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.id);
     return conversation;
+  },
+});
+
+// Get audio URL for a conversation
+export const getAudioUrl = query({
+  args: { conversationId: v.id("conversations") },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    
+    if (!conversation?.audioStorageId) {
+      return null;
+    }
+    
+    // Generate temporary URL for audio playback
+    const url = await ctx.storage.getUrl(conversation.audioStorageId);
+    return url;
   },
 });
 
@@ -255,6 +273,7 @@ export const list = query({
       endedAt: v.optional(v.number()),
       summary: v.optional(v.string()),
       audioStorageId: v.optional(v.id("_storage")),
+      speakerMap: v.optional(v.any()),
     })
   ),
   handler: async (ctx) => {
@@ -309,6 +328,7 @@ export const getByInviteCode = query({
       endedAt: v.optional(v.number()),
       summary: v.optional(v.string()),
       audioStorageId: v.optional(v.id("_storage")),
+      speakerMap: v.optional(v.any()),
     }),
     v.null()
   ),
@@ -333,6 +353,7 @@ export const getTranscript = query({
       speaker: v.optional(v.string()),
       text: v.string(),
       order: v.number(),
+      timestamp: v.optional(v.number()),
     })
   ),
   handler: async (ctx, args) => {
