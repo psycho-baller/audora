@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query, action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { action, mutation, query } from "./_generated/server";
 
 // Generate a random invite code
 function generateInviteCode(): string {
@@ -153,7 +153,16 @@ export const updateStatus = mutation({
 export const saveTranscriptData = mutation({
   args: {
     conversationId: v.id("conversations"),
-    transcript: v.array(v.object({ userId: v.id("users"), text: v.string() })),
+    transcript: v.array(v.object({ 
+      userId: v.id("users"), 
+      text: v.string(),
+      words: v.optional(v.array(v.object({
+        word: v.string(),
+        startTime: v.number(),
+        endTime: v.number(),
+        wordId: v.string(),
+      }))),
+    })),
     S1_facts: v.array(v.string()),
     S2_facts: v.array(v.string()),
     initiatorName: v.optional(v.string()),
@@ -180,13 +189,15 @@ export const saveTranscriptData = mutation({
       endedAt: Date.now(),
     });
 
-    // Save transcript turns
+    // Save transcript turns (with word-level data if available)
     for (let i = 0; i < args.transcript.length; i++) {
+      const turn = args.transcript[i];
       await ctx.db.insert("transcriptTurns", {
         conversationId: args.conversationId,
-        userId: args.transcript[i].userId,
-        text: args.transcript[i].text,
+        userId: turn.userId,
+        text: turn.text,
         order: i,
+        words: turn.words, // Word-level data for new conversations
       });
     }
 
@@ -354,6 +365,12 @@ export const getTranscript = query({
       text: v.string(),
       order: v.number(),
       timestamp: v.optional(v.number()),
+      words: v.optional(v.array(v.object({
+        word: v.string(),
+        startTime: v.number(),
+        endTime: v.number(),
+        wordId: v.string(),
+      }))),
     })
   ),
   handler: async (ctx, args) => {

@@ -1,14 +1,14 @@
 "use node";
 
+import { openai as openaiProvider } from "@ai-sdk/openai";
+import { ZepClient } from "@getzep/zep-cloud";
+import { BatchClient } from "@speechmatics/batch-client";
+import { generateObject } from "ai";
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { z } from "zod";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { BatchClient } from "@speechmatics/batch-client";
-import { openai as openaiProvider } from "@ai-sdk/openai";
-import { generateObject } from "ai";
-import { z } from "zod";
-import { ZepClient } from "@getzep/zep-cloud";
+import { action } from "./_generated/server";
 
 const zepClient = new ZepClient({
   apiKey: process.env.ZEP_API_KEY || "",
@@ -239,11 +239,14 @@ export const batchTranscribe = action({
     console.log("Speaker mapping:", speakerMap);
     console.log("Speaker to userId mapping:", speakerToUserIdMap);
 
-    // Step 5: Convert transcript turns with userIds for storage
-    const transcriptWithUserIds = transcriptTurns.map(turn => ({
-      // speaker: turn.speaker,
+    // Step 5: Convert transcript turns with userIds for storage (include word-level data)
+    const transcriptWithUserIds = transcriptTurns.map((turn, index) => ({
       userId: (speakerToUserIdMap[turn.speaker] || conversation.initiatorUserId) as Id<"users">,
       text: turn.text,
+      words: turn.words?.map((w, wordIndex) => ({
+        ...w,
+        wordId: `t${index}-w${wordIndex}`, // Stable ID for word
+      })),
     }));
 
     // Convert transcript turns with actual names for AI analysis
@@ -334,6 +337,12 @@ function processTranscriptResponse(response: any): Array<{
   text: string;
   startTime: number;
   endTime: number;
+  words: Array<{
+    word: string;
+    startTime: number;
+    endTime: number;
+    wordId: string;
+  }>;
 }> {
   // Process results into structured format
   const transcript: Array<{
@@ -341,6 +350,12 @@ function processTranscriptResponse(response: any): Array<{
     text: string;
     startTime: number;
     endTime: number;
+    words: Array<{
+      word: string;
+      startTime: number;
+      endTime: number;
+      wordId: string;
+    }>;
   }> = [];
 
   if (typeof response !== "string" && response.results) {
@@ -349,7 +364,15 @@ function processTranscriptResponse(response: any): Array<{
       text: string;
       startTime: number;
       endTime: number;
+      words: Array<{
+        word: string;
+        startTime: number;
+        endTime: number;
+        wordId: string;
+      }>;
     } | null = null;
+    let turnIndex = 0;
+    let wordOrder = 0;
 
     for (const result of response.results) {
       if (result.type === "word") {
@@ -362,17 +385,33 @@ function processTranscriptResponse(response: any): Array<{
         if (!currentTurn || currentTurn.speaker !== speaker) {
           if (currentTurn) {
             transcript.push(currentTurn);
+            turnIndex++;
           }
+          wordOrder = 0;
           currentTurn = {
             speaker,
             text: content,
             startTime,
             endTime,
+            words: [{
+              word: content,
+              startTime,
+              endTime,
+              wordId: `t${turnIndex}-w${wordOrder}`,
+            }],
           };
+          wordOrder++;
         } else {
           // Same speaker, append to current turn
           currentTurn.text += ` ${content}`;
           currentTurn.endTime = endTime;
+          currentTurn.words.push({
+            word: content,
+            startTime,
+            endTime,
+            wordId: `t${turnIndex}-w${wordOrder}`,
+          });
+          wordOrder++;
         }
       }
     }
