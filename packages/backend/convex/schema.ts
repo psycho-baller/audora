@@ -77,6 +77,12 @@ export default defineSchema({
     text: v.string(),
     order: v.number(),
     timestamp: v.optional(v.number()), // Timestamp in seconds from start of conversation
+    words: v.optional(v.array(v.object({
+      word: v.string(),
+      startTime: v.number(),
+      endTime: v.number(),
+      wordId: v.string(),
+    }))), // Word-level timing data for new conversations
   })
     .index("by_conversation_and_order", ["conversationId", "order"])
     .index("by_user", ["userId"])

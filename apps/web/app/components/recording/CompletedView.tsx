@@ -1,11 +1,12 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Clock, Download, Loader2, Pause, Phone, Play, Sparkles, TrendingUp, Users } from "lucide-react";
+import { Clock, Download, Loader2, Phone, Sparkles, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import SpeechAnalytics from "../analytics/SpeechAnalytics";
 import { PhoneNumberDialog } from "../network/PhoneNumberDialog";
+import TranscriptPlayer from "../transcript/TranscriptPlayer";
 import { Button } from "../ui/button";
 
 interface CompletedViewProps {
@@ -17,7 +18,6 @@ export default function CompletedView({
   conversationId,
   conversation,
 }: CompletedViewProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -155,10 +155,8 @@ export default function CompletedView({
   // Get current user's facts only
   const currentUserFactsList = currentUserFacts.length > 0 ? currentUserFacts[0].facts : [];
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    // TODO: Implement actual audio playback
-  };
+  // Check if any turn has word-level data
+  const hasWordLevelData = transcriptTurns.some((turn) => turn.words && turn.words.length > 0);
 
   // Helper function to get user name from userId
   const getUserName = (userId: Id<"users">) => {
@@ -270,15 +268,6 @@ export default function CompletedView({
               </Button>
             )}
             <button
-              onClick={handlePlayPause}
-              className="p-2 bg-primary hover:bg-primary/90 rounded-lg transition-colors">
-              {isPlaying ? (
-                <Pause className="w-4 h-4 text-primary-foreground" />
-              ) : (
-                <Play className="w-4 h-4 text-primary-foreground" />
-              )}
-            </button>
-            <button
               onClick={handleDownload}
               className="p-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors">
               <Download className="w-4 h-4 text-foreground" />
@@ -375,33 +364,40 @@ export default function CompletedView({
       )}
 
       {/* Transcript */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Transcript</h3>
-        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-          {transcriptTurns
-            .filter((turn) => !selectedUserId || turn.userId === selectedUserId)
-            .map((turn, index) => {
-              const userName = getUserName(turn.userId);
-              return (
-                <div key={turn._id} className="flex space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-xs font-medium text-primary-foreground">
-                      {userName.charAt(0).toUpperCase()}
+      {hasWordLevelData ? (
+        <TranscriptPlayer
+          conversationId={conversationId as Id<"conversations">}
+          getUserName={getUserName}
+        />
+      ) : (
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Transcript</h3>
+          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {transcriptTurns
+              .filter((turn) => !selectedUserId || turn.userId === selectedUserId)
+              .map((turn, index) => {
+                const userName = getUserName(turn.userId);
+                return (
+                  <div key={turn._id} className="flex space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-xs font-medium text-primary-foreground">
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-sm font-medium text-foreground">
+                          {userName}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed">{turn.text}</p>
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-sm font-medium text-foreground">
-                        {userName}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed">{turn.text}</p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Key Facts - Current User Only */}
       {currentUserFactsList.length > 0 && (
