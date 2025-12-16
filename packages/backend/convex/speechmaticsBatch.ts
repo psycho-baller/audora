@@ -70,6 +70,12 @@ export const transcribeChunkOnly = action({
       text: string;
       startTime: number;
       endTime: number;
+      words: Array<{
+        word: string;
+        startTime: number;
+        endTime: number;
+        wordId: string;
+      }>;
     }>;
 
     try {
@@ -187,6 +193,12 @@ export const batchTranscribe = action({
       text: string;
       startTime: number;
       endTime: number;
+      words: Array<{
+        word: string;
+        startTime: number;
+        endTime: number;
+        wordId: string;
+      }>;
     }>;
 
     try {
