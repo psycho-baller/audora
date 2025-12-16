@@ -14,6 +14,15 @@ export default defineSchema({
     .index("by_token", ["tokenIdentifier"])
     .index("by_email", ["email"])
     .index("by_invite_code", ["inviteCode"]),
+
+  user_settings: defineTable({
+    userId: v.id("users"),
+    realtimeFillerWords: v.boolean(),
+    realtimeVocabulary: v.boolean(),
+    dashboardFillerWords: v.boolean(),
+    dashboardVocabulary: v.boolean(),
+  })
+    .index("by_user", ["userId"]),
   subscriptions: defineTable({
     userId: v.optional(v.string()),
     polarId: v.optional(v.string()),
