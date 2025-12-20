@@ -220,7 +220,7 @@ export default function ConversationDetailPage() {
         <div className="hidden lg:block flex-[2] overflow-auto bg-muted/10">
           <div className="p-6">
             <div className="bg-card border border-border rounded-lg p-6">
-              <AnalyticsPanel />
+              <AnalyticsPanel conversationId={id as Id<"conversations">} />
             </div>
           </div>
         </div>
@@ -261,7 +261,7 @@ export default function ConversationDetailPage() {
               </div>
               <div className="flex-1 overflow-auto p-6">
                 <div className="bg-card border border-border rounded-lg p-6">
-                  <AnalyticsPanel showHeader={false} />
+                  <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
                 </div>
               </div>
             </div>
