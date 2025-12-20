@@ -3,13 +3,25 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, ArrowLeft, Clock, Loader2, Users } from "lucide-react";
+import { AlertCircle, ArrowLeft, BarChart3, Clock, Loader2, Users, X } from "lucide-react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
 import { Button } from "~/components/ui/button";
 
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
   const navigate = useNavigate();
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const closeAnalytics = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsAnalyticsOpen(false);
+      setIsClosing(false);
+    }, 300);
+  };
 
   // Fetch conversation data
   const conversation = useQuery(
@@ -204,32 +216,58 @@ export default function ConversationDetailPage() {
           </div>
         </div>
 
-        {/* Right column: Analytics (40%) */}
-        <div className="flex-[2] overflow-auto bg-muted/10">
+        {/* Right column: Analytics (40%) - hidden on small screens */}
+        <div className="hidden lg:block flex-[2] overflow-auto bg-muted/10">
           <div className="p-6">
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">
-                Analytics
-              </h2>
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Analytics dashboard will be implemented in Part 4
-              </p>
-              <div className="space-y-4 mt-4">
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground">Coming soon:</p>
-                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    <li>• Communication Scores (Clarity, Conciseness, Confidence)</li>
-                    <li>• Filler Word Detection</li>
-                    <li>• Speaking Pace Analysis</li>
-                    <li>• Word Choice Insights</li>
-                    <li>• AI Coaching Feedback</li>
-                  </ul>
+              <AnalyticsPanel />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile bottom nav bar - shown on small screens */}
+      <div className="lg:hidden border-t border-border bg-card/50 backdrop-blur-sm p-3 shrink-0">
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={() => setIsAnalyticsOpen(true)}
+        >
+          <BarChart3 className="w-4 h-4" />
+          View Analytics
+        </Button>
+      </div>
+
+      {/* Mobile Analytics slide-in panel */}
+      {isAnalyticsOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+            onClick={closeAnalytics}
+          />
+          {/* Panel */}
+          <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-background shadow-xl transition-transform duration-300 ${isClosing ? 'translate-x-full' : 'translate-x-0 animate-in slide-in-from-right'}`}>
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-lg font-semibold text-foreground">Analytics</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={closeAnalytics}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto p-6">
+                <div className="bg-card border border-border rounded-lg p-6">
+                  <AnalyticsPanel showHeader={false} />
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
