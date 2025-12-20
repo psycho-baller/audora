@@ -174,7 +174,7 @@ export default function ConversationDetailPage() {
                 Transcript
               </h2>
               {transcript && transcript.length > 0 ? (
-                <div className="space-y-4 overflow-auto flex-1 min-h-0">
+                <div className="space-y-4 overflow-auto flex-1 min-h-0 pr-3 custom-scrollbar">
                   {transcript.map((turn, index) => (
                     <div
                       key={turn._id}
@@ -217,10 +217,15 @@ export default function ConversationDetailPage() {
         </div>
 
         {/* Right column: Analytics (40%) - hidden on small screens */}
-        <div className="hidden lg:block flex-[2] overflow-auto bg-muted/10">
-          <div className="p-6">
-            <div className="bg-card border border-border rounded-lg p-6">
-              <AnalyticsPanel conversationId={id as Id<"conversations">} />
+        <div className="hidden lg:flex lg:flex-col flex-[2] bg-muted/10 h-full min-h-0">
+          <div className="p-6 flex flex-col h-full min-h-0">
+            <div className="bg-card border border-border rounded-lg p-6 flex flex-col h-full min-h-0">
+              <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
+                Analytics
+              </h2>
+              <div className="flex-1 min-h-0">
+                <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
+              </div>
             </div>
           </div>
         </div>
@@ -259,7 +264,7 @@ export default function ConversationDetailPage() {
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              <div className="flex-1 overflow-auto p-6">
+              <div className="flex-1 overflow-auto p-6 pr-3 custom-scrollbar">
                 <div className="bg-card border border-border rounded-lg p-6">
                   <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
                 </div>
