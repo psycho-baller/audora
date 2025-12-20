@@ -2,18 +2,18 @@ import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
-  AlertTriangle,
+  ChevronRight,
+  Lightbulb,
   Loader2,
-  MessageSquare,
   Minus,
-  Repeat,
   Sparkles,
-  Timer,
   TrendingDown,
   TrendingUp,
+  Trophy
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 interface AnalyticsPanelProps {
   showHeader?: boolean;
@@ -159,188 +159,277 @@ export function AnalyticsPanel({
         <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
       )}
 
-      <div className="space-y-6 overflow-auto flex-1 min-h-0 pr-3 custom-scrollbar">
-        {/* Score Cards */}
-        <div className="grid grid-cols-3 gap-3">
-          <div
-            className={`p-3 rounded-xl border ${getScoreBgColor(analytics.scores.clarity)}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Clarity</span>
-              {getTrendIcon(analytics.scores.clarity)}
-            </div>
-            <div
-              className={`text-2xl font-bold ${getScoreColor(analytics.scores.clarity)}`}>
-              {analytics.scores.clarity}
-            </div>
-          </div>
+      <Tabs defaultValue="word-choice" className="flex flex-col h-full min-h-0">
+        <TabsList className="shrink-0 mb-4">
+          <TabsTrigger value="word-choice">Word Choice</TabsTrigger>
+          <TabsTrigger value="delivery">Delivery</TabsTrigger>
+        </TabsList>
 
-          <div
-            className={`p-3 rounded-xl border ${getScoreBgColor(analytics.scores.conciseness)}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Concise</span>
-              {getTrendIcon(analytics.scores.conciseness)}
-            </div>
-            <div
-              className={`text-2xl font-bold ${getScoreColor(analytics.scores.conciseness)}`}>
-              {analytics.scores.conciseness}
-            </div>
-          </div>
-
-          <div
-            className={`p-3 rounded-xl border ${getScoreBgColor(analytics.scores.confidence)}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Confidence</span>
-              {getTrendIcon(analytics.scores.confidence)}
-            </div>
-            <div
-              className={`text-2xl font-bold ${getScoreColor(analytics.scores.confidence)}`}>
-              {analytics.scores.confidence}
-            </div>
-          </div>
-        </div>
-
-        {/* Filler Words */}
-        <div className="bg-muted/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquare className="w-4 h-4 text-primary" />
-            <h4 className="font-medium text-foreground text-sm">Filler Words</h4>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Total Count</span>
-              <span className="font-medium text-foreground">
-                {analytics.fillerWords.count}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Per Minute</span>
-              <span className="font-medium text-foreground">
-                {analytics.fillerWords.ratePerMinute.toFixed(1)}
-              </span>
-            </div>
-            {analytics.fillerWords.instances.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-2">Most Common:</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(
-                    new Set(
-                      analytics.fillerWords.instances.slice(0, 5).map((i) => i.word)
-                    )
-                  ).map((word) => (
-                    <span
-                      key={word}
-                      className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
-                      {word}
+        {/* Word Choice Tab */}
+        <TabsContent value="word-choice" className="flex-1 min-h-0 overflow-hidden">
+          <div className="space-y-4 overflow-auto h-full pr-3 custom-scrollbar">
+            {/* What went well */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Trophy className="w-4 h-4 text-yellow-500" />
+                <h4 className="font-medium text-foreground text-sm">What went well</h4>
+              </div>
+              
+              {/* Repetition - shown if count is low (good) */}
+              <div className="space-y-2">
+                <details className="group bg-muted/30 rounded-lg">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                      <span className="text-sm text-foreground">Repetition</span>
+                    </div>
+                    <span className="text-sm text-primary">
+                      {analytics.repetitions.repeatedWords.reduce((sum, w) => sum + w.count, 0)} repetition(s), {Math.round((analytics.repetitions.repeatedWords.reduce((sum, w) => sum + w.count, 0) / (analytics.pacing.wordsPerMinute * (analytics.pacing.wordsPerMinute > 0 ? 1 : 1))) * 100) || 0}%
                     </span>
-                  ))}
-                </div>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1">
+                    {analytics.repetitions.repeatedWords.length > 0 ? (
+                      <div className="space-y-1">
+                        {analytics.repetitions.repeatedWords.slice(0, 5).map((item) => (
+                          <div key={item.word} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground capitalize">{item.word}</span>
+                            <span className="font-medium text-foreground">{item.count}x</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No excessive repetitions detected</p>
+                    )}
+                  </div>
+                </details>
+
+                {/* Filler Words */}
+                <details className="group bg-muted/30 rounded-lg">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                      <span className="text-sm text-foreground">Filler Words</span>
+                    </div>
+                    <span className="text-sm text-primary">
+                      {analytics.fillerWords.count} filler(s), {Math.round(analytics.fillerWords.ratePerMinute)}%
+                    </span>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Per Minute</span>
+                        <span className="font-medium text-foreground">
+                          {analytics.fillerWords.ratePerMinute.toFixed(1)}
+                        </span>
+                      </div>
+                      {analytics.fillerWords.instances.length > 0 && (
+                        <div className="pt-2 border-t border-border">
+                          <p className="text-xs text-muted-foreground mb-2">Most Common:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(
+                              new Set(
+                                analytics.fillerWords.instances.slice(0, 5).map((i) => i.word)
+                              )
+                            ).map((word) => (
+                              <span
+                                key={word}
+                                className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
+                                {word}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </details>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Pacing */}
-        <div className="bg-muted/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Timer className="w-4 h-4 text-primary" />
-            <h4 className="font-medium text-foreground text-sm">Pacing</h4>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Words Per Minute</span>
-            <span className="font-medium text-foreground">
-              {analytics.pacing.wordsPerMinute}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {analytics.pacing.wordsPerMinute < 100
-              ? "Speaking slowly - good for clarity"
-              : analytics.pacing.wordsPerMinute > 160
-                ? "Speaking quickly - consider slowing down"
-                : "Good speaking pace"}
-          </p>
-        </div>
-
-        {/* Repeated Words */}
-        {analytics.repetitions.repeatedWords.length > 0 && (
-          <div className="bg-muted/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Repeat className="w-4 h-4 text-primary" />
-              <h4 className="font-medium text-foreground text-sm">Repeated Words</h4>
             </div>
-            <div className="space-y-1">
-              {analytics.repetitions.repeatedWords.slice(0, 5).map((item) => (
-                <div key={item.word} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground capitalize">{item.word}</span>
-                  <span className="font-medium text-foreground">{item.count}x</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Weak Sentence Starters */}
-        {analytics.sentenceStarters.weak.length > 0 && (
-          <div className="bg-muted/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-              <h4 className="font-medium text-foreground text-sm">
-                Weak Sentence Starters
-              </h4>
-            </div>
-            <div className="space-y-1">
-              {analytics.sentenceStarters.weak.slice(0, 5).map((item) => (
-                <div key={item.word} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">"{item.word}"</span>
-                  <span className="font-medium text-foreground">{item.count}x</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* AI Suggestions */}
-        {analytics.weakWords.length > 0 && (
-          <div className="bg-muted/30 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <h4 className="font-medium text-foreground text-sm">AI Suggestions</h4>
+            {/* What could have gone better */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-yellow-400" />
+                <h4 className="font-medium text-foreground text-sm">What could have gone better</h4>
               </div>
-              {analytics.weakWords.some((w) => !w.suggestion) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleGenerateSuggestions}
-                  disabled={isGeneratingSuggestions}
-                  className="h-7 text-xs">
-                  {isGeneratingSuggestions ? (
-                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                  ) : (
-                    <Sparkles className="w-3 h-3 mr-1" />
-                  )}
-                  Generate
-                </Button>
-              )}
+              
+              <div className="space-y-2">
+                {/* Weak Words */}
+                {analytics.weakWords.length > 0 && (
+                  <details className="group bg-muted/30 rounded-lg">
+                    <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-2">
+                        <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                        <span className="text-sm text-foreground">Weak Words</span>
+                      </div>
+                      <span className="text-sm text-primary">
+                        {analytics.weakWords.length} weak words
+                      </span>
+                    </summary>
+                    <div className="px-3 pb-3 pt-1">
+                      <div className="space-y-3">
+                        {analytics.weakWords.slice(0, 3).map((item, index) => (
+                          <div key={index} className="p-2 bg-background/50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              Weak word:{" "}
+                              <span className="font-medium text-foreground">"{item.word}"</span>
+                            </p>
+                            <p className="text-xs text-foreground/80 italic">"{item.sentence}"</p>
+                            {item.suggestion && (
+                              <p className="text-xs text-primary font-medium mt-2">
+                                → "{item.suggestion}"
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                        {analytics.weakWords.some((w) => !w.suggestion) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleGenerateSuggestions}
+                            disabled={isGeneratingSuggestions}
+                            className="h-7 text-xs w-full">
+                            {isGeneratingSuggestions ? (
+                              <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                            ) : (
+                              <Sparkles className="w-3 h-3 mr-1" />
+                            )}
+                            Generate AI Suggestions
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </details>
+                )}
+
+                {/* Conciseness */}
+                <details className="group bg-muted/30 rounded-lg">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                      <span className="text-sm text-foreground">Conciseness</span>
+                    </div>
+                    <span className="text-sm text-primary">
+                      {100 - analytics.scores.conciseness}% Excess
+                    </span>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1">
+                    <div className={`p-3 rounded-xl border ${getScoreBgColor(analytics.scores.conciseness)}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-muted-foreground">Score</span>
+                        {getTrendIcon(analytics.scores.conciseness)}
+                      </div>
+                      <div className={`text-2xl font-bold ${getScoreColor(analytics.scores.conciseness)}`}>
+                        {analytics.scores.conciseness}
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                {/* Sentence Starters */}
+                {analytics.sentenceStarters.weak.length > 0 && (
+                  <details className="group bg-muted/30 rounded-lg">
+                    <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-2">
+                        <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                        <span className="text-sm text-foreground">Sentence Starters</span>
+                      </div>
+                      <span className="text-sm text-primary">
+                        "{analytics.sentenceStarters.weak[0]?.word}," {Math.round((analytics.sentenceStarters.weak[0]?.count || 0) / analytics.sentenceStarters.weak.reduce((sum, s) => sum + s.count, 1) * 100)}%
+                      </span>
+                    </summary>
+                    <div className="px-3 pb-3 pt-1">
+                      <div className="space-y-1">
+                        {analytics.sentenceStarters.weak.slice(0, 5).map((item) => (
+                          <div key={item.word} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">"{item.word}"</span>
+                            <span className="font-medium text-foreground">{item.count}x</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </details>
+                )}
+              </div>
             </div>
-            <div className="space-y-3">
-              {analytics.weakWords.slice(0, 3).map((item, index) => (
-                <div key={index} className="p-2 bg-background/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Weak word:{" "}
-                    <span className="font-medium text-foreground">"{item.word}"</span>
-                  </p>
-                  <p className="text-xs text-foreground/80 italic">"{item.sentence}"</p>
-                  {item.suggestion && (
-                    <p className="text-xs text-primary font-medium mt-2">
-                      → "{item.suggestion}"
+          </div>
+        </TabsContent>
+
+        {/* Delivery Tab */}
+        <TabsContent value="delivery" className="flex-1 min-h-0 overflow-hidden">
+          <div className="space-y-4 overflow-auto h-full pr-3 custom-scrollbar">
+            {/* What went well */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Trophy className="w-4 h-4 text-yellow-500" />
+                <h4 className="font-medium text-foreground text-sm">What went well</h4>
+              </div>
+              
+              <div className="space-y-2">
+                {/* Eye Contact - Placeholder (not available) */}
+                <details className="group bg-muted/30 rounded-lg opacity-50">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                      <span className="text-sm text-foreground">Eye Contact</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">N/A</span>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1">
+                    <p className="text-xs text-muted-foreground">Eye contact analysis requires video input</p>
+                  </div>
+                </details>
+
+                {/* Pauses - Placeholder (not available) */}
+                <details className="group bg-muted/30 rounded-lg opacity-50">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                      <span className="text-sm text-foreground">Pauses</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">N/A</span>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1">
+                    <p className="text-xs text-muted-foreground">Pause analysis coming soon</p>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            {/* What could have gone better */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-yellow-400" />
+                <h4 className="font-medium text-foreground text-sm">What could have gone better</h4>
+              </div>
+              
+              <div className="space-y-2">
+                {/* Pacing */}
+                <details className="group bg-muted/30 rounded-lg">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                      <span className="text-sm text-foreground">Pacing</span>
+                    </div>
+                    <span className="text-sm text-primary">
+                      {analytics.pacing.wordsPerMinute} words/minute
+                    </span>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {analytics.pacing.wordsPerMinute < 100
+                        ? "Speaking slowly - good for clarity"
+                        : analytics.pacing.wordsPerMinute > 160
+                          ? "Speaking quickly - consider slowing down"
+                          : "Good speaking pace (120-150 words/min is ideal)"}
                     </p>
-                  )}
-                </div>
-              ))}
+                  </div>
+                </details>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
