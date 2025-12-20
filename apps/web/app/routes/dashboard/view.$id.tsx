@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, BarChart3, Clock, Loader2, Users, X } from "luc
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
+import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
 
 export default function ConversationDetailPage() {
@@ -140,79 +141,13 @@ export default function ConversationDetailPage() {
 
       {/* Two-column layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left column: Audio player & Transcript (60%) */}
+        {/* Left column: TranscriptPlayer (audio + transcript) */}
         <div className="flex-[3] border-r border-border flex flex-col h-full min-h-0">
           <div className="flex flex-col p-6 h-full min-h-0">
-            {/* Audio Player Placeholder */}
-            <div className="bg-card border border-border rounded-lg p-6 mb-6 shrink-0">
-              <h2 className="text-lg font-semibold text-foreground mb-4">
-                Audio Player
-              </h2>
-              {audioUrl ? (
-                <div className="text-sm text-muted-foreground">
-                  <p className="mb-2">Audio URL: {audioUrl}</p>
-                  <p className="text-xs text-muted-foreground">
-                    (Audio player component will be implemented in Part 2)
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-2">No audio available</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate("/dashboard/import")}>
-                    Import Audio
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Transcript Placeholder */}
-            <div className="bg-card border border-border rounded-lg p-6 flex flex-col flex-1 min-h-0">
-              <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
-                Transcript
-              </h2>
-              {transcript && transcript.length > 0 ? (
-                <div className="space-y-4 overflow-auto flex-1 min-h-0 pr-3 custom-scrollbar">
-                  {transcript.map((turn, index) => (
-                    <div
-                      key={turn._id}
-                      className={`p-4 rounded-lg ${
-                        index % 2 === 0 ? "bg-muted/30" : "bg-muted/50"
-                      }`}>
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
-                            {index % 2 === 0 ? "S1" : "S2"}
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-foreground">
-                              Speaker {index % 2 === 0 ? "1" : "2"}
-                            </span>
-                            {turn.timestamp !== undefined && (
-                              <span className="text-xs text-muted-foreground">
-                                {Math.floor(turn.timestamp / 60)}:
-                                {String(Math.floor(turn.timestamp % 60)).padStart(2, "0")}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {turn.text}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  No transcript available
-                </p>
-              )}
-            </div>
+            <TranscriptPlayer
+              conversationId={id as Id<"conversations">}
+              getUserName={() => "Speaker"}
+            />
           </div>
         </div>
 
