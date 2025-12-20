@@ -113,9 +113,9 @@ export function AnalyticsPanel({
   // Loading state
   if (!conversationId) {
     return (
-      <div className={className}>
+      <div className={`flex flex-col h-full min-h-0 ${className ?? ""}`}>
         {showHeader && (
-          <h2 className="text-lg font-semibold text-foreground mb-4">Analytics</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
         )}
         <p className="text-sm text-muted-foreground text-center py-8">
           No conversation selected
@@ -126,9 +126,9 @@ export function AnalyticsPanel({
 
   if (conversationAnalytics === undefined || isAnalyzing) {
     return (
-      <div className={className}>
+      <div className={`flex flex-col h-full min-h-0 ${className ?? ""}`}>
         {showHeader && (
-          <h2 className="text-lg font-semibold text-foreground mb-4">Analytics</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
         )}
         <div className="flex flex-col items-center justify-center py-8 space-y-3">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -142,9 +142,9 @@ export function AnalyticsPanel({
 
   if (!analytics) {
     return (
-      <div className={className}>
+      <div className={`flex flex-col h-full min-h-0 ${className ?? ""}`}>
         {showHeader && (
-          <h2 className="text-lg font-semibold text-foreground mb-4">Analytics</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
         )}
         <p className="text-sm text-muted-foreground text-center py-8">
           No analytics available for this conversation
@@ -154,12 +154,12 @@ export function AnalyticsPanel({
   }
 
   return (
-    <div className={className}>
+    <div className={`flex flex-col h-full min-h-0 ${className ?? ""}`}>
       {showHeader && (
-        <h2 className="text-lg font-semibold text-foreground mb-4">Analytics</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-6 overflow-auto flex-1 min-h-0 pr-3 custom-scrollbar">
         {/* Score Cards */}
         <div className="grid grid-cols-3 gap-3">
           <div
