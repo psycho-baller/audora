@@ -129,10 +129,10 @@ export default function ConversationDetailPage() {
       {/* Two-column layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left column: Audio player & Transcript (60%) */}
-        <div className="flex-[3] border-r border-border overflow-auto">
-          <div className="p-6">
+        <div className="flex-[3] border-r border-border flex flex-col h-full min-h-0">
+          <div className="flex flex-col p-6 h-full min-h-0">
             {/* Audio Player Placeholder */}
-            <div className="bg-card border border-border rounded-lg p-6 mb-6">
+            <div className="bg-card border border-border rounded-lg p-6 mb-6 shrink-0">
               <h2 className="text-lg font-semibold text-foreground mb-4">
                 Audio Player
               </h2>
@@ -157,12 +157,12 @@ export default function ConversationDetailPage() {
             </div>
 
             {/* Transcript Placeholder */}
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">
+            <div className="bg-card border border-border rounded-lg p-6 flex flex-col flex-1 min-h-0">
+              <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
                 Transcript
               </h2>
               {transcript && transcript.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 overflow-auto flex-1 min-h-0">
                   {transcript.map((turn, index) => (
                     <div
                       key={turn._id}
