@@ -150,4 +150,11 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_user", ["userId"])
     .index("by_user_and_conversation", ["userId", "conversationId"]),
+  user_settings: defineTable({
+    dashboardFillerWords: v.boolean(),
+    dashboardVocabulary: v.boolean(),
+    realtimeFillerWords: v.boolean(),
+    realtimeVocabulary: v.boolean(),
+    userId: v.id("users"),
+  }).index("by_user", ["userId"]),
 });
