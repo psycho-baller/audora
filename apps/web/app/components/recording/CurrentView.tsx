@@ -17,11 +17,18 @@ interface TranscriptWord {
   speaker?: string;
 }
 
+interface WordTiming {
+  word: string;
+  startTime: number;
+  endTime: number;
+}
+
 interface TranscriptTurn {
   speaker: string;
   text: string;
   startTime: number;
   endTime: number;
+  words?: WordTiming[];
 }
 
 interface CurrentViewProps {
@@ -111,6 +118,7 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
       let currentSpeaker: string | undefined;
       let sentenceStartTime: number | undefined;
       let sentenceEndTime: number | undefined;
+      let wordBuffer: WordTiming[] = [];
 
       // Set up real-time transcript event listeners
       client.addEventListener("receiveMessage", ({ data }: any) => {
@@ -138,6 +146,14 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
             if (result.type === "word") {
               sentenceBuffer += " " + content;
               currentSpeaker = speaker;
+              // Capture word-level timing
+              if (result.start_time !== undefined && result.end_time !== undefined) {
+                wordBuffer.push({
+                  word: content,
+                  startTime: result.start_time,
+                  endTime: result.end_time,
+                });
+              }
             } else if (result.type === "punctuation") {
               sentenceBuffer += content;
             }
@@ -148,8 +164,9 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
               const speakerLabel = currentSpeaker || "Unknown";
 
               console.log(`Complete sentence: [${speakerLabel}] "${completeSentence}"`);
+              console.log(`Words with timing: ${wordBuffer.length} words`);
 
-              // Save turn with speaker label
+              // Save turn with speaker label and word-level timing
               if (completeSentence && sentenceStartTime !== undefined && sentenceEndTime !== undefined) {
                 // Check if we need to merge with previous turn (same speaker)
                 const lastTurn = transcriptTurnsRef.current[transcriptTurnsRef.current.length - 1];
@@ -157,13 +174,20 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
                   // Merge with previous turn if same speaker and < 2s gap
                   lastTurn.text += " " + completeSentence;
                   lastTurn.endTime = sentenceEndTime;
+                  // Append words to existing turn
+                  if (lastTurn.words) {
+                    lastTurn.words.push(...wordBuffer);
+                  } else {
+                    lastTurn.words = [...wordBuffer];
+                  }
                 } else {
-                  // Create new turn
+                  // Create new turn with word-level timing
                   transcriptTurnsRef.current.push({
                     speaker: speakerLabel,
                     text: completeSentence,
                     startTime: sentenceStartTime,
                     endTime: sentenceEndTime,
+                    words: [...wordBuffer],
                   });
                 }
               }
@@ -180,6 +204,7 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
               currentSpeaker = undefined;
               sentenceStartTime = undefined;
               sentenceEndTime = undefined;
+              wordBuffer = [];
             }
           }
 

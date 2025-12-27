@@ -1,13 +1,13 @@
 "use node";
 
+import { openai as openaiProvider } from "@ai-sdk/openai";
+import { ZepClient } from "@getzep/zep-cloud";
+import { generateObject } from "ai";
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { z } from "zod";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { openai as openaiProvider } from "@ai-sdk/openai";
-import { generateObject } from "ai";
-import { z } from "zod";
-import { ZepClient } from "@getzep/zep-cloud";
+import { action } from "./_generated/server";
 
 const zepClient = new ZepClient({
   apiKey: process.env.ZEP_API_KEY || "",
@@ -28,6 +28,11 @@ export const processRealtimeTranscript = action({
         text: v.string(),
         startTime: v.number(),
         endTime: v.number(),
+        words: v.optional(v.array(v.object({
+          word: v.string(),
+          startTime: v.number(),
+          endTime: v.number(),
+        }))),
       })
     ),
     initiatorName: v.optional(v.string()),
@@ -67,10 +72,14 @@ export const processRealtimeTranscript = action({
     console.log("Speaker mapping:", speakerMap);
     console.log("Speaker to userId mapping:", speakerToUserIdMap);
 
-    // Convert transcript turns with userIds for storage
-    const transcriptWithUserIds = args.transcriptTurns.map(turn => ({
+    // Convert transcript turns with userIds for storage (include word-level data)
+    const transcriptWithUserIds = args.transcriptTurns.map((turn, index) => ({
       userId: (speakerToUserIdMap[turn.speaker] || conversation.initiatorUserId) as Id<"users">,
       text: turn.text,
+      words: turn.words?.map((w, wordIndex) => ({
+        ...w,
+        wordId: `t${index}-w${wordIndex}`, // Stable ID for word
+      })),
     }));
 
     // Convert transcript turns with actual names for AI analysis

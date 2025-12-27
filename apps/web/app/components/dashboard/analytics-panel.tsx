@@ -3,17 +3,319 @@ import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
   ChevronRight,
-  Lightbulb,
   Loader2,
   Minus,
   Sparkles,
   TrendingDown,
-  TrendingUp,
-  Trophy
+  TrendingUp
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+
+// Pacing Gauge Component
+function PacingGauge({ wpm }: { wpm: number }) {
+  // WPM ranges: Slow < 100, Conversational 100-160, Fast > 160
+  // Map WPM to angle: 0 (slow) to 180 (fast)
+  const minWpm = 60;
+  const maxWpm = 200;
+  const clampedWpm = Math.max(minWpm, Math.min(maxWpm, wpm));
+  const percentage = (clampedWpm - minWpm) / (maxWpm - minWpm);
+  const angle = percentage * 180;
+  
+  // Calculate the arc path length for the filled portion
+  // The arc goes from angle 0 to 180 degrees (left to right)
+  // We need to calculate how much of the arc to fill based on the needle position
+  const arcLength = Math.PI * 45; // Total arc length (half circle with radius 45)
+  const filledLength = arcLength * percentage;
+  const unfilledLength = arcLength - filledLength;
+  
+  // Determine label
+  let label = "Conversational";
+  if (wpm < 100) label = "Slow";
+  else if (wpm > 160) label = "Fast";
+
+  return (
+    <div className="flex flex-col items-center py-4">
+      {/* Gauge container with labels positioned absolutely */}
+      <div className="relative w-44">
+        {/* Slow label - positioned at left end of arc */}
+        <span className="absolute -left-1 top-8 text-[10px] text-muted-foreground -rotate-45 origin-center">Slow</span>
+        {/* Conversational label - positioned at top center */}
+        <span className="absolute left-1/2 -translate-x-1/2 top-0 text-[10px] text-muted-foreground">Conversational</span>
+        {/* Fast label - positioned at right end of arc */}
+        <span className="absolute -right-1 top-8 text-[10px] text-muted-foreground rotate-45 origin-center">Fast</span>
+        
+        {/* Gauge SVG */}
+        <div className="w-40 h-20 mx-auto mt-4">
+          <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
+            {/* Grey background arc */}
+            <path
+              d="M 5 50 A 45 45 0 0 1 95 50"
+              fill="none"
+              stroke="#e5e5e5"
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+            {/* Purple filled arc up to needle position */}
+            <path
+              d="M 5 50 A 45 45 0 0 1 95 50"
+              fill="none"
+              stroke="#a855f7"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={`${filledLength} ${unfilledLength}`}
+            />
+            {/* Needle */}
+            <g transform={`rotate(${angle - 90}, 50, 50)`}>
+              <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="15"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-foreground"
+              />
+              <circle cx="50" cy="50" r="4" fill="currentColor" className="text-foreground" />
+            </g>
+          </svg>
+        </div>
+      </div>
+      {/* Result label and WPM below gauge */}
+      <p className="text-sm font-medium text-foreground mt-2">{label}</p>
+      <p className="text-2xl font-bold text-foreground">{wpm} <span className="text-sm font-normal text-muted-foreground">wpm</span></p>
+    </div>
+  );
+}
+
+// Pacing Variation Chart Component
+function PacingVariationChart({ 
+  wpm, 
+  segments, 
+  durationSeconds 
+}: { 
+  wpm: number; 
+  segments?: Array<{ startTime: number; endTime: number; wpm: number }>;
+  durationSeconds?: number;
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  
+  // Use real segment data if available, otherwise generate placeholder based on overall WPM
+  const data = segments && segments.length > 0 
+    ? segments.map(s => s.wpm)
+    : (() => {
+        // Generate placeholder data when no segments available
+        const points = [];
+        for (let i = 0; i <= 10; i++) {
+          const variation = (Math.sin(i * 0.5) * 30) + (Math.cos(i * 0.3) * 15);
+          points.push(wpm + variation);
+        }
+        return points;
+      })();
+  
+  // Calculate total duration
+  const totalDuration = durationSeconds || (segments && segments.length > 0 
+    ? segments[segments.length - 1].endTime 
+    : 300); // Default to 5 minutes if no data
+  
+  // Dynamic min/max based on actual data, but always include conversational range (100-160)
+  const dataMin = Math.min(...data);
+  const dataMax = Math.max(...data);
+  // Ensure conversational zone (100-160) is always visible
+  const rangeMin = Math.min(dataMin, 100);
+  const rangeMax = Math.max(dataMax, 160);
+  // Add 10% padding to the range
+  const padding = Math.max((rangeMax - rangeMin) * 0.1, 10);
+  const minVal = Math.floor(rangeMin - padding);
+  const maxVal = Math.ceil(rangeMax + padding);
+  const midVal = Math.round((minVal + maxVal) / 2);
+  const range = maxVal - minVal;
+  
+  // SVG dimensions
+  const width = 100;
+  const height = 60;
+  
+  // Format time helper
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
+  
+  // Calculate point coordinates
+  const pointCoords = data.map((val, i) => {
+    const timeInSegment = segments && segments[i] 
+      ? (segments[i].startTime + segments[i].endTime) / 2 
+      : (i / (data.length - 1)) * totalDuration;
+    
+    return {
+      x: (i / (data.length - 1)) * width,
+      y: height - ((val - minVal) / range) * height,
+      value: Math.round(val),
+      time: formatTime(timeInSegment)
+    };
+  });
+  
+  // Create smooth bezier curve path
+  const createSmoothPath = () => {
+    if (pointCoords.length < 2) return '';
+    
+    let path = `M ${pointCoords[0].x},${pointCoords[0].y}`;
+    
+    for (let i = 0; i < pointCoords.length - 1; i++) {
+      const current = pointCoords[i];
+      const next = pointCoords[i + 1];
+      const prev = pointCoords[i - 1] || current;
+      const nextNext = pointCoords[i + 2] || next;
+      
+      // Calculate control points for smooth curve
+      const tension = 0.3;
+      const cp1x = current.x + (next.x - prev.x) * tension;
+      const cp1y = current.y + (next.y - prev.y) * tension;
+      const cp2x = next.x - (nextNext.x - current.x) * tension;
+      const cp2y = next.y - (nextNext.y - current.y) * tension;
+      
+      path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`;
+    }
+    
+    return path;
+  };
+  
+  const smoothPath = createSmoothPath();
+
+  // Conversational zone (100-160 WPM) - always fixed at exactly 100-160
+  const zoneTop = height - ((160 - minVal) / range) * height;
+  const zoneBottom = height - ((100 - minVal) / range) * height;
+  const zoneHeight = zoneBottom - zoneTop;
+
+  // Generate x-axis time labels
+  const timeLabels = [];
+  const numLabels = Math.min(5, Math.ceil(totalDuration / 60) + 1);
+  for (let i = 0; i < numLabels; i++) {
+    const time = (i / (numLabels - 1)) * totalDuration;
+    timeLabels.push(formatTime(time));
+  }
+
+  // Calculate Y positions as percentages for HTML labels
+  const y160Percent = (zoneTop / height) * 100;
+  const y100Percent = (zoneBottom / height) * 100;
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center gap-2 mb-2">
+        <h5 className="text-sm font-medium text-foreground">Pacing Variation</h5>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-2 bg-primary/20 rounded-sm" />
+          <span className="text-[10px] text-muted-foreground">Conversational (100-160)</span>
+        </div>
+      </div>
+      <div className="relative bg-muted/20 rounded-lg p-2">
+        {/* Chart with Y-axis labels */}
+        <div className="flex">
+          {/* Y-axis labels */}
+          <div className="relative w-8 h-24 flex-shrink-0 text-[10px] text-muted-foreground">
+            <span className="absolute right-1 top-0 -translate-y-1/2">{maxVal}</span>
+            <span className="absolute right-1 text-primary/70" style={{ top: `${y160Percent}%`, transform: 'translateY(-50%)' }}>160</span>
+            <span className="absolute right-1 text-primary/70" style={{ top: `${y100Percent}%`, transform: 'translateY(-50%)' }}>100</span>
+            <span className="absolute right-1 bottom-0 translate-y-1/2">{minVal}</span>
+          </div>
+          {/* Chart area */}
+          <div className="flex-1 relative">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-24" preserveAspectRatio="none">
+              {/* Conversational zone highlight (always shown at 100-160 WPM) */}
+              <rect
+              x="0"
+              y={zoneTop}
+              width={width}
+              height={zoneHeight}
+              fill="currentColor"
+              className="text-primary/10"
+            />
+            {/* Grid lines at 100 and 160 WPM boundaries */}
+            <line x1="0" y1={zoneTop} x2={width} y2={zoneTop} stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground/30" strokeDasharray="2,2" style={{ pointerEvents: 'none' }} />
+            <line x1="0" y1={zoneBottom} x2={width} y2={zoneBottom} stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground/30" strokeDasharray="2,2" style={{ pointerEvents: 'none' }} />
+            {/* Smooth line chart */}
+            <path
+              d={smoothPath}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-primary"
+              vectorEffect="non-scaling-stroke"
+              style={{ pointerEvents: 'none' }}
+            />
+            {/* Hover vertical line */}
+            {hoveredIndex !== null && (
+              <line 
+                x1={pointCoords[hoveredIndex].x} 
+                y1={0} 
+                x2={pointCoords[hoveredIndex].x} 
+                y2={height} 
+                stroke="currentColor" 
+                strokeWidth="0.5" 
+                className="text-muted-foreground"
+                strokeDasharray="2,1"
+                vectorEffect="non-scaling-stroke"
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
+            {/* Interactive hover areas */}
+            {pointCoords.map((point, i) => (
+              <rect
+                key={i}
+                x={point.x - (width / data.length / 2)}
+                y={0}
+                width={width / data.length}
+                height={height}
+                fill="transparent"
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              />
+            ))}
+            {/* Hover point indicator */}
+            {hoveredIndex !== null && (
+              <circle
+                cx={pointCoords[hoveredIndex].x}
+                cy={pointCoords[hoveredIndex].y}
+                r="3"
+                fill="currentColor"
+                className="text-primary"
+                vectorEffect="non-scaling-stroke"
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
+          </svg>
+          {/* Tooltip */}
+          {hoveredIndex !== null && (
+            <div 
+              className="absolute bg-popover text-popover-foreground border border-border rounded-md px-2 py-1 text-xs shadow-md pointer-events-none z-10"
+              style={{
+                left: `${(pointCoords[hoveredIndex].x / width) * 100}%`,
+                top: `${(pointCoords[hoveredIndex].y / height) * 100}%`,
+                transform: 'translate(-50%, -120%)'
+              }}
+            >
+              <div className="font-medium">{pointCoords[hoveredIndex].value} WPM</div>
+              <div className="text-muted-foreground">{pointCoords[hoveredIndex].time}</div>
+            </div>
+          )}
+          {/* X-axis labels */}
+          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+            {timeLabels.map((label, i) => (
+              <span key={i}>{label}</span>
+            ))}
+          </div>
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">
+        <span className="font-medium">Vary your pace</span> to keep your audience engaged. <span className="font-medium">Practice sections</span> where your pace is flat.
+      </p>
+    </div>
+  );
+}
 
 interface AnalyticsPanelProps {
   showHeader?: boolean;
@@ -168,15 +470,8 @@ export function AnalyticsPanel({
         {/* Word Choice Tab */}
         <TabsContent value="word-choice" className="flex-1 min-h-0 overflow-hidden">
           <div className="space-y-4 overflow-auto h-full pr-3 custom-scrollbar">
-            {/* What went well */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                <h4 className="font-medium text-foreground text-sm">What went well</h4>
-              </div>
-              
-              {/* Repetition - shown if count is low (good) */}
-              <div className="space-y-2">
+            {/* Repetition - shown if count is low (good) */}
+            <div className="space-y-2">
                 <details className="group bg-muted/30 rounded-lg">
                   <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
                     <div className="flex items-center gap-2">
@@ -243,17 +538,7 @@ export function AnalyticsPanel({
                     </div>
                   </div>
                 </details>
-              </div>
-            </div>
 
-            {/* What could have gone better */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-4 h-4 text-yellow-400" />
-                <h4 className="font-medium text-foreground text-sm">What could have gone better</h4>
-              </div>
-              
-              <div className="space-y-2">
                 {/* Weak Words */}
                 {analytics.weakWords.length > 0 && (
                   <details className="group bg-muted/30 rounded-lg">
@@ -351,22 +636,14 @@ export function AnalyticsPanel({
                   </details>
                 )}
               </div>
-            </div>
           </div>
         </TabsContent>
 
         {/* Delivery Tab */}
         <TabsContent value="delivery" className="flex-1 min-h-0 overflow-hidden">
           <div className="space-y-4 overflow-auto h-full pr-3 custom-scrollbar">
-            {/* What went well */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                <h4 className="font-medium text-foreground text-sm">What went well</h4>
-              </div>
-              
-              <div className="space-y-2">
-                {/* Eye Contact - Placeholder (not available) */}
+            <div className="space-y-2">
+              {/* Eye Contact - Placeholder (not available) */}
                 <details className="group bg-muted/30 rounded-lg opacity-50">
                   <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
                     <div className="flex items-center gap-2">
@@ -393,19 +670,9 @@ export function AnalyticsPanel({
                     <p className="text-xs text-muted-foreground">Pause analysis coming soon</p>
                   </div>
                 </details>
-              </div>
-            </div>
 
-            {/* What could have gone better */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-4 h-4 text-yellow-400" />
-                <h4 className="font-medium text-foreground text-sm">What could have gone better</h4>
-              </div>
-              
-              <div className="space-y-2">
                 {/* Pacing */}
-                <details className="group bg-muted/30 rounded-lg">
+                <details className="group bg-muted/30 rounded-lg" open>
                   <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
                     <div className="flex items-center gap-2">
                       <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
@@ -416,17 +683,29 @@ export function AnalyticsPanel({
                     </span>
                   </summary>
                   <div className="px-3 pb-3 pt-1">
-                    <p className="text-xs text-muted-foreground">
-                      {analytics.pacing.wordsPerMinute < 100
-                        ? "Speaking slowly - good for clarity"
-                        : analytics.pacing.wordsPerMinute > 160
-                          ? "Speaking quickly - consider slowing down"
-                          : "Good speaking pace (120-150 words/min is ideal)"}
-                    </p>
+                    {/* Pacing feedback message */}
+                    <div className="text-center mb-2">
+                      <p className="text-sm text-muted-foreground">
+                        {analytics.pacing.wordsPerMinute < 100
+                          ? "Your pace was slow. Try speaking faster than 120 WPM."
+                          : analytics.pacing.wordsPerMinute > 160
+                            ? "Your pace was fast. Try slowing down to under 160 WPM."
+                            : "Great pace! Keep it between 100-160 WPM for clarity."}
+                      </p>
+                    </div>
+                    
+                    {/* Pacing Gauge */}
+                    <PacingGauge wpm={analytics.pacing.wordsPerMinute} />
+                    
+                    {/* Pacing Variation Chart */}
+                    <PacingVariationChart 
+                      wpm={analytics.pacing.wordsPerMinute} 
+                      segments={analytics.pacing.segments}
+                      durationSeconds={analytics.pacing.durationSeconds}
+                    />
                   </div>
                 </details>
               </div>
-            </div>
           </div>
         </TabsContent>
       </Tabs>

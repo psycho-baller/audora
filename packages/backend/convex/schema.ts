@@ -114,6 +114,12 @@ export default defineSchema({
       wordsPerMinute: v.number(),
       averagePauseDuration: v.optional(v.number()),
       longestPause: v.optional(v.number()),
+      durationSeconds: v.optional(v.number()), // Total duration in seconds
+      segments: v.optional(v.array(v.object({
+        startTime: v.number(), // Start time in seconds
+        endTime: v.number(), // End time in seconds  
+        wpm: v.number(), // Words per minute for this segment
+      }))),
     }),
     // Repetition metrics
     repetitions: v.object({

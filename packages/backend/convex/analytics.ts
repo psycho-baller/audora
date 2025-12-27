@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query, action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { action, mutation, query } from "./_generated/server";
 
 // Filler words to detect
 const FILLER_WORDS = [
@@ -74,6 +74,68 @@ export const analyzeUserSpeech = mutation({
     // 2. Pacing Metrics
     const wordsPerMinute = Math.round(wordCount / durationMinutes);
     console.log("Words per minute:", wordsPerMinute);
+
+    // Calculate pacing segments from word-level timing data
+    const durationSeconds = durationMinutes * 60;
+    const pacingSegments: Array<{ startTime: number; endTime: number; wpm: number }> = [];
+    
+    // Collect all words with timing from user turns
+    const allWordsWithTiming: Array<{ word: string; startTime: number; endTime: number }> = [];
+    
+    // Debug: Check what data is in the turns
+    console.log("Checking user turns for word-level timing:");
+    userTurns.forEach((turn, idx) => {
+      console.log(`Turn ${idx}: has words=${!!turn.words}, words length=${turn.words?.length || 0}`);
+      if (turn.words && turn.words.length > 0) {
+        console.log(`  First word sample:`, turn.words[0]);
+      }
+    });
+    
+    userTurns.forEach((turn) => {
+      if (turn.words && Array.isArray(turn.words)) {
+        turn.words.forEach((w) => {
+          allWordsWithTiming.push({
+            word: w.word,
+            startTime: w.startTime,
+            endTime: w.endTime,
+          });
+        });
+      }
+    });
+    
+    console.log(`Total words with timing collected: ${allWordsWithTiming.length}`);
+
+    // If we have word-level timing, compute segments
+    if (allWordsWithTiming.length > 0) {
+      // Sort by start time
+      allWordsWithTiming.sort((a, b) => a.startTime - b.startTime);
+      
+      // Determine segment size (aim for ~10-20 segments)
+      const totalDuration = allWordsWithTiming[allWordsWithTiming.length - 1].endTime - allWordsWithTiming[0].startTime;
+      const segmentDuration = Math.max(5, totalDuration / 15); // At least 5 seconds per segment
+      
+      let segmentStart = allWordsWithTiming[0].startTime;
+      while (segmentStart < allWordsWithTiming[allWordsWithTiming.length - 1].endTime) {
+        const segmentEnd = segmentStart + segmentDuration;
+        const wordsInSegment = allWordsWithTiming.filter(
+          (w) => w.startTime >= segmentStart && w.startTime < segmentEnd
+        );
+        
+        if (wordsInSegment.length > 0) {
+          const segmentWpm = Math.round((wordsInSegment.length / segmentDuration) * 60);
+          pacingSegments.push({
+            startTime: segmentStart,
+            endTime: segmentEnd,
+            wpm: segmentWpm,
+          });
+        }
+        segmentStart = segmentEnd;
+      }
+      
+      console.log(`Computed ${pacingSegments.length} pacing segments from ${allWordsWithTiming.length} words`);
+    } else {
+      console.log("No word-level timing data available for pacing segments");
+    }
 
     // 3. Repetition Detection
     const wordFrequency: Record<string, number> = {};
@@ -175,6 +237,8 @@ export const analyzeUserSpeech = mutation({
         wordsPerMinute,
         averagePauseDuration: undefined,
         longestPause: undefined,
+        durationSeconds,
+        segments: pacingSegments.length > 0 ? pacingSegments : undefined,
       },
       repetitions: {
         repeatedWords,
