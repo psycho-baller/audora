@@ -163,4 +163,18 @@ export default defineSchema({
     realtimeVocabulary: v.boolean(),
     userId: v.id("users"),
   }).index("by_user", ["userId"]),
+  
+  // AI Personalized Feedback
+  personalizedFeedback: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    summary: v.string(),
+    strengths: v.array(v.string()),
+    improvements: v.array(v.string()),
+    actionItems: v.array(v.string()),
+    comparisonToPrevious: v.optional(v.string()),
+    generatedAt: v.number(),
+  })
+    .index("by_conversation_and_user", ["conversationId", "userId"])
+    .index("by_user", ["userId"]),
 });

@@ -149,6 +149,34 @@ export const updateStatus = mutation({
   },
 });
 
+// Helper mutation to clean up stuck conversations
+export const forceCompleteConversation = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    // Mark as ended
+    await ctx.db.patch(args.conversationId, {
+      status: "ended",
+      endedAt: conversation.endedAt || Date.now(),
+      summary: "Conversation completed without transcript data",
+    });
+
+    return null;
+  },
+});
+
 // Save transcript data after processing
 export const saveTranscriptData = mutation({
   args: {
@@ -381,6 +409,43 @@ export const getTranscript = query({
       )
       .collect();
     return turns.sort((a, b) => a.order - b.order);
+  },
+});
+
+// Get speaker information for a conversation
+export const getSpeakers = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      return null;
+    }
+    
+    const speakers: Record<string, { name: string; email?: string; image?: string }> = {};
+    
+    // Get initiator info
+    const initiator = await ctx.db.get(conversation.initiatorUserId);
+    if (initiator) {
+      speakers[conversation.initiatorUserId] = {
+        name: initiator.name || initiator.email || "Speaker 1",
+        email: initiator.email,
+        image: initiator.image,
+      };
+    }
+    
+    // Get scanner info if exists
+    if (conversation.scannerUserId) {
+      const scanner = await ctx.db.get(conversation.scannerUserId);
+      if (scanner) {
+        speakers[conversation.scannerUserId] = {
+          name: scanner.name || scanner.email || "Speaker 2",
+          email: scanner.email,
+          image: scanner.image,
+        };
+      }
+    }
+    
+    return speakers;
   },
 });
 

@@ -1,8 +1,9 @@
-"use client";
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { useEffect, useRef, useState } from "react";
+import { AlertCircle, Pause, Play, SkipBack, SkipForward, Target, Waves, Zap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Waveform } from "~/components/audio/Waveform";
 
 interface Word {
   word: string;
@@ -23,25 +24,129 @@ interface TranscriptPlayerProps {
   getUserName: (userId?: Id<"users">) => string;
 }
 
+type HighlightType = "filler" | "weak" | "starter" | null;
+
+interface WordHighlight {
+  wordId: string;
+  type: HighlightType;
+  word: string;
+}
+
 export default function TranscriptPlayer({ conversationId, getUserName }: TranscriptPlayerProps) {
   const transcriptTurns = useQuery(api.conversations.getTranscript, { conversationId }) || [];
   const audioUrl = useQuery(api.conversations.getAudioUrl, { conversationId });
+  const speakers = useQuery(api.conversations.getSpeakers, { conversationId });
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const analytics = useQuery(
+    api.analytics.getAnalytics,
+    currentUser && conversationId
+      ? { conversationId, userId: currentUser._id }
+      : "skip"
+  );
+  
+  // Enhanced getUserName that uses speaker data
+  const getSpeakerName = (userId?: Id<"users">) => {
+    if (!userId) return "Unknown Speaker";
+    if (speakers && speakers[userId]) {
+      return speakers[userId].name;
+    }
+    return getUserName(userId);
+  };
+
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeWordId, setActiveWordId] = useState<string | null>(null);
+  const [showWaveform, setShowWaveform] = useState(false);
   const activeWordRef = useRef<HTMLSpanElement>(null);
 
   // Flatten all words with their turn info
-  const allWords = transcriptTurns.flatMap((turn) => {
-    if (!turn.words || turn.words.length === 0) return [];
-    return turn.words.map((word) => ({
-      ...word,
-      turnId: turn._id,
-      userId: turn.userId,
-    }));
-  });
+  const allWords = useMemo(() => {
+    return transcriptTurns.flatMap((turn) => {
+      if (!turn.words || turn.words.length === 0) return [];
+      return turn.words.map((word) => ({
+        ...word,
+        turnId: turn._id,
+        userId: turn.userId,
+      }));
+    });
+  }, [transcriptTurns]);
+
+  // Build word highlight map from analytics
+  const wordHighlights = useMemo<Map<string, WordHighlight>>(() => {
+    const highlights = new Map<string, WordHighlight>();
+    
+    if (!analytics || !currentUser) return highlights;
+
+    // Map filler words
+    if (analytics.fillerWords?.instances) {
+      // We need to find the actual word positions in the transcript
+      let wordIndex = 0;
+      transcriptTurns.forEach((turn) => {
+        if (turn.userId === currentUser._id && turn.words) {
+          turn.words.forEach((word) => {
+            const lowerWord = word.word.toLowerCase().replace(/[.,!?;:]/g, "");
+            // Check if this word matches any filler word
+            const fillerWord = analytics.fillerWords.instances.find(
+              (f) => f.word.toLowerCase() === lowerWord
+            );
+            if (fillerWord) {
+              highlights.set(word.wordId, {
+                wordId: word.wordId,
+                type: "filler",
+                word: word.word,
+              });
+            }
+            wordIndex++;
+          });
+        }
+      });
+    }
+
+    // Map weak words
+    if (analytics.weakWords) {
+      transcriptTurns.forEach((turn) => {
+        if (turn.userId === currentUser._id && turn.words) {
+          turn.words.forEach((word) => {
+            const lowerWord = word.word.toLowerCase().replace(/[.,!?;:]/g, "");
+            const weakWord = analytics.weakWords.find(
+              (w) => w.word.toLowerCase() === lowerWord
+            );
+            if (weakWord && !highlights.has(word.wordId)) {
+              highlights.set(word.wordId, {
+                wordId: word.wordId,
+                type: "weak",
+                word: word.word,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Map sentence starters (first word of sentences)
+    if (analytics.sentenceStarters?.weak) {
+      transcriptTurns.forEach((turn) => {
+        if (turn.userId === currentUser._id && turn.words && turn.words.length > 0) {
+          const firstWord = turn.words[0];
+          const lowerWord = firstWord.word.toLowerCase().replace(/[.,!?;:]/g, "");
+          const starter = analytics.sentenceStarters.weak.find(
+            (s) => s.word.toLowerCase() === lowerWord
+          );
+          if (starter && !highlights.has(firstWord.wordId)) {
+            highlights.set(firstWord.wordId, {
+              wordId: firstWord.wordId,
+              type: "starter",
+              word: firstWord.word,
+            });
+          }
+        }
+      });
+    }
+
+    return highlights;
+  }, [analytics, transcriptTurns, currentUser]);
 
   // Find active word based on current time
   useEffect(() => {
@@ -79,11 +184,72 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
     setIsPlaying(!isPlaying);
   };
 
+  const handleSkip = (seconds: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + seconds));
+    }
+  };
+
+  const handleWaveformSeek = (time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
   const handleWordClick = (word: Word & { turnId: Id<"transcriptTurns"> }) => {
     if (audioRef.current) {
       audioRef.current.currentTime = word.startTime;
       setActiveWordId(word.wordId);
+      if (!isPlaying) {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
     }
+  };
+
+  // Calculate timeline markers for highlights
+  const timelineMarkers = useMemo(() => {
+    const markers: Array<{ time: number; type: HighlightType; word: string }> = [];
+    
+    allWords.forEach((word) => {
+      const highlight = wordHighlights.get(word.wordId);
+      if (highlight) {
+        markers.push({
+          time: word.startTime,
+          type: highlight.type,
+          word: highlight.word,
+        });
+      }
+    });
+    
+    return markers;
+  }, [allWords, wordHighlights]);
+
+  const getWordClassName = (word: Word, isActive: boolean) => {
+    const highlight = wordHighlights.get(word.wordId);
+    const baseClasses = "transition-all duration-200 inline-block";
+    const activeClasses = isActive
+      ? "bg-primary text-primary-foreground font-semibold px-1 py-0.5 rounded-md shadow-sm scale-105"
+      : "hover:bg-muted/60 px-0.5 rounded";
+    const clickableClasses = "cursor-pointer";
+    
+    let highlightClasses = "";
+    if (highlight && !isActive) {
+      switch (highlight.type) {
+        case "filler":
+          highlightClasses = "bg-yellow-500/15 text-yellow-800 dark:text-yellow-300 font-medium px-1 py-0.5 rounded-md border-b-2 border-yellow-500/60 hover:bg-yellow-500/25 hover:scale-102";
+          break;
+        case "weak":
+          highlightClasses = "bg-orange-500/15 text-orange-800 dark:text-orange-300 font-medium px-1 py-0.5 rounded-md border-b-2 border-orange-500/60 hover:bg-orange-500/25 hover:scale-102";
+          break;
+        case "starter":
+          highlightClasses = "bg-blue-500/15 text-blue-800 dark:text-blue-300 font-medium px-1 py-0.5 rounded-md border-b-2 border-blue-500/60 hover:bg-blue-500/25 hover:scale-102";
+          break;
+      }
+    }
+
+    return `${baseClasses} ${activeClasses} ${clickableClasses} ${highlightClasses}`;
   };
 
   if (!audioUrl) {
@@ -96,46 +262,152 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
 
   return (
     <div className="flex flex-col h-full min-h-0 space-y-4">
-      {/* Audio Player */}
-      <div className="bg-card border border-border rounded-lg p-4 shrink-0">
-        <div className="flex items-center gap-4">
+      {/* Enhanced Audio Player */}
+      <div className="bg-gradient-to-b from-card to-card/80 border border-border rounded-xl p-5 shrink-0 shadow-sm">
+        <div className="flex items-center gap-4 mb-3">
           <button
             onClick={handlePlayPause}
-            className="p-2 bg-primary hover:bg-primary/90 rounded-lg transition-colors"
+            className="p-4 bg-primary hover:bg-primary/90 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
-              <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M6 4h4v12H6V4zm4 0h4v12h-4V4z" />
-              </svg>
+              <Pause className="w-6 h-6 text-primary-foreground" fill="currentColor" />
             ) : (
-              <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M6.5 4l9 6-9 6V4z" />
-              </svg>
+              <Play className="w-6 h-6 text-primary-foreground ml-0.5" fill="currentColor" />
             )}
           </button>
-          <div className="flex-1 flex items-center gap-3">
-            <span className="text-sm text-muted-foreground min-w-[40px]">
-              {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, "0")}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              value={currentTime}
-              onChange={(e) => {
-                const newTime = parseFloat(e.target.value);
-                if (audioRef.current) {
-                  audioRef.current.currentTime = newTime;
-                }
-                setCurrentTime(newTime);
-              }}
-              className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-            />
-            <span className="text-sm text-muted-foreground min-w-[40px]">
-              {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, "0")}
-            </span>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleSkip(-10)}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Skip back 10 seconds"
+            >
+              <SkipBack className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => handleSkip(10)}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Skip forward 10 seconds"
+            >
+              <SkipForward className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+          
+              <div className="flex-1 flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-mono text-muted-foreground min-w-[50px] text-right tabular-nums">
+                {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, "0")}
+              </span>
+              <div className="flex-1 relative">
+                {showWaveform ? (
+                  /* Waveform visualization */
+                  <div className="relative">
+                    <Waveform
+                      audioUrl={audioUrl}
+                      currentTime={currentTime}
+                      duration={duration}
+                      onSeek={handleWaveformSeek}
+                      className="h-16"
+                    />
+                    {/* Timeline markers overlay */}
+                    <div className="absolute inset-x-0 top-0 h-full flex items-center pointer-events-none">
+                      {timelineMarkers.map((marker, i) => {
+                        const position = (marker.time / (duration || 100)) * 100;
+                        let color = "bg-yellow-500";
+                        if (marker.type === "weak") color = "bg-orange-500";
+                        if (marker.type === "starter") color = "bg-blue-500";
+                        
+                        return (
+                          <div
+                            key={`${marker.time}-${i}`}
+                            className={`absolute w-1 h-4 ${color} rounded-full opacity-70`}
+                            style={{ left: `${position}%`, transform: 'translateX(-50%)', top: '4px' }}
+                            title={`${marker.type}: ${marker.word}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  /* Timeline with markers */
+                  <div className="relative h-10 flex items-center">
+                    {/* Timeline markers */}
+                    <div className="absolute inset-x-0 top-0 h-6 flex items-center pointer-events-none">
+                      {timelineMarkers.map((marker, i) => {
+                        const position = (marker.time / (duration || 100)) * 100;
+                        let color = "bg-yellow-500";
+                        if (marker.type === "weak") color = "bg-orange-500";
+                        if (marker.type === "starter") color = "bg-blue-500";
+                        
+                        return (
+                          <div
+                            key={`${marker.time}-${i}`}
+                            className={`absolute w-1 h-3 ${color} rounded-full opacity-60 hover:opacity-100 transition-opacity`}
+                            style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
+                            title={`${marker.type}: ${marker.word}`}
+                          />
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <input
+                      type="range"
+                      min={0}
+                      max={duration || 100}
+                      value={currentTime}
+                      onChange={(e) => {
+                        const newTime = parseFloat(e.target.value);
+                        if (audioRef.current) {
+                          audioRef.current.currentTime = newTime;
+                        }
+                        setCurrentTime(newTime);
+                      }}
+                      className="w-full h-2 bg-muted/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-md hover:[&::-moz-range-thumb]:scale-110 [&::-moz-range-thumb]:transition-transform relative z-10"
+                      style={{
+                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) 100%)`
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <span className="text-sm font-mono text-muted-foreground min-w-[50px] tabular-nums">
+                {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, "0")}
+              </span>
+              <button
+                onClick={() => setShowWaveform(!showWaveform)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                aria-label="Toggle waveform"
+                title={showWaveform ? "Show simple timeline" : "Show waveform"}
+              >
+                <Waves className={`w-4 h-4 ${showWaveform ? 'text-primary' : 'text-muted-foreground'}`} />
+              </button>
+            </div>
           </div>
         </div>
+        
+        {/* Highlight legend */}
+        {wordHighlights.size > 0 && (
+          <div className="flex items-center gap-4 pt-3 border-t border-border/50">
+            <span className="text-xs text-muted-foreground font-medium">Timeline markers:</span>
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                <span className="text-muted-foreground">Filler words</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                <span className="text-muted-foreground">Weak words</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                <span className="text-muted-foreground">Sentence starters</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <audio
           ref={audioRef}
           src={audioUrl}
@@ -155,27 +427,69 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
         />
       </div>
 
-      {/* Transcript */}
-      <div className="bg-card border border-border rounded-lg p-6 flex flex-col flex-1 min-h-0">
-        <h3 className="text-lg font-semibold text-foreground mb-4 shrink-0">Transcript</h3>
-        <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-3 custom-scrollbar">
-          {transcriptTurns.map((turn) => {
-            const userName = getUserName(turn.userId);
+      {/* Enhanced Transcript */}
+      <div className="bg-gradient-to-b from-card to-card/80 border border-border rounded-xl p-6 flex flex-col flex-1 min-h-0 shadow-sm">
+        <div className="flex items-center justify-between mb-5 shrink-0 pb-4 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground">Transcript</h3>
+            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+              {transcriptTurns.length} turns
+            </span>
+          </div>
+          {wordHighlights.size > 0 && (
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5 bg-yellow-500/10 px-2 py-1 rounded-md border border-yellow-500/20">
+                <AlertCircle className="w-3 h-3 text-yellow-600 dark:text-yellow-500" />
+                <span className="text-yellow-700 dark:text-yellow-400 font-medium">Filler</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-orange-500/10 px-2 py-1 rounded-md border border-orange-500/20">
+                <Zap className="w-3 h-3 text-orange-600 dark:text-orange-500" />
+                <span className="text-orange-700 dark:text-orange-400 font-medium">Weak</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/20">
+                <Target className="w-3 h-3 text-blue-600 dark:text-blue-500" />
+                <span className="text-blue-700 dark:text-blue-400 font-medium">Starter</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="space-y-5 overflow-y-auto flex-1 min-h-0 pr-3 custom-scrollbar">
+          {transcriptTurns.map((turn, turnIndex) => {
+            const userName = getSpeakerName(turn.userId);
             const hasWords = turn.words && turn.words.length > 0;
+            const isFirstTurn = turnIndex === 0;
+            const prevTurn = turnIndex > 0 ? transcriptTurns[turnIndex - 1] : null;
+            const sameSpeaker = prevTurn?.userId === turn.userId;
+            const isCurrentUser = currentUser && turn.userId === currentUser._id;
+            
+            // Different colors for different speakers
+            const avatarGradient = isCurrentUser 
+              ? "bg-gradient-to-br from-primary via-primary to-accent" 
+              : "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600";
 
             return (
-              <div key={turn._id} className="flex space-x-3">
+              <div key={turn._id} className={`flex gap-3 group transition-all ${!sameSpeaker && !isFirstTurn ? 'pt-3 mt-1 border-t border-border/30' : ''}`}>
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-xs font-medium text-primary-foreground">
+                  <div className={`w-9 h-9 rounded-full ${avatarGradient} flex items-center justify-center text-sm font-semibold text-white shadow-md ring-2 ring-background`}>
                     {userName.charAt(0).toUpperCase()}
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="text-sm font-medium text-foreground">{userName}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-sm font-semibold text-foreground">{userName}</span>
+                    {isCurrentUser && (
+                      <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-medium">
+                        You
+                      </span>
+                    )}
+                    {turn.timestamp !== undefined && (
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {Math.floor(turn.timestamp / 60)}:{Math.floor(turn.timestamp % 60).toString().padStart(2, '0')}
+                      </span>
+                    )}
                   </div>
                   {hasWords ? (
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-foreground leading-relaxed text-[15px]">
                       {turn.words!.map((word, idx) => {
                         const isActive = activeWordId === word.wordId;
                         return (
@@ -183,11 +497,8 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
                             key={word.wordId}
                             ref={isActive ? activeWordRef : null}
                             onClick={() => handleWordClick({ ...word, turnId: turn._id })}
-                            className={`
-                              ${isActive ? "bg-primary text-primary-foreground px-1 rounded" : ""}
-                              ${!isActive ? "hover:bg-muted cursor-pointer px-0.5 rounded" : ""}
-                              transition-colors
-                            `}
+                            className={getWordClassName(word, isActive)}
+                            title={wordHighlights.get(word.wordId)?.type || undefined}
                           >
                             {word.word}
                             {idx < turn.words!.length - 1 && " "}
@@ -196,7 +507,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
                       })}
                     </p>
                   ) : (
-                    <p className="text-muted-foreground leading-relaxed">{turn.text}</p>
+                    <p className="text-muted-foreground leading-relaxed text-[15px]">{turn.text}</p>
                   )}
                 </div>
               </div>

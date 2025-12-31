@@ -10,6 +10,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedback";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
@@ -461,11 +462,24 @@ export function AnalyticsPanel({
         <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
       )}
 
-      <Tabs defaultValue="word-choice" className="flex flex-col h-full min-h-0">
+      <Tabs defaultValue="overview" className="flex flex-col h-full min-h-0">
         <TabsList className="shrink-0 mb-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="word-choice">Word Choice</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
         </TabsList>
+
+        {/* Overview Tab - AI Feedback */}
+        <TabsContent value="overview" className="flex-1 min-h-0 overflow-hidden">
+          <div className="space-y-4 overflow-auto h-full pr-3 custom-scrollbar">
+            {currentUser && (
+              <PersonalizedFeedback 
+                conversationId={conversationId} 
+                userId={currentUser._id} 
+              />
+            )}
+          </div>
+        </TabsContent>
 
         {/* Word Choice Tab */}
         <TabsContent value="word-choice" className="flex-1 min-h-0 overflow-hidden">

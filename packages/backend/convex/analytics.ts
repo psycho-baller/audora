@@ -571,3 +571,199 @@ export const getUserDashboard = query({
     };
   },
 });
+
+// Get personalized feedback for a conversation
+export const getPersonalizedFeedback = query({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const feedback = await ctx.db
+      .query("personalizedFeedback")
+      .withIndex("by_conversation_and_user", (q) =>
+        q.eq("conversationId", args.conversationId).eq("userId", args.userId)
+      )
+      .first();
+    
+    return feedback;
+  },
+});
+
+// Generate personalized feedback using AI
+export const generatePersonalizedFeedback = action({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    console.log("=== GENERATE PERSONALIZED FEEDBACK ===");
+    
+    // Get analytics for this conversation
+    const analytics = await ctx.runQuery(api.analytics.getAnalytics, args);
+    if (!analytics) {
+      console.log("No analytics found");
+      return null;
+    }
+    
+    // Get transcript
+    const transcript = await ctx.runQuery(api.conversations.getTranscript, {
+      conversationId: args.conversationId,
+    });
+    
+    // Get user's previous analytics for comparison
+    const allUserAnalytics = await ctx.runQuery(api.analytics.getConversationAnalytics, {
+      conversationId: args.conversationId,
+    });
+    
+    const userAnalytics = allUserAnalytics?.filter(a => a.userId === args.userId) || [];
+    
+    // Prepare context for AI
+    const context = {
+      currentAnalytics: {
+        fillerWordsCount: analytics.fillerWords.count,
+        fillerWordsRate: analytics.fillerWords.ratePerMinute,
+        wordsPerMinute: analytics.pacing.wordsPerMinute,
+        clarityScore: analytics.scores.clarity,
+        concisenessScore: analytics.scores.conciseness,
+        confidenceScore: analytics.scores.confidence,
+        weakWords: analytics.weakWords.length,
+        repeatedWords: analytics.repetitions.repeatedWords.length,
+      },
+      transcriptSample: transcript?.slice(0, 5).map(t => t.text).join(" "),
+    };
+    
+    // Call OpenAI for personalized feedback
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      console.error("OpenAI API key not found");
+      return null;
+    }
+    
+    const prompt = `You are an expert communication coach analyzing a speech performance. Based on the following metrics, provide personalized, actionable feedback:
+
+Current Performance:
+- Filler words: ${context.currentAnalytics.fillerWordsCount} (${context.currentAnalytics.fillerWordsRate.toFixed(1)} per minute)
+- Speaking pace: ${context.currentAnalytics.wordsPerMinute} words per minute
+- Clarity score: ${context.currentAnalytics.clarityScore}/100
+- Conciseness score: ${context.currentAnalytics.concisenessScore}/100
+- Confidence score: ${context.currentAnalytics.confidenceScore}/100
+- Weak words identified: ${context.currentAnalytics.weakWords}
+- Repeated words: ${context.currentAnalytics.repeatedWords}
+
+Transcript sample: "${context.transcriptSample}"
+
+Provide feedback in the following JSON format:
+{
+  "summary": "A 2-3 sentence overall assessment of their communication",
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "improvements": ["area 1", "area 2", "area 3"],
+  "actionItems": ["specific action 1", "specific action 2", "specific action 3"]
+}
+
+Make the feedback:
+1. Specific and actionable
+2. Encouraging but honest
+3. Focused on the most impactful improvements
+4. Professional and supportive in tone`;
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openaiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert communication coach providing personalized feedback on speech performance.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error("OpenAI API error:", response.status, await response.text());
+        return null;
+      }
+      
+      const data = await response.json();
+      const feedbackText = data.choices[0].message.content;
+      const feedback = JSON.parse(feedbackText);
+      
+      // Save feedback to database
+      const existingFeedback = await ctx.runQuery(api.analytics.getPersonalizedFeedback, args);
+      
+      const feedbackData = {
+        conversationId: args.conversationId,
+        userId: args.userId,
+        summary: feedback.summary,
+        strengths: feedback.strengths || [],
+        improvements: feedback.improvements || [],
+        actionItems: feedback.actionItems || [],
+        comparisonToPrevious: undefined,
+        generatedAt: Date.now(),
+      };
+      
+      if (existingFeedback) {
+        await ctx.runMutation(api.analytics.updatePersonalizedFeedback, {
+          feedbackId: existingFeedback._id,
+          ...feedbackData,
+        });
+      } else {
+        await ctx.runMutation(api.analytics.createPersonalizedFeedback, feedbackData);
+      }
+      
+      console.log("✅ Personalized feedback generated");
+      return feedback;
+    } catch (error) {
+      console.error("Error generating feedback:", error);
+      return null;
+    }
+  },
+});
+
+// Create personalized feedback
+export const createPersonalizedFeedback = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    summary: v.string(),
+    strengths: v.array(v.string()),
+    improvements: v.array(v.string()),
+    actionItems: v.array(v.string()),
+    comparisonToPrevious: v.optional(v.string()),
+    generatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("personalizedFeedback", args);
+  },
+});
+
+// Update personalized feedback
+export const updatePersonalizedFeedback = mutation({
+  args: {
+    feedbackId: v.id("personalizedFeedback"),
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    summary: v.string(),
+    strengths: v.array(v.string()),
+    improvements: v.array(v.string()),
+    actionItems: v.array(v.string()),
+    comparisonToPrevious: v.optional(v.string()),
+    generatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { feedbackId, ...data } = args;
+    await ctx.db.patch(feedbackId, data);
+  },
+});
