@@ -81,7 +81,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <ThemeProvider defaultTheme="system" storageKey="orbit-theme">
+          <ThemedToaster />
+          {children}
+        </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -97,12 +100,8 @@ export default function App({ loaderData }: Route.ComponentProps) {
       signInFallbackRedirectUrl="/dashboard"
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <ThemeProvider defaultTheme="system" storageKey="orbit-theme">
-          <UserSync />
-          {/* <ThemeToggle /> */}
-          <ThemedToaster />
-          <Outlet />
-        </ThemeProvider>
+        <UserSync />
+        <Outlet />
       </ConvexProviderWithClerk>
     </ClerkProvider>
   );

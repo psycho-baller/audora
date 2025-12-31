@@ -99,14 +99,21 @@ export const processRealtimeTranscript = action({
     console.log("Formatted transcript with names:", formattedTranscript);
 
     // Use AI ONLY for facts extraction and summary generation
-    const { object: aiAnalysis } = await generateObject({
-      model: openaiProvider("gpt-4o"),
-      schema: z.object({
-        S1_facts: z.array(z.string()).describe(`Facts extracted for ${speakerMap["S1"]}`).default([]),
-        S2_facts: z.array(z.string()).describe(`Facts extracted for ${speakerMap["S2"]}`).default([]),
-        summary: z.string().describe("Brief summary of the conversation").default(""),
-      }),
-      prompt: `You are an AI assistant that analyzes conversation transcripts to extract key facts and generate summaries.
+    let aiAnalysis = {
+      S1_facts: [] as string[],
+      S2_facts: [] as string[],
+      summary: "Conversation completed (AI analysis unavailable)",
+    };
+
+    try {
+      const { object } = await generateObject({
+        model: openaiProvider("gpt-4o"),
+        schema: z.object({
+          S1_facts: z.array(z.string()).describe(`Facts extracted for ${speakerMap["S1"]}`).default([]),
+          S2_facts: z.array(z.string()).describe(`Facts extracted for ${speakerMap["S2"]}`).default([]),
+          summary: z.string().describe("Brief summary of the conversation").default(""),
+        }),
+        prompt: `You are an AI assistant that analyzes conversation transcripts to extract key facts and generate summaries.
 
 SPEAKERS:
 - ${speakerMap["S1"]}: The person who initiated the conversation
@@ -125,9 +132,16 @@ ${formattedTranscript}
 Provide:
 1. facts: Key facts extracted for each speaker separately (use actual names as keys: "${args.initiatorName || "Speaker 1"}" and "${args.scannerName || "Speaker 2"}")
 2. summary: Concise summary of key points and outcomes`,
-    });
-
-    console.log("AI analysis complete:", aiAnalysis);
+      });
+      aiAnalysis = object;
+      console.log("AI analysis complete:", aiAnalysis);
+    } catch (aiError: any) {
+      console.error("⚠️ OpenAI analysis failed:", aiError.message);
+      console.log("Proceeding without AI analysis - conversation will still be saved");
+      // Use a basic summary from the transcript
+      const wordCount = formattedTranscript.split(/\s+/).length;
+      aiAnalysis.summary = `Conversation with ${args.transcriptTurns.length} turns and approximately ${wordCount} words.`;
+    }
 
     // Process with Zep if available
     if (transcript && aiAnalysis.S1_facts && aiAnalysis.S2_facts) {

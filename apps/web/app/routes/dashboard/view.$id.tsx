@@ -1,12 +1,11 @@
-"use client";
-
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, ArrowLeft, BarChart3, Clock, Loader2, Users, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, BarChart3, Clock, Loader2, Users, X, Download, Share2, Calendar, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
+import { ExportDialog } from "~/components/export/ExportDialog";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
 
@@ -105,45 +104,80 @@ export default function ConversationDetailPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      {/* Enhanced Header */}
+      <div className="border-b border-border bg-gradient-to-r from-card via-card/95 to-card/90 backdrop-blur-sm shadow-sm">
+        <div className="px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            {/* Left section */}
+            <div className="flex items-start gap-4 flex-1 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/dashboard")}
-                className="gap-2">
+                className="gap-2 shrink-0 hover:bg-muted/80">
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">
-                  {getConversationTitle()}
-                </h1>
-                <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-2xl font-bold text-foreground truncate">
+                    {getConversationTitle()}
+                  </h1>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                    conversation.status === 'ended' 
+                      ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' 
+                      : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20'
+                  }`}>
+                    {conversation.status === 'ended' ? 'Completed' : 'Active'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-5 text-sm text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    <span>{formatDate(conversation._creationTime)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <Clock className="w-4 h-4" />
                     <span>{formatDuration()}</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <Users className="w-4 h-4" />
-                    <span>{participantCount} participants</span>
+                    <span>{participantCount} {participantCount === 1 ? 'participant' : 'participants'}</span>
                   </div>
-                  <span>{formatDate(conversation._creationTime)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{transcript?.length || 0} turns</span>
+                  </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Right section - Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <ExportDialog 
+                conversationId={id as Id<"conversations">}
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 hover:bg-muted/80"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Share & Export</span>
+                    <span className="sm:hidden">Share</span>
+                  </Button>
+                }
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Two-column layout - Responsive */}
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left column: TranscriptPlayer (audio + transcript) */}
-        <div className="flex-[3] border-r border-border flex flex-col h-full min-h-0">
-          <div className="flex flex-col p-6 h-full min-h-0">
+        <div className="flex-1 lg:flex-[3] border-b lg:border-b-0 lg:border-r border-border flex flex-col h-full min-h-0">
+          <div className="flex flex-col p-4 sm:p-6 h-full min-h-0">
             <TranscriptPlayer
               conversationId={id as Id<"conversations">}
               getUserName={() => "Speaker"}
@@ -151,8 +185,8 @@ export default function ConversationDetailPage() {
           </div>
         </div>
 
-        {/* Right column: Analytics (40%) - hidden on small screens */}
-        <div className="hidden lg:flex lg:flex-col flex-[2] bg-muted/10 h-full min-h-0">
+        {/* Right column: Analytics - hidden on mobile, shown in modal */}
+        <div className="hidden lg:flex lg:flex-col lg:flex-[2] bg-muted/10 h-full min-h-0">
           <div className="p-6 flex flex-col h-full min-h-0">
             <div className="bg-card border border-border rounded-lg p-6 flex flex-col h-full min-h-0">
               <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">

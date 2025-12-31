@@ -224,6 +224,7 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
       // Get JWT from Convex
       console.log("Getting Speechmatics JWT...");
       const jwt = await generateSpeechmaticsJWT();
+      console.log("✅ JWT received successfully");
 
       // Get microphone stream first
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -255,7 +256,8 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
 
       // Start Speechmatics session (will trigger RecognitionStarted event)
       console.log("Starting Speechmatics session...");
-      await client.start(jwt, {
+      try {
+        await client.start(jwt, {
         transcription_config: {
           language: "en",
           operating_point: "enhanced",
@@ -278,6 +280,11 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
           sample_rate: audioContext.sampleRate,
         },
       });
+      console.log("✅ Speechmatics session started successfully");
+      } catch (speechmaticsError) {
+        console.error("❌ Failed to start Speechmatics session:", speechmaticsError);
+        throw speechmaticsError;
+      }
 
       // Create MediaRecorder for audio archival
       // Use a format supported by Speechmatics Batch API (mp4, mpeg, ogg, or webm as fallback)
@@ -356,8 +363,12 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
           console.log("Final structured transcript with speakers:", structuredTranscript);
 
           if (structuredTranscript.length === 0) {
-            // throw new Error("No transcript data collected");
-            toast.error("No transcript data collected");
+            console.error("❌ No transcript data was collected during recording");
+            console.log("This usually means:");
+            console.log("1. Speechmatics session didn't start properly");
+            console.log("2. No audio was detected/spoken");
+            console.log("3. Microphone permissions issue");
+            toast.error("No transcript data collected. Check console for details.");
             return;
           }
           // Now run batch transcription for more accurate final transcript
