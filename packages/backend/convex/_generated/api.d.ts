@@ -10,6 +10,7 @@
 
 import type * as analytics from "../analytics.js";
 import type * as conversations from "../conversations.js";
+import type * as files from "../files.js";
 import type * as homepage from "../homepage.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
@@ -43,6 +44,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   conversations: typeof conversations;
+  files: typeof files;
   homepage: typeof homepage;
   http: typeof http;
   migrations: typeof migrations;
