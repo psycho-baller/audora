@@ -43,7 +43,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       ? { conversationId, userId: currentUser._id }
       : "skip"
   );
-  
+
   // Enhanced getUserName that uses speaker data
   const getSpeakerName = (userId?: Id<"users">) => {
     if (!userId) return "Unknown Speaker";
@@ -61,7 +61,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
   const [showWaveform, setShowWaveform] = useState(false);
   const activeWordRef = useRef<HTMLSpanElement>(null);
 
-  // Flatten all words with their turn info
+  // Flatten all words with their turn info - memoized to prevent recalculation on every render
   const allWords = useMemo(() => {
     return transcriptTurns.flatMap((turn) => {
       if (!turn.words || turn.words.length === 0) return [];
@@ -76,7 +76,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
   // Build word highlight map from analytics
   const wordHighlights = useMemo<Map<string, WordHighlight>>(() => {
     const highlights = new Map<string, WordHighlight>();
-    
+
     if (!analytics || !currentUser) return highlights;
 
     // Map filler words
@@ -163,7 +163,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       // Clear active word if not in any word's time range
       setActiveWordId(null);
     }
-  }, [currentTime, allWords]);
+  }, [currentTime, transcriptTurns]); // Use transcriptTurns instead of allWords for stable reference
 
   useEffect(() => {
     if (activeWordId && activeWordRef.current) {
@@ -211,7 +211,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
   // Calculate timeline markers for highlights
   const timelineMarkers = useMemo(() => {
     const markers: Array<{ time: number; type: HighlightType; word: string }> = [];
-    
+
     allWords.forEach((word) => {
       const highlight = wordHighlights.get(word.wordId);
       if (highlight) {
@@ -222,7 +222,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
         });
       }
     });
-    
+
     return markers;
   }, [allWords, wordHighlights]);
 
@@ -233,7 +233,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       ? "bg-primary text-primary-foreground font-semibold px-1 py-0.5 rounded-md shadow-sm scale-105"
       : "hover:bg-muted/60 px-0.5 rounded";
     const clickableClasses = "cursor-pointer";
-    
+
     let highlightClasses = "";
     if (highlight && !isActive) {
       switch (highlight.type) {
@@ -276,7 +276,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
               <Play className="w-6 h-6 text-primary-foreground ml-0.5" fill="currentColor" />
             )}
           </button>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleSkip(-10)}
@@ -293,7 +293,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
               <SkipForward className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
-          
+
               <div className="flex-1 flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <span className="text-sm font-mono text-muted-foreground min-w-[50px] text-right tabular-nums">
@@ -317,7 +317,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
                         let color = "bg-yellow-500";
                         if (marker.type === "weak") color = "bg-orange-500";
                         if (marker.type === "starter") color = "bg-blue-500";
-                        
+
                         return (
                           <div
                             key={`${marker.time}-${i}`}
@@ -339,7 +339,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
                         let color = "bg-yellow-500";
                         if (marker.type === "weak") color = "bg-orange-500";
                         if (marker.type === "starter") color = "bg-blue-500";
-                        
+
                         return (
                           <div
                             key={`${marker.time}-${i}`}
@@ -350,7 +350,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
                         );
                       })}
                     </div>
-                    
+
                     {/* Progress bar */}
                     <input
                       type="range"
@@ -386,7 +386,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
             </div>
           </div>
         </div>
-        
+
         {/* Highlight legend */}
         {wordHighlights.size > 0 && (
           <div className="flex items-center gap-4 pt-3 border-t border-border/50">
@@ -407,7 +407,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
             </div>
           </div>
         )}
-        
+
         <audio
           ref={audioRef}
           src={audioUrl}
@@ -461,10 +461,10 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
             const prevTurn = turnIndex > 0 ? transcriptTurns[turnIndex - 1] : null;
             const sameSpeaker = prevTurn?.userId === turn.userId;
             const isCurrentUser = currentUser && turn.userId === currentUser._id;
-            
+
             // Different colors for different speakers
-            const avatarGradient = isCurrentUser 
-              ? "bg-gradient-to-br from-primary via-primary to-accent" 
+            const avatarGradient = isCurrentUser
+              ? "bg-gradient-to-br from-primary via-primary to-accent"
               : "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600";
 
             return (
@@ -518,4 +518,3 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
     </div>
   );
 }
-
