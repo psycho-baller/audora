@@ -2,12 +2,12 @@ import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
-  ChevronRight,
-  Loader2,
-  Minus,
-  Sparkles,
-  TrendingDown,
-  TrendingUp
+    ChevronRight,
+    Loader2,
+    Minus,
+    Sparkles,
+    TrendingDown,
+    TrendingUp
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedback";
@@ -23,14 +23,14 @@ function PacingGauge({ wpm }: { wpm: number }) {
   const clampedWpm = Math.max(minWpm, Math.min(maxWpm, wpm));
   const percentage = (clampedWpm - minWpm) / (maxWpm - minWpm);
   const angle = percentage * 180;
-  
+
   // Calculate the arc path length for the filled portion
   // The arc goes from angle 0 to 180 degrees (left to right)
   // We need to calculate how much of the arc to fill based on the needle position
   const arcLength = Math.PI * 45; // Total arc length (half circle with radius 45)
   const filledLength = arcLength * percentage;
   const unfilledLength = arcLength - filledLength;
-  
+
   // Determine label
   let label = "Conversational";
   if (wpm < 100) label = "Slow";
@@ -46,7 +46,7 @@ function PacingGauge({ wpm }: { wpm: number }) {
         <span className="absolute left-1/2 -translate-x-1/2 top-0 text-[10px] text-muted-foreground">Conversational</span>
         {/* Fast label - positioned at right end of arc */}
         <span className="absolute -right-1 top-8 text-[10px] text-muted-foreground rotate-45 origin-center">Fast</span>
-        
+
         {/* Gauge SVG */}
         <div className="w-40 h-20 mx-auto mt-4">
           <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
@@ -91,19 +91,19 @@ function PacingGauge({ wpm }: { wpm: number }) {
 }
 
 // Pacing Variation Chart Component
-function PacingVariationChart({ 
-  wpm, 
-  segments, 
-  durationSeconds 
-}: { 
-  wpm: number; 
+function PacingVariationChart({
+  wpm,
+  segments,
+  durationSeconds
+}: {
+  wpm: number;
   segments?: Array<{ startTime: number; endTime: number; wpm: number }>;
   durationSeconds?: number;
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  
+
   // Use real segment data if available, otherwise generate placeholder based on overall WPM
-  const data = segments && segments.length > 0 
+  const data = segments && segments.length > 0
     ? segments.map(s => s.wpm)
     : (() => {
         // Generate placeholder data when no segments available
@@ -114,12 +114,12 @@ function PacingVariationChart({
         }
         return points;
       })();
-  
+
   // Calculate total duration
-  const totalDuration = durationSeconds || (segments && segments.length > 0 
-    ? segments[segments.length - 1].endTime 
+  const totalDuration = durationSeconds || (segments && segments.length > 0
+    ? segments[segments.length - 1].endTime
     : 300); // Default to 5 minutes if no data
-  
+
   // Dynamic min/max based on actual data, but always include conversational range (100-160)
   const dataMin = Math.min(...data);
   const dataMax = Math.max(...data);
@@ -132,24 +132,24 @@ function PacingVariationChart({
   const maxVal = Math.ceil(rangeMax + padding);
   const midVal = Math.round((minVal + maxVal) / 2);
   const range = maxVal - minVal;
-  
+
   // SVG dimensions
   const width = 100;
   const height = 60;
-  
+
   // Format time helper
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.round(seconds % 60);
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
-  
+
   // Calculate point coordinates
   const pointCoords = data.map((val, i) => {
-    const timeInSegment = segments && segments[i] 
-      ? (segments[i].startTime + segments[i].endTime) / 2 
+    const timeInSegment = segments && segments[i]
+      ? (segments[i].startTime + segments[i].endTime) / 2
       : (i / (data.length - 1)) * totalDuration;
-    
+
     return {
       x: (i / (data.length - 1)) * width,
       y: height - ((val - minVal) / range) * height,
@@ -157,32 +157,32 @@ function PacingVariationChart({
       time: formatTime(timeInSegment)
     };
   });
-  
+
   // Create smooth bezier curve path
   const createSmoothPath = () => {
     if (pointCoords.length < 2) return '';
-    
+
     let path = `M ${pointCoords[0].x},${pointCoords[0].y}`;
-    
+
     for (let i = 0; i < pointCoords.length - 1; i++) {
       const current = pointCoords[i];
       const next = pointCoords[i + 1];
       const prev = pointCoords[i - 1] || current;
       const nextNext = pointCoords[i + 2] || next;
-      
+
       // Calculate control points for smooth curve
       const tension = 0.3;
       const cp1x = current.x + (next.x - prev.x) * tension;
       const cp1y = current.y + (next.y - prev.y) * tension;
       const cp2x = next.x - (nextNext.x - current.x) * tension;
       const cp2y = next.y - (nextNext.y - current.y) * tension;
-      
+
       path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`;
     }
-    
+
     return path;
   };
-  
+
   const smoothPath = createSmoothPath();
 
   // Conversational zone (100-160 WPM) - always fixed at exactly 100-160
@@ -248,13 +248,13 @@ function PacingVariationChart({
             />
             {/* Hover vertical line */}
             {hoveredIndex !== null && (
-              <line 
-                x1={pointCoords[hoveredIndex].x} 
-                y1={0} 
-                x2={pointCoords[hoveredIndex].x} 
-                y2={height} 
-                stroke="currentColor" 
-                strokeWidth="0.5" 
+              <line
+                x1={pointCoords[hoveredIndex].x}
+                y1={0}
+                x2={pointCoords[hoveredIndex].x}
+                y2={height}
+                stroke="currentColor"
+                strokeWidth="0.5"
                 className="text-muted-foreground"
                 strokeDasharray="2,1"
                 vectorEffect="non-scaling-stroke"
@@ -290,7 +290,7 @@ function PacingVariationChart({
           </svg>
           {/* Tooltip */}
           {hoveredIndex !== null && (
-            <div 
+            <div
               className="absolute bg-popover text-popover-foreground border border-border rounded-md px-2 py-1 text-xs shadow-md pointer-events-none z-10"
               style={{
                 left: `${(pointCoords[hoveredIndex].x / width) * 100}%`,
@@ -377,7 +377,7 @@ export function AnalyticsPanel({
     };
 
     runAnalysis();
-  }, [conversationId, currentUser, currentUserAnalytics.length, isAnalyzing, conversationAnalytics]);
+  }, [conversationId, currentUser?._id, currentUserAnalytics.length, conversationAnalytics, analyzeUserSpeech]);
 
   const handleGenerateSuggestions = async () => {
     if (!conversationId || !currentUser) return;
@@ -707,13 +707,13 @@ export function AnalyticsPanel({
                             : "Great pace! Keep it between 100-160 WPM for clarity."}
                       </p>
                     </div>
-                    
+
                     {/* Pacing Gauge */}
                     <PacingGauge wpm={analytics.pacing.wordsPerMinute} />
-                    
+
                     {/* Pacing Variation Chart */}
-                    <PacingVariationChart 
-                      wpm={analytics.pacing.wordsPerMinute} 
+                    <PacingVariationChart
+                      wpm={analytics.pacing.wordsPerMinute}
                       segments={analytics.pacing.segments}
                       durationSeconds={analytics.pacing.durationSeconds}
                     />

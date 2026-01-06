@@ -41,6 +41,16 @@ export default function ConversationDetailPage() {
     id ? { conversationId: id as Id<"conversations"> } : "skip"
   );
 
+  // Fetch initiator and scanner user data for speaker names
+  const initiatorUser = useQuery(
+    api.users.get,
+    conversation?.initiatorUserId ? { id: conversation.initiatorUserId } : "skip"
+  );
+  const scannerUser = useQuery(
+    api.users.get,
+    conversation?.scannerUserId ? { id: conversation.scannerUserId } : "skip"
+  );
+
   // Loading state
   if (conversation === undefined || transcript === undefined) {
     return (
@@ -180,7 +190,16 @@ export default function ConversationDetailPage() {
           <div className="flex flex-col p-4 sm:p-6 h-full min-h-0">
             <TranscriptPlayer
               conversationId={id as Id<"conversations">}
-              getUserName={() => "Speaker"}
+              getUserName={(userId) => {
+                if (!userId) return "Unknown";
+                if (initiatorUser && userId === conversation?.initiatorUserId) {
+                  return initiatorUser.name || "Speaker 1";
+                }
+                if (scannerUser && userId === conversation?.scannerUserId) {
+                  return scannerUser.name || "Speaker 2";
+                }
+                return "Speaker";
+              }}
             />
           </div>
         </div>
@@ -216,7 +235,7 @@ export default function ConversationDetailPage() {
       {isAnalyticsOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           {/* Backdrop */}
-          <div 
+          <div
             className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
             onClick={closeAnalytics}
           />
@@ -245,5 +264,3 @@ export default function ConversationDetailPage() {
     </div>
   );
 }
-
-

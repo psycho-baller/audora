@@ -1,5 +1,5 @@
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 export const getSettings = query({
   handler: async (ctx) => {
@@ -63,7 +63,12 @@ export const updateSettings = mutation({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .first();
 
-    const updates: any = {};
+    const updates: Partial<{
+      realtimeFillerWords: boolean;
+      realtimeVocabulary: boolean;
+      dashboardFillerWords: boolean;
+      dashboardVocabulary: boolean;
+    }> = {};
     if (args.realtimeFillerWords !== undefined) updates.realtimeFillerWords = args.realtimeFillerWords;
     if (args.realtimeVocabulary !== undefined) updates.realtimeVocabulary = args.realtimeVocabulary;
     if (args.dashboardFillerWords !== undefined) updates.dashboardFillerWords = args.dashboardFillerWords;
@@ -85,5 +90,3 @@ export const updateSettings = mutation({
     }
   },
 });
-
-

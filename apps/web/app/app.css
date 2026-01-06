@@ -167,14 +167,6 @@ html, body {
     --sidebar-ring: #818cf8;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    }
-  body {
-    @apply bg-background text-foreground;
-    }
-}
 
 /* Custom scrollbar styling */
 .custom-scrollbar::-webkit-scrollbar {
