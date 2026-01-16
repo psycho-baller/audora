@@ -21,16 +21,8 @@ export default function ParallaxScrollView({
   const colorScheme = useColorScheme() ?? 'light';
 
   return (
-    <ScrollView
-      style={{ backgroundColor, flex: 1 }}
-      scrollEventThrottle={16}
-    >
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: headerBackgroundColor[colorScheme] },
-        ]}
-      >
+    <ScrollView style={{ backgroundColor, flex: 1 }} scrollEventThrottle={16}>
+      <View style={[styles.header, { backgroundColor: headerBackgroundColor[colorScheme] }]}>
         {headerImage}
       </View>
       <ThemedView style={styles.content}>{children}</ThemedView>

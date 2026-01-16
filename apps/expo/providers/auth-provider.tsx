@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
 import { ClerkProvider } from '@clerk/clerk-expo';
+import type { ReactNode } from 'react';
+
 import { CLERK_PUBLISHABLE_KEY } from '@/lib/auth/config';
 import { tokenCache } from '@/lib/auth/token-cache';
 

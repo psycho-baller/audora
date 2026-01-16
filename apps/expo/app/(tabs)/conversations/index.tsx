@@ -2,7 +2,14 @@ import { api } from '@audora/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useNavigation, useRouter } from 'expo-router';
 import { useLayoutEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ConversationsScreen() {
@@ -20,8 +27,10 @@ export default function ConversationsScreen() {
             onPress={() => router.push('/(tabs)/conversations/import')}
             disabled={isCreating}
             // style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f0f0f0', borderRadius: 8 }}
-            >
-            <Text style={{ fontSize: 14, fontWeight: '600', color: 'white', paddingHorizontal: 8 }}>📤  Import</Text>
+          >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: 'white', paddingHorizontal: 8 }}>
+              📤 Import
+            </Text>
           </TouchableOpacity>
         </View>
       ),
@@ -32,11 +41,15 @@ export default function ConversationsScreen() {
             disabled={isCreating}
             // style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#007AFF', borderRadius: 8 }}
             // className="bg-primary"
-            >
+          >
             {isCreating ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
-              <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', paddingHorizontal: 8 }}>New chat</Text>
+              <Text
+                style={{ color: 'white', fontSize: 14, fontWeight: '600', paddingHorizontal: 8 }}
+              >
+                New chat
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -137,14 +150,19 @@ export default function ConversationsScreen() {
                   // TODO: Navigate to conversation detail
                   console.log('View conversation:', conversation._id);
                 }}
-                className="bg-card border border-border rounded-xl p-4">
+                className="bg-card border border-border rounded-xl p-4"
+              >
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-row items-center gap-2 flex-1">
                     <View className="w-10 h-10 rounded-lg bg-primary/10 items-center justify-center">
                       <Text className="text-xl">💬</Text>
                     </View>
-                    <View className={`px-2 py-1 rounded-full border ${getStatusColor(conversation.status)}`}>
-                      <Text className={`text-xs font-medium ${getStatusTextColor(conversation.status)}`}>
+                    <View
+                      className={`px-2 py-1 rounded-full border ${getStatusColor(conversation.status)}`}
+                    >
+                      <Text
+                        className={`text-xs font-medium ${getStatusTextColor(conversation.status)}`}
+                      >
                         {conversation.status}
                       </Text>
                     </View>
