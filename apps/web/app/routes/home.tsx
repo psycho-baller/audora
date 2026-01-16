@@ -1,6 +1,6 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 // import { fetchAction, fetchQuery } from "convex/nextjs";
-
+import * as React from "react";
 import ContentSection from "~/components/homepage/content";
 import FeaturesSection from "~/components/homepage/features";
 import Footer from "~/components/homepage/footer";
@@ -10,10 +10,10 @@ import TechnologiesSection from "~/components/homepage/technologies";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
-  const title = "Audora - Transform How You Connect";
+  const title = "Audora - your AI communication coach";
   const description =
-    "Your on-device speech reflection app. Become a more intentional, articulate communicator and unlock deeper relationships through better conversations.";
-  const keywords = "Communication, Speech Analysis, Relationships, AI Coaching, Privacy-First, Connection, Conversation Skills";
+    "The First Private AI Communication OS. Track, improve, and master the skill that impacts every area of your life";
+  const keywords = "Communication, Speech Analysis, Relationships, AI Coaching, Privacy-First, Connection, Conversation Skills, AI Communication Coach, AI Communication Coach App, Improve your communication, self-improvement";
   const siteUrl = "https://getaudora.app";
   const imageUrl =
     "/logo.png";
@@ -90,12 +90,20 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  const [joinedWaitlist, setJoinedWaitlist] = React.useState(false);
   return (
     <>
-      <Integrations loaderData={loaderData} />
+      <Integrations
+        loaderData={loaderData}
+        joinedWaitlist={joinedWaitlist}
+        onJoinedWaitlist={() => setJoinedWaitlist(true)}
+      />
       <ContentSection />
       <FeaturesSection />
-      <HowItWorksSection />
+      <HowItWorksSection
+        joinedWaitlist={joinedWaitlist}
+        onJoinedWaitlist={() => setJoinedWaitlist(true)}
+      />
       <TechnologiesSection />
       <Footer />
     </>

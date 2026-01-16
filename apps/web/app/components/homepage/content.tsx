@@ -1,26 +1,30 @@
-  import { Button } from "~/components/ui/button";
-import { ChevronRight } from "lucide-react";
+  import { ChevronRight } from "lucide-react";
 import { Link } from "react-router";
+import { Button } from "~/components/ui/button";
 
 export default function ContentSection() {
   return (
     <section id="features" className="py-16 md:py-32">
       <div className="mx-auto max-w-5xl px-6">
         <div className="grid gap-6 md:grid-cols-2 md:gap-12">
-          <h2 className="text-4xl font-medium">
-            A mirror for how you talk. So you can maxx out how you link.
+          <h2 className="text-4xl font-medium italic">
+            "The quality of your life is directly related to the quality of your communication"<span className="text-muted-foreground text-sm"> - Tony Robbins</span>
           </h2>
-          <div className="space-y-6">
-            <p>
-              Most people don't realize how much they get in their own way. Filler words. Rambling. Vague language.
-              <span className="font-bold"> It's not what you say—it's how you say it.</span>
+          <div className="space-y-8">
+            <p className="">
+              Yet most people never receive meaningful feedback on how they communicate.
+              In high-stakes moments like interviews, presentations, and important meetings,
+              <span className="font-bold"> it's nearly impossible to know how you're actually coming across.</span>
             </p>
-            <p>
-              Audora shows you exactly how your words affect your connections. Get real-time feedback.
-              Improve your clarity. Build deeper relationships through better conversations.
+            <p className="">
+              Without feedback, you repeat the same patterns for years. The same filler words.
+              The same unclear explanations. The same missed opportunities.
+            </p>
+            <p className="">
+              We track our fitness, sleep, and productivity. <span className="font-bold">Why not track the skill that actually determines your career success and relationships?</span>
             </p>
             <p className="text-muted-foreground text-sm">
-              Privacy-first. On-device. Your conversations stay yours.
+              Audora gives you the communication feedback you've never had access to: private, personalized, and always available.
             </p>
             <Button
               asChild

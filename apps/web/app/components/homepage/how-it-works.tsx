@@ -1,45 +1,49 @@
+import { api } from "@audora/backend/convex/_generated/api";
+import { useAction } from "convex/react";
 import { ArrowRight } from "lucide-react";
+import { WaitlistInput } from "./waitlist-input";
 
 const steps = [
   {
     number: "01",
-    title: "Start a Conversation",
-    description: "Open Audora and begin speaking. The app listens with your full consent, processing everything on-device for maximum privacy.",
-    detail: "Whether it's a call, meeting, or casual chat—just hit record and be present.",
+    title: "Record Your Virtual Meetings",
+    description: "Audora transcribes and analyzes your virtual calls in real-time, all on your device. Everything stays private.",
+    detail: "Job interviews, team meetings, client calls—whatever matters to you.",
   },
   {
     number: "02",
-    title: "Real-Time Analysis",
-    description: "As you speak, Whisper-tiny transcribes your words locally. Our AI analyzes your speech patterns, filler words, pacing, and clarity in real-time.",
-    detail: "See instant flags on your communication patterns without breaking flow.",
+    title: "Get Clear Feedback After",
+    description: "After each call, see exactly how you communicated—filler words, pacing, clarity, tone. Clear insights, not just data.",
+    detail: "Understand your patterns instead of guessing.",
   },
   {
     number: "03",
-    title: "Get Instant Feedback",
-    description: "Receive clear, actionable insights: track filler words, identify weak phrasing, understand your pacing, and see where you can improve.",
-    detail: "No judgment—just supportive coaching to help you grow.",
+    title: "Choose What to Work On",
+    description: "Pick one thing to focus on for your next meeting. Not ten things—just one. That's how improvement actually happens.",
+    detail: "You can always come back to the other feedback later.",
   },
   {
     number: "04",
-    title: "Reflect with AI",
-    description: "After your conversation, chat or call an AI companion to reflect on what happened. What did you learn about yourself? About them? What can you discuss next time?",
-    detail: "Deep reflection turns conversations into growth opportunities.",
+    title: "Prepare Before Your Next Call",
+    description: "Before your next meeting, Audora reminds you what you're working on. You'll go in prepared, not scrambling.",
+    detail: "Build the habit of intentional communication.",
   },
   {
     number: "05",
-    title: "Track Your Growth",
-    description: "Watch your communication skills improve over time. See your filler words decrease, your clarity increase, and your relationships deepen.",
-    detail: "Build a personal memory system that tracks your evolution as a communicator.",
-  },
-  {
-    number: "06",
-    title: "Visualize Your Network",
-    description: "Map your relationships and conversation patterns. Understand who you connect with, how often, and what topics matter most.",
-    detail: "Turn your social life into meaningful insights and stronger bonds.",
+    title: "Watch Yourself Improve",
+    description: "Track your progress over time. See the patterns change, the skills develop, the confidence build.",
+    detail: "Real growth, not just metrics.",
   },
 ];
 
-export default function HowItWorksSection() {
+export default function HowItWorksSection({
+  joinedWaitlist,
+  onJoinedWaitlist,
+}: {
+  joinedWaitlist?: boolean;
+  onJoinedWaitlist?: () => void;
+}) {
+  const addEmail = useAction(api.homepage.addEmailToWaitlist);
   return (
     <section id="how-it-works" className="py-16 md:py-32">
       <div className="mx-auto max-w-6xl px-6">
@@ -48,8 +52,8 @@ export default function HowItWorksSection() {
             How Audora Works
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Six simple steps to transform your conversations and deepen your connections.
-            Start your journey to becoming a more intentional communicator.
+            Five simple steps to master your communication skills and unlock new opportunities.
+            Your personal AI coach that helps you improve with every meeting.
           </p>
         </div>
 
@@ -94,20 +98,27 @@ export default function HowItWorksSection() {
 
         {/* Call to Action */}
         <div className="mt-16 text-center">
-          <div className="inline-block rounded-lg bg-primary/5 border border-primary/20 px-6 py-8 max-w-2xl">
+          <div className="max-w-2xl mx-auto">
             <h3 className="text-2xl font-semibold mb-3">
-              Ready to maxx out how you link?
+              Ready to Master Your Communication?
             </h3>
-            <p className="text-muted-foreground mb-4">
-              Join the movement of people who believe that human connection is the strongest force in the world.
+            <p className="text-muted-foreground mb-6">
+              We're focused on building the most useful communication tool possible.
+              Join us early and help shape what we build next.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href="/sign-up"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Start Your Journey
-              </a>
+            <div className="w-full flex flex-col items-center gap-4">
+              <WaitlistInput
+                  busy={false}
+                  joined={joinedWaitlist}
+                  onSubmit={async (email) => {
+                    const res = await addEmail({ email });
+                    if (res.alreadyAdded) {
+                      return { alreadyAdded: true };
+                    }
+                    onJoinedWaitlist?.();
+                    return { alreadyAdded: false };
+                  }}
+                />
               <a
                 href="#all-features"
                 className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
