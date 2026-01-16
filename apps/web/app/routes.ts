@@ -15,9 +15,9 @@ const authRoutes = [
   route("join/:id", "routes/join.$id.tsx"),
   layout("routes/dashboard/layout.tsx", [
     route("dashboard", "routes/dashboard/index.tsx"),
-    route("dashboard/conversations", "routes/record.tsx"),
-    route("dashboard/conversations/:id", "routes/record.$id.tsx"),
-    route("dashboard/view/:id", "routes/dashboard/view.$id.tsx"),
+    route("dashboard/record", "routes/record.tsx"),
+    route("dashboard/record/:id", "routes/record.$id.tsx"),
+    route("dashboard/conversations/:id", "routes/dashboard/view.$id.tsx"),
     route("dashboard/import", "routes/dashboard/import.tsx"),
     route("dashboard/analytics", "routes/dashboard/analytics.tsx"),
     route("dashboard/chat", "routes/dashboard/chat.tsx"),

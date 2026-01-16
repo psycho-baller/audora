@@ -74,7 +74,13 @@ export default function ConversationHistory({
           {conversations.map((conversation) => (
             <div
               key={conversation._id}
-              onClick={() => navigate(`conversations/${conversation._id}`)}
+              onClick={() => {
+                // Route based on conversation status
+                const route = conversation.status === "ended" 
+                  ? `conversations/${conversation._id}`  // View completed conversations
+                  : `record/${conversation._id}`;         // Continue pending/active recordings
+                navigate(route);
+              }}
               className="group bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-200">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
