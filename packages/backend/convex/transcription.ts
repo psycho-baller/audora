@@ -1,13 +1,13 @@
 "use node";
 
-import { v } from "convex/values";
-import { action } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
-import OpenAI from "openai";
-import { generateObject } from "ai";
 import { openai as openaiProvider } from "@ai-sdk/openai";
-import { z } from "zod";
 import { ZepClient } from "@getzep/zep-cloud";
+import { generateObject } from "ai";
+import { v } from "convex/values";
+import OpenAI from "openai";
+import { z } from "zod";
+import { Id } from "./_generated/dataModel";
+import { action } from "./_generated/server";
 
 // Initialize clients
 const openai = new OpenAI({
