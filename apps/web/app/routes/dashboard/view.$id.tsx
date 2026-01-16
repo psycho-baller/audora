@@ -8,6 +8,7 @@ import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
 import { ExportDialog } from "~/components/export/ExportDialog";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
+import { AudioPlaybackProvider } from "~/hooks/use-audio-playback";
 
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
@@ -113,6 +114,7 @@ export default function ConversationDetailPage() {
     : 0;
 
   return (
+    <AudioPlaybackProvider>
     <div className="flex flex-col h-full bg-background">
       {/* Enhanced Header */}
       <div className="border-b border-border bg-gradient-to-r from-card via-card/95 to-card/90 backdrop-blur-sm shadow-sm">
@@ -262,5 +264,6 @@ export default function ConversationDetailPage() {
         </div>
       )}
     </div>
+    </AudioPlaybackProvider>
   );
 }

@@ -1,9 +1,17 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, Pause, Play, SkipBack, SkipForward, Target, Waves, Zap } from "lucide-react";
+import { AlertCircle, Pause, Play, PlayCircle, SkipBack, SkipForward, Target, Waves, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Waveform } from "~/components/audio/Waveform";
+import { useAudioPlaybackOptional } from "~/hooks/use-audio-playback";
+
+// Format seconds to MM:SS
+function formatTimestamp(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
 
 interface Word {
   word: string;
@@ -43,6 +51,9 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       ? { conversationId, userId: currentUser._id }
       : "skip"
   );
+  
+  // Audio playback context for syncing with analytics panel
+  const audioPlayback = useAudioPlaybackOptional();
 
   // Enhanced getUserName that uses speaker data
   const getSpeakerName = (userId?: Id<"users">) => {
@@ -60,6 +71,13 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
   const [activeWordId, setActiveWordId] = useState<string | null>(null);
   const [showWaveform, setShowWaveform] = useState(false);
   const activeWordRef = useRef<HTMLSpanElement>(null);
+  
+  // Register audio ref with context for external control
+  useEffect(() => {
+    if (audioPlayback && audioRef.current) {
+      audioPlayback.registerAudioRef(audioRef as React.RefObject<HTMLAudioElement>);
+    }
+  }, [audioPlayback, audioUrl]); // Re-register when audio URL changes
 
   // Flatten all words with their turn info - memoized to prevent recalculation on every render
   const allWords = useMemo(() => {
@@ -173,6 +191,24 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       });
     }
   }, [activeWordId]);
+
+  // Handle external word highlighting from analytics panel
+  useEffect(() => {
+    if (audioPlayback?.highlightedWordId) {
+      // Find the word and seek to it
+      const targetWord = allWords.find(w => w.wordId === audioPlayback.highlightedWordId);
+      if (targetWord && audioRef.current) {
+        audioRef.current.currentTime = targetWord.startTime;
+        setCurrentTime(targetWord.startTime);
+        setActiveWordId(targetWord.wordId);
+        // Start playing
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+      // Clear the highlighted word after seeking
+      audioPlayback.setHighlightedWordId(null);
+    }
+  }, [audioPlayback?.highlightedWordId, allWords]);
 
   const handlePlayPause = () => {
     if (!audioRef.current) return;
@@ -411,17 +447,28 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
         <audio
           ref={audioRef}
           src={audioUrl}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onEnded={() => setIsPlaying(false)}
+          onPlay={() => {
+            setIsPlaying(true);
+            audioPlayback?.updateIsPlaying(true);
+          }}
+          onPause={() => {
+            setIsPlaying(false);
+            audioPlayback?.updateIsPlaying(false);
+          }}
+          onEnded={() => {
+            setIsPlaying(false);
+            audioPlayback?.updateIsPlaying(false);
+          }}
           onLoadedMetadata={() => {
             if (audioRef.current) {
               setDuration(audioRef.current.duration);
+              audioPlayback?.updateDuration(audioRef.current.duration);
             }
           }}
           onTimeUpdate={() => {
             if (audioRef.current) {
               setCurrentTime(audioRef.current.currentTime);
+              audioPlayback?.updateCurrentTime(audioRef.current.currentTime);
             }
           }}
         />
@@ -461,6 +508,11 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
             const prevTurn = turnIndex > 0 ? transcriptTurns[turnIndex - 1] : null;
             const sameSpeaker = prevTurn?.userId === turn.userId;
             const isCurrentUser = currentUser && turn.userId === currentUser._id;
+            
+            // Get the start time for this turn (from first word or turn timestamp)
+            const turnStartTime = hasWords && turn.words![0] 
+              ? turn.words![0].startTime 
+              : (turn.timestamp ?? null);
 
             // Different colors for different speakers
             const avatarGradient = isCurrentUser
@@ -469,6 +521,28 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
 
             return (
               <div key={turn._id} className={`flex gap-3 group transition-all ${!sameSpeaker && !isFirstTurn ? 'pt-3 mt-1 border-t border-border/30' : ''}`}>
+                {/* Clickable timestamp button (like Yoodli) */}
+                <div className="flex-shrink-0 w-14">
+                  {turnStartTime !== null && (
+                    <button
+                      onClick={() => {
+                        if (audioRef.current) {
+                          audioRef.current.currentTime = turnStartTime;
+                          setCurrentTime(turnStartTime);
+                          if (!isPlaying) {
+                            audioRef.current.play();
+                            setIsPlaying(true);
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-primary transition-colors cursor-pointer group/timestamp"
+                      title={`Jump to ${formatTimestamp(turnStartTime)}`}
+                    >
+                      <PlayCircle className="w-3 h-3 opacity-0 group-hover/timestamp:opacity-100 transition-opacity" />
+                      <span>{formatTimestamp(turnStartTime)}</span>
+                    </button>
+                  )}
+                </div>
                 <div className="flex-shrink-0">
                   <div className={`w-9 h-9 rounded-full ${avatarGradient} flex items-center justify-center text-sm font-semibold text-white shadow-md ring-2 ring-background`}>
                     {userName.charAt(0).toUpperCase()}
@@ -480,11 +554,6 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
                     {isCurrentUser && (
                       <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-medium">
                         You
-                      </span>
-                    )}
-                    {turn.timestamp !== undefined && (
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {Math.floor(turn.timestamp / 60)}:{Math.floor(turn.timestamp % 60).toString().padStart(2, '0')}
                       </span>
                     )}
                   </div>

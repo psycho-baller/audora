@@ -3,16 +3,50 @@ import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
     ChevronRight,
+    Clock,
     Loader2,
     Minus,
+    Play,
     Sparkles,
     TrendingDown,
     TrendingUp
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedback";
+import { useAudioPlaybackOptional } from "~/hooks/use-audio-playback";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+
+// Format seconds to MM:SS
+function formatTimestamp(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+// Clickable timestamp button component
+function TimestampButton({ 
+  time, 
+  wordId,
+  label,
+  onClick 
+}: { 
+  time: number; 
+  wordId?: string;
+  label?: string;
+  onClick: (time: number, wordId?: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onClick(time, wordId)}
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono bg-primary/10 hover:bg-primary/20 text-primary rounded transition-colors cursor-pointer"
+      title={`Jump to ${formatTimestamp(time)}`}
+    >
+      <Play className="w-2.5 h-2.5" fill="currentColor" />
+      {label || formatTimestamp(time)}
+    </button>
+  );
+}
 
 // Pacing Gauge Component
 function PacingGauge({ wpm }: { wpm: number }) {
@@ -332,12 +366,21 @@ export function AnalyticsPanel({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
 
+  // Audio playback context for syncing with transcript
+  const audioPlayback = useAudioPlaybackOptional();
+
   // Get current user
   const currentUser = useQuery(api.users.getCurrentUser);
 
   // Get analytics for this conversation
   const conversationAnalytics = useQuery(
     api.analytics.getConversationAnalytics,
+    conversationId ? { conversationId } : "skip"
+  );
+
+  // Get transcript for word-level timestamps
+  const transcript = useQuery(
+    api.conversations.getTranscript,
     conversationId ? { conversationId } : "skip"
   );
 
@@ -348,6 +391,39 @@ export function AnalyticsPanel({
     ) || [];
 
   const analytics = currentUserAnalytics[0];
+
+  // Build mapping of words to their timestamps for the current user
+  const wordTimestampMap = useMemo(() => {
+    const map = new Map<number, { word: string; startTime: number; wordId: string }>();
+    if (!transcript || !currentUser) return map;
+    
+    let wordIndex = 0;
+    transcript.forEach((turn) => {
+      if (turn.userId === currentUser._id && turn.words) {
+        turn.words.forEach((word) => {
+          map.set(wordIndex, {
+            word: word.word,
+            startTime: word.startTime,
+            wordId: word.wordId,
+          });
+          wordIndex++;
+        });
+      }
+    });
+    return map;
+  }, [transcript, currentUser]);
+
+  // Handle seeking to a timestamp
+  const handleSeekToTime = (time: number, wordId?: string) => {
+    if (audioPlayback) {
+      if (wordId) {
+        // Set highlighted word ID - this will trigger the TranscriptPlayer to seek and highlight
+        audioPlayback.setHighlightedWordId(wordId);
+      } else {
+        audioPlayback.seekTo(time, true);
+      }
+    }
+  };
 
   const analyzeUserSpeech = useMutation(api.analytics.analyzeUserSpeech);
   const generateSuggestions = useAction(api.analytics.generateWeakWordSuggestions);
@@ -498,13 +574,32 @@ export function AnalyticsPanel({
                   </summary>
                   <div className="px-3 pb-3 pt-1">
                     {analytics.repetitions.repeatedWords.length > 0 ? (
-                      <div className="space-y-1">
-                        {analytics.repetitions.repeatedWords.slice(0, 5).map((item) => (
-                          <div key={item.word} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground capitalize">{item.word}</span>
-                            <span className="font-medium text-foreground">{item.count}x</span>
-                          </div>
-                        ))}
+                      <div className="space-y-2">
+                        {analytics.repetitions.repeatedWords.slice(0, 5).map((item) => {
+                          // Find first occurrence in transcript
+                          const wordData = Array.from(wordTimestampMap.values()).find(
+                            (w) => w.word.toLowerCase().replace(/[.,!?;:]/g, "") === item.word.toLowerCase()
+                          );
+                          
+                          return (
+                            <div key={item.word} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground capitalize">{item.word}</span>
+                                {wordData && (
+                                  <button
+                                    onClick={() => handleSeekToTime(wordData.startTime, wordData.wordId)}
+                                    className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[10px] font-mono bg-primary/10 hover:bg-primary/20 text-primary rounded transition-colors cursor-pointer"
+                                    title={`Jump to first occurrence at ${formatTimestamp(wordData.startTime)}`}
+                                  >
+                                    <Play className="w-2 h-2" fill="currentColor" />
+                                    {formatTimestamp(wordData.startTime)}
+                                  </button>
+                                )}
+                              </div>
+                              <span className="font-medium text-foreground">{item.count}x</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">No excessive repetitions detected</p>
@@ -533,19 +628,40 @@ export function AnalyticsPanel({
                       </div>
                       {analytics.fillerWords.instances.length > 0 && (
                         <div className="pt-2 border-t border-border">
-                          <p className="text-xs text-muted-foreground mb-2">Most Common:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {Array.from(
-                              new Set(
-                                analytics.fillerWords.instances.slice(0, 5).map((i) => i.word)
-                              )
-                            ).map((word) => (
-                              <span
-                                key={word}
-                                className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
-                                {word}
+                          <p className="text-xs text-muted-foreground mb-2">Instances (click to jump):</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {analytics.fillerWords.instances.slice(0, 8).map((instance, idx) => {
+                              const wordData = wordTimestampMap.get(instance.position);
+                              if (wordData) {
+                                return (
+                                  <button
+                                    key={`${instance.word}-${idx}`}
+                                    onClick={() => handleSeekToTime(wordData.startTime, wordData.wordId)}
+                                    className="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 rounded-md border border-yellow-500/20 transition-colors cursor-pointer"
+                                    title={`Jump to "${instance.word}" at ${formatTimestamp(wordData.startTime)}`}
+                                  >
+                                    <Play className="w-2.5 h-2.5" fill="currentColor" />
+                                    <span className="font-medium">{instance.word}</span>
+                                    <span className="text-yellow-600/70 dark:text-yellow-500/70 font-mono text-[10px]">
+                                      {formatTimestamp(wordData.startTime)}
+                                    </span>
+                                  </button>
+                                );
+                              }
+                              return (
+                                <span
+                                  key={`${instance.word}-${idx}`}
+                                  className="px-2 py-1 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 rounded-md text-xs border border-yellow-500/20"
+                                >
+                                  {instance.word}
+                                </span>
+                              );
+                            })}
+                            {analytics.fillerWords.instances.length > 8 && (
+                              <span className="text-xs text-muted-foreground self-center">
+                                +{analytics.fillerWords.instances.length - 8} more
                               </span>
-                            ))}
+                            )}
                           </div>
                         </div>
                       )}
@@ -567,20 +683,39 @@ export function AnalyticsPanel({
                     </summary>
                     <div className="px-3 pb-3 pt-1">
                       <div className="space-y-3">
-                        {analytics.weakWords.slice(0, 3).map((item, index) => (
-                          <div key={index} className="p-2 bg-background/50 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">
-                              Weak word:{" "}
-                              <span className="font-medium text-foreground">"{item.word}"</span>
-                            </p>
-                            <p className="text-xs text-foreground/80 italic">"{item.sentence}"</p>
-                            {item.suggestion && (
-                              <p className="text-xs text-primary font-medium mt-2">
-                                → "{item.suggestion}"
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                        {analytics.weakWords.slice(0, 3).map((item, index) => {
+                          // Find this weak word in the transcript to get its timestamp
+                          const wordData = Array.from(wordTimestampMap.values()).find(
+                            (w) => w.word.toLowerCase().replace(/[.,!?;:]/g, "") === item.word.toLowerCase()
+                          );
+                          
+                          return (
+                            <div key={index} className="p-2 bg-background/50 rounded-lg">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-xs text-muted-foreground">
+                                  Weak word:{" "}
+                                  <span className="font-medium text-foreground">"{item.word}"</span>
+                                </p>
+                                {wordData && (
+                                  <button
+                                    onClick={() => handleSeekToTime(wordData.startTime, wordData.wordId)}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded transition-colors cursor-pointer"
+                                    title={`Jump to ${formatTimestamp(wordData.startTime)}`}
+                                  >
+                                    <Play className="w-2 h-2" fill="currentColor" />
+                                    {formatTimestamp(wordData.startTime)}
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-xs text-foreground/80 italic">"{item.sentence}"</p>
+                              {item.suggestion && (
+                                <p className="text-xs text-primary font-medium mt-2">
+                                  → "{item.suggestion}"
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
                         {analytics.weakWords.some((w) => !w.suggestion) && (
                           <Button
                             size="sm"
@@ -638,13 +773,32 @@ export function AnalyticsPanel({
                       </span>
                     </summary>
                     <div className="px-3 pb-3 pt-1">
-                      <div className="space-y-1">
-                        {analytics.sentenceStarters.weak.slice(0, 5).map((item) => (
-                          <div key={item.word} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">"{item.word}"</span>
-                            <span className="font-medium text-foreground">{item.count}x</span>
-                          </div>
-                        ))}
+                      <div className="space-y-2">
+                        {analytics.sentenceStarters.weak.slice(0, 5).map((item) => {
+                          // Find first occurrence of this starter word
+                          const wordData = Array.from(wordTimestampMap.values()).find(
+                            (w) => w.word.toLowerCase().replace(/[.,!?;:]/g, "") === item.word.toLowerCase()
+                          );
+                          
+                          return (
+                            <div key={item.word} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">"{item.word}"</span>
+                                {wordData && (
+                                  <button
+                                    onClick={() => handleSeekToTime(wordData.startTime, wordData.wordId)}
+                                    className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[10px] font-mono bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded transition-colors cursor-pointer"
+                                    title={`Jump to first occurrence at ${formatTimestamp(wordData.startTime)}`}
+                                  >
+                                    <Play className="w-2 h-2" fill="currentColor" />
+                                    {formatTimestamp(wordData.startTime)}
+                                  </button>
+                                )}
+                              </div>
+                              <span className="font-medium text-foreground">{item.count}x</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </details>
