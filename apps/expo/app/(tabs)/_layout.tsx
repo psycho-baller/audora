@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
+import { useEffect } from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';

@@ -1,8 +1,8 @@
 // Learn more https://docs.expo.dev/guides/monorepos
 const { FileStore } = require('@expo/metro/metro-cache');
 const { getDefaultConfig } = require('expo/metro-config');
+const { withNativewind } = require('nativewind/metro');
 const path = require('node:path');
-const { withNativewind } = require("nativewind/metro");
 
 // Create the default Expo config for Metro
 const config = getDefaultConfig(__dirname);

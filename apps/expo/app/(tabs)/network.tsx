@@ -1,7 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useQuery } from 'convex/react';
 import { api } from '@audora/backend/convex/_generated/api';
+import { useQuery } from 'convex/react';
+import { useRouter } from 'expo-router';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function NetworkScreen() {
@@ -70,7 +77,8 @@ export default function NetworkScreen() {
             </View>
             <Text className="text-lg font-semibold text-foreground mb-2">No connections yet</Text>
             <Text className="text-sm text-muted-foreground text-center max-w-sm px-4">
-              Once you complete conversations with other people, they will automatically show up here
+              Once you complete conversations with other people, they will automatically show up
+              here
             </Text>
           </View>
         ) : (
@@ -87,7 +95,8 @@ export default function NetworkScreen() {
                     // TODO: Navigate to contact detail
                     console.log('View contact:', connection.contactId);
                   }}
-                  className="bg-card border border-border rounded-xl p-4 active:opacity-70">
+                  className="bg-card border border-border rounded-xl p-4 active:opacity-70"
+                >
                   <View className="flex-row items-center gap-3 mb-3">
                     {/* Avatar */}
                     <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center">
@@ -104,7 +113,8 @@ export default function NetworkScreen() {
                         </Text>
                         <View className="bg-secondary rounded-full px-2 py-0.5">
                           <Text className="text-xs font-medium text-secondary-foreground">
-                            {connection.conversationCount} convo{connection.conversationCount === 1 ? '' : 's'}
+                            {connection.conversationCount} convo
+                            {connection.conversationCount === 1 ? '' : 's'}
                           </Text>
                         </View>
                       </View>
@@ -126,9 +136,7 @@ export default function NetworkScreen() {
                         {transcriptsLabel}
                       </Text>
                     </View>
-                    <Text className="text-xs text-muted-foreground">
-                      {lastInteraction}
-                    </Text>
+                    <Text className="text-xs text-muted-foreground">{lastInteraction}</Text>
                   </View>
                 </TouchableOpacity>
               );

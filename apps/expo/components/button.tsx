@@ -1,8 +1,8 @@
-import { Pressable, Text, StyleSheet, type PressableProps } from 'react-native'
+import { Pressable, Text, StyleSheet, type PressableProps } from 'react-native';
 
 interface ButtonProps extends PressableProps {
-  title: string
-  variant?: 'primary' | 'secondary'
+  title: string;
+  variant?: 'primary' | 'secondary';
 }
 
 export function Button({ title, variant = 'primary', style, ...props }: ButtonProps) {
@@ -16,11 +16,13 @@ export function Button({ title, variant = 'primary', style, ...props }: ButtonPr
       ]}
       {...props}
     >
-      <Text style={[styles.text, variant === 'primary' ? styles.primaryText : styles.secondaryText]}>
+      <Text
+        style={[styles.text, variant === 'primary' ? styles.primaryText : styles.secondaryText]}
+      >
         {title}
       </Text>
     </Pressable>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -51,4 +53,4 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: '#000000',
   },
-})
+});

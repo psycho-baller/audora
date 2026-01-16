@@ -23,10 +23,15 @@ type ProcessingStage =
   | 'error';
 
 export default function ImportAudio() {
-  const { hasShareIntent, shareIntent, resetShareIntent, error: shareError } = useShareIntentContext();
+  const {
+    hasShareIntent,
+    shareIntent,
+    resetShareIntent,
+    error: shareError,
+  } = useShareIntentContext();
   const router = useRouter();
 
-  const [selectedFriend, setSelectedFriend] = useState<Id<"users"> | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<Id<'users'> | null>(null);
   const [isSoloConversation, setIsSoloConversation] = useState(false);
   const [stage, setStage] = useState<ProcessingStage>('selecting-friend');
   const [progress, setProgress] = useState(0);
@@ -56,10 +61,12 @@ export default function ImportAudio() {
   const extractAudioFile = () => {
     try {
       // Filter for audio files
-      const audioFiles = shareIntent.files?.filter(file =>
-        file.mimeType?.startsWith('audio/') ||
-        file.fileName?.match(/\.(mp3|wav|m4a|aac|ogg|flac)$/i)
-      ) || [];
+      const audioFiles =
+        shareIntent.files?.filter(
+          (file) =>
+            file.mimeType?.startsWith('audio/') ||
+            file.fileName?.match(/\.(mp3|wav|m4a|aac|ogg|flac)$/i)
+        ) || [];
 
       if (audioFiles.length === 0) {
         Alert.alert('No Audio Files', 'Please share an audio file to import.');
@@ -86,7 +93,7 @@ export default function ImportAudio() {
     }
   };
 
-  const handleFriendSelect = (friendId: Id<"users">) => {
+  const handleFriendSelect = (friendId: Id<'users'>) => {
     setSelectedFriend(friendId);
     setIsSoloConversation(false);
   };
@@ -98,7 +105,10 @@ export default function ImportAudio() {
 
   const handleStartImport = async () => {
     if ((!selectedFriend && !isSoloConversation) || !audioFile) {
-      Alert.alert('Error', 'Please select a friend or solo conversation, and ensure an audio file is loaded.');
+      Alert.alert(
+        'Error',
+        'Please select a friend or solo conversation, and ensure an audio file is loaded.'
+      );
       return;
     }
 
@@ -136,7 +146,7 @@ export default function ImportAudio() {
       setStatusMessage('Transcribing audio... This may take a few minutes.');
 
       const result = await processImportedAudio({
-        storageId: storageId as Id<"_storage">,
+        storageId: storageId as Id<'_storage'>,
         friendId: selectedFriend || undefined,
         location: 'Imported from Mobile',
       });
@@ -147,19 +157,15 @@ export default function ImportAudio() {
       setStatusMessage('Import complete!');
 
       // Show success message and navigate
-      Alert.alert(
-        'Success!',
-        'Your conversation has been imported and analyzed.',
-        [
-          {
-            text: 'View Conversation',
-            onPress: () => {
-              resetShareIntent();
-              router.replace('/(tabs)/conversations');
-            },
+      Alert.alert('Success!', 'Your conversation has been imported and analyzed.', [
+        {
+          text: 'View Conversation',
+          onPress: () => {
+            resetShareIntent();
+            router.replace('/(tabs)/conversations');
           },
-        ]
-      );
+        },
+      ]);
     } catch (err: any) {
       console.error('Import failed:', err);
       setStage('error');
@@ -191,21 +197,17 @@ export default function ImportAudio() {
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Import',
-      'Are you sure you want to cancel?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes',
-          style: 'destructive',
-          onPress: () => {
-            resetShareIntent();
-            router.back();
-          },
+    Alert.alert('Cancel Import', 'Are you sure you want to cancel?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes',
+        style: 'destructive',
+        onPress: () => {
+          resetShareIntent();
+          router.back();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (stage === 'selecting-friend') {
@@ -230,103 +232,117 @@ export default function ImportAudio() {
               </View>
             )}
 
-          {/* Conversation Type Selection */}
-          <View className="mb-6">
-            <Text className="text-xl font-bold text-foreground mb-2">Who was in this conversation?</Text>
-            <Text className="text-sm text-muted-foreground mb-5 leading-5">
-              Select the person you were talking with, or mark it as a solo recording
-            </Text>
+            {/* Conversation Type Selection */}
+            <View className="mb-6">
+              <Text className="text-xl font-bold text-foreground mb-2">
+                Who was in this conversation?
+              </Text>
+              <Text className="text-sm text-muted-foreground mb-5 leading-5">
+                Select the person you were talking with, or mark it as a solo recording
+              </Text>
 
-            {/* Solo Conversation Option */}
-            <TouchableOpacity
-              className={`flex-row items-center bg-card rounded-2xl p-3 border-2 gap-4 ${
-                isSoloConversation ? 'border-primary bg-primary/5' : 'border-border'
-              }`}
-              onPress={handleSoloSelect}
-              activeOpacity={0.7}
-            >
-              <View className="w-12 h-12 rounded-xl bg-muted items-center justify-center">
-                <Text className="text-3xl">🎙️</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground mb-1">Solo Recording</Text>
-                <Text className="text-sm text-muted-foreground">Just me talking</Text>
-              </View>
-              {isSoloConversation && (
-                <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2">
-                  <Text className="text-white text-lg font-bold">✓</Text>
+              {/* Solo Conversation Option */}
+              <TouchableOpacity
+                className={`flex-row items-center bg-card rounded-2xl p-3 border-2 gap-4 ${
+                  isSoloConversation ? 'border-primary bg-primary/5' : 'border-border'
+                }`}
+                onPress={handleSoloSelect}
+                activeOpacity={0.7}
+              >
+                <View className="w-12 h-12 rounded-xl bg-muted items-center justify-center">
+                  <Text className="text-3xl">🎙️</Text>
                 </View>
-              )}
-            </TouchableOpacity>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground mb-1">
+                    Solo Recording
+                  </Text>
+                  <Text className="text-sm text-muted-foreground">Just me talking</Text>
+                </View>
+                {isSoloConversation && (
+                  <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2">
+                    <Text className="text-white text-lg font-bold">✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-            {/* Divider */}
-            <View className="flex-row items-center my-5">
-              <View className="flex-1 h-px bg-border" />
-              <Text className="text-xs font-semibold text-muted-foreground mx-3 uppercase" >OR</Text>
-              <View className="flex-1 h-px bg-border" />
-            </View>
-
-            {/* Contacts List */}
-            {contacts.length === 0 ? (
-              <View className="items-center py-10 px-6 bg-card rounded-2xl border-2 border-dashed border-border">
-                <Text className="text-5xl mb-3">👥</Text>
-                <Text className="text-base font-semibold text-foreground mb-1">No contacts found</Text>
-                <Text className="text-sm text-muted-foreground text-center">
-                  Add friends to your network to tag them in conversations
+              {/* Divider */}
+              <View className="flex-row items-center my-5">
+                <View className="flex-1 h-px bg-border" />
+                <Text className="text-xs font-semibold text-muted-foreground mx-3 uppercase">
+                  OR
                 </Text>
+                <View className="flex-1 h-px bg-border" />
               </View>
-            ) : (
-              <View className="flex flex-col gap-2">
-                <Text className="text-xs font-semibold text-muted-foreground mb-3 uppercase">Select a contact</Text>
-                {contacts.map((contact) => (
-                  <TouchableOpacity
-                    key={contact.contactId}
-                    className={`flex-row items-center bg-card rounded-2xl p-3 border-2 gap-4 ${
-                      selectedFriend === contact.contactId ? 'border-primary bg-primary/5' : 'border-border'
-                    }`}
-                    onPress={() => handleFriendSelect(contact.contactId)}
-                    activeOpacity={0.7}
-                  >
-                    {contact.image ? (
-                      <Image source={{ uri: contact.image }} className="w-12 h-12 rounded-xl" />
-                    ) : (
-                      <View className="w-12 h-12 rounded-xl bg-primary items-center justify-center mr-4">
-                        <Text className="text-white text-xl font-bold">
-                          {contact.name?.charAt(0) || contact.email?.charAt(0) || '?'}
+
+              {/* Contacts List */}
+              {contacts.length === 0 ? (
+                <View className="items-center py-10 px-6 bg-card rounded-2xl border-2 border-dashed border-border">
+                  <Text className="text-5xl mb-3">👥</Text>
+                  <Text className="text-base font-semibold text-foreground mb-1">
+                    No contacts found
+                  </Text>
+                  <Text className="text-sm text-muted-foreground text-center">
+                    Add friends to your network to tag them in conversations
+                  </Text>
+                </View>
+              ) : (
+                <View className="flex flex-col gap-2">
+                  <Text className="text-xs font-semibold text-muted-foreground mb-3 uppercase">
+                    Select a contact
+                  </Text>
+                  {contacts.map((contact) => (
+                    <TouchableOpacity
+                      key={contact.contactId}
+                      className={`flex-row items-center bg-card rounded-2xl p-3 border-2 gap-4 ${
+                        selectedFriend === contact.contactId
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border'
+                      }`}
+                      onPress={() => handleFriendSelect(contact.contactId)}
+                      activeOpacity={0.7}
+                    >
+                      {contact.image ? (
+                        <Image source={{ uri: contact.image }} className="w-12 h-12 rounded-xl" />
+                      ) : (
+                        <View className="w-12 h-12 rounded-xl bg-primary items-center justify-center mr-4">
+                          <Text className="text-white text-xl font-bold">
+                            {contact.name?.charAt(0) || contact.email?.charAt(0) || '?'}
+                          </Text>
+                        </View>
+                      )}
+                      <View className="flex-1">
+                        <Text className="text-base font-semibold text-foreground mb-1">
+                          {contact.name || 'Unknown'}
+                        </Text>
+                        <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+                          {contact.email}
                         </Text>
                       </View>
-                    )}
-                    <View className="flex-1">
-                      <Text className="text-base font-semibold text-foreground mb-1">{contact.name || 'Unknown'}</Text>
-                      <Text className="text-sm text-muted-foreground" numberOfLines={1}>
-                        {contact.email}
-                      </Text>
-                    </View>
-                    {selectedFriend === contact.contactId && (
-                      <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2">
-                        <Text className="text-white text-lg font-bold">✓</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+                      {selectedFriend === contact.contactId && (
+                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2">
+                          <Text className="text-white text-lg font-bold">✓</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
         </ScrollView>
 
         {/* Action Button - Fixed at bottom */}
         <View className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
           <TouchableOpacity
             className={`w-full rounded-xl p-4 items-center justify-center ${
-              (!selectedFriend && !isSoloConversation) ? 'bg-muted' : 'bg-primary'
+              !selectedFriend && !isSoloConversation ? 'bg-muted' : 'bg-primary'
             }`}
             onPress={handleStartImport}
             disabled={!selectedFriend && !isSoloConversation}
             activeOpacity={0.7}
           >
-            <Text className="text-primary-foreground text-2xl font-bold" >
-              {(!selectedFriend && !isSoloConversation) ? 'Select an option' : 'Start Import'}
+            <Text className="text-primary-foreground text-2xl font-bold">
+              {!selectedFriend && !isSoloConversation ? 'Select an option' : 'Start Import'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -342,7 +358,9 @@ export default function ImportAudio() {
           <ActivityIndicator size="large" color="#007AFF" />
         </View>
 
-        <Text className="text-lg font-semibold text-foreground text-center mb-6">{statusMessage}</Text>
+        <Text className="text-lg font-semibold text-foreground text-center mb-6">
+          {statusMessage}
+        </Text>
 
         {/* Progress Bar */}
         <View className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -353,23 +371,31 @@ export default function ImportAudio() {
         {/* Stage Indicators */}
         <View className="flex-row items-center justify-center w-full mt-10 px-5">
           <View className="items-center">
-            <View className={`w-4 h-4 rounded-full mb-2 ${
-              (stage === 'transcribing' || stage === 'analyzing' || stage === 'complete') ? 'bg-primary' : 'bg-muted'
-            }`} />
+            <View
+              className={`w-4 h-4 rounded-full mb-2 ${
+                stage === 'transcribing' || stage === 'analyzing' || stage === 'complete'
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            />
             <Text className="text-xs font-medium text-muted-foreground">Upload</Text>
           </View>
           <View className="w-10 h-0.5 bg-border mx-2" />
           <View className="items-center">
-            <View className={`w-4 h-4 rounded-full mb-2 ${
-              (stage === 'analyzing' || stage === 'complete') ? 'bg-primary' : 'bg-muted'
-            }`} />
+            <View
+              className={`w-4 h-4 rounded-full mb-2 ${
+                stage === 'analyzing' || stage === 'complete' ? 'bg-primary' : 'bg-muted'
+              }`}
+            />
             <Text className="text-xs font-medium text-muted-foreground">Transcribe</Text>
           </View>
           <View className="w-10 h-0.5 bg-border mx-2" />
           <View className="items-center">
-            <View className={`w-4 h-4 rounded-full mb-2 ${
-              stage === 'complete' ? 'bg-primary' : 'bg-muted'
-            }`} />
+            <View
+              className={`w-4 h-4 rounded-full mb-2 ${
+                stage === 'complete' ? 'bg-primary' : 'bg-muted'
+              }`}
+            />
             <Text className="text-xs font-medium text-muted-foreground">Analyze</Text>
           </View>
         </View>

@@ -1,5 +1,5 @@
-import { SignIn } from '@clerk/clerk-expo/web'
+import { SignIn } from '@clerk/clerk-expo/web';
 
 export default function Page() {
-  return <SignIn />
+  return <SignIn />;
 }

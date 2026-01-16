@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, ActivityIndicator, Dimensions, StyleSheet } from 'react-native';
-import { useQuery } from 'convex/react';
 import { api } from '@audora/backend/convex/_generated/api';
+import { useQuery } from 'convex/react';
+import { View, Text, ScrollView, ActivityIndicator, Dimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AnalyticsScreen() {
@@ -17,10 +17,14 @@ export default function AnalyticsScreen() {
     );
   }
 
-  const { overview, performanceTrend, fillerTrend, topKeywords, recentConversations } = dashboardData;
+  const { overview, performanceTrend, fillerTrend, topKeywords, recentConversations } =
+    dashboardData;
 
-  const avgScore = Math.round((overview.avgClarity + overview.avgConciseness + overview.avgConfidence) / 3);
-  const wordsPerMin = overview.totalMinutes > 0 ? Math.round(overview.totalWords / overview.totalMinutes) : 0;
+  const avgScore = Math.round(
+    (overview.avgClarity + overview.avgConciseness + overview.avgConfidence) / 3
+  );
+  const wordsPerMin =
+    overview.totalMinutes > 0 ? Math.round(overview.totalWords / overview.totalMinutes) : 0;
 
   return (
     <SafeAreaView style={styles.container} className="bg-background" edges={['bottom']}>
@@ -34,7 +38,9 @@ export default function AnalyticsScreen() {
                 <Text className="text-2xl">💬</Text>
               </View>
               <Text className="text-3xl font-bold text-white">{overview.totalConversations}</Text>
-              <Text className="text-xs text-blue-300 mt-1">{overview.completedConversations} completed</Text>
+              <Text className="text-xs text-blue-300 mt-1">
+                {overview.completedConversations} completed
+              </Text>
             </View>
 
             <View className="flex-1 bg-gradient-to-br from-purple-900/50 to-purple-800/30 rounded-xl p-4 border border-purple-700/50">
@@ -42,7 +48,9 @@ export default function AnalyticsScreen() {
                 <Text className="text-sm font-medium text-purple-300">Words</Text>
                 <Text className="text-2xl">📝</Text>
               </View>
-              <Text className="text-3xl font-bold text-white">{overview.totalWords.toLocaleString()}</Text>
+              <Text className="text-3xl font-bold text-white">
+                {overview.totalWords.toLocaleString()}
+              </Text>
               <Text className="text-xs text-purple-300 mt-1">{wordsPerMin} words/min</Text>
             </View>
           </View>
@@ -91,7 +99,9 @@ export default function AnalyticsScreen() {
             <View>
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-sm font-medium text-foreground">Conciseness</Text>
-                <Text className="text-2xl font-bold text-purple-400">{overview.avgConciseness}</Text>
+                <Text className="text-2xl font-bold text-purple-400">
+                  {overview.avgConciseness}
+                </Text>
               </View>
               <View className="h-2 bg-muted rounded-full overflow-hidden">
                 <View
@@ -136,7 +146,9 @@ export default function AnalyticsScreen() {
                       />
                     </View>
                   </View>
-                  <Text className="text-sm font-semibold text-muted-foreground">{keyword.count}</Text>
+                  <Text className="text-sm font-semibold text-muted-foreground">
+                    {keyword.count}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -149,7 +161,10 @@ export default function AnalyticsScreen() {
             <Text className="text-xl font-bold text-foreground mb-4">Recent Activity</Text>
             <View className="gap-3">
               {recentConversations.map((conv, idx) => (
-                <View key={conv.id} className="flex-row items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <View
+                  key={conv.id}
+                  className="flex-row items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                >
                   <View className="w-10 h-10 bg-blue-500/20 rounded-full items-center justify-center">
                     <Text className="text-blue-400 font-semibold">{idx + 1}</Text>
                   </View>
@@ -158,22 +173,24 @@ export default function AnalyticsScreen() {
                       {conv.location || 'Conversation'}
                     </Text>
                     <Text className="text-xs text-muted-foreground">
-                      {conv.startedAt ? new Date(conv.startedAt).toLocaleDateString() : 'Unknown date'}
+                      {conv.startedAt
+                        ? new Date(conv.startedAt).toLocaleDateString()
+                        : 'Unknown date'}
                       {conv.endedAt && conv.startedAt
                         ? ` • ${Math.round((conv.endedAt - conv.startedAt) / 60000)} min`
                         : ' • In progress'}
                     </Text>
                   </View>
-                  <View className={`px-2 py-1 rounded-full ${
-                    conv.status === 'ended'
-                      ? 'bg-green-500/20'
-                      : 'bg-yellow-500/20'
-                  }`}>
-                    <Text className={`text-xs font-medium ${
-                      conv.status === 'ended'
-                        ? 'text-green-400'
-                        : 'text-yellow-400'
-                    }`}>
+                  <View
+                    className={`px-2 py-1 rounded-full ${
+                      conv.status === 'ended' ? 'bg-green-500/20' : 'bg-yellow-500/20'
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-medium ${
+                        conv.status === 'ended' ? 'text-green-400' : 'text-yellow-400'
+                      }`}
+                    >
                       {conv.status}
                     </Text>
                   </View>
