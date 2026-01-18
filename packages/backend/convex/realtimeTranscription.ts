@@ -44,6 +44,7 @@ export const processRealtimeTranscript = action({
     transcript: v.array(v.object({ speaker: v.string(), text: v.string() })),
     S1_facts: v.array(v.string()),
     S2_facts: v.array(v.string()),
+    summary: v.string(),
   }),
   handler: async (ctx, args) => {
     console.log("Processing real-time transcript with speaker labels...");
