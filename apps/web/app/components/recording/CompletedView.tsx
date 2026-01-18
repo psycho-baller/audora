@@ -159,7 +159,8 @@ export default function CompletedView({
   const hasWordLevelData = transcriptTurns.some((turn) => turn.words && turn.words.length > 0);
 
   // Helper function to get user name from userId
-  const getUserName = (userId: Id<"users">) => {
+  const getUserName = (userId?: Id<"users">) => {
+    if (!userId) return "Unknown";
     if (initiatorUser && userId === conversation.initiatorUserId) {
       return initiatorUser.name || "Speaker 1";
     } else if (scannerUser && userId === conversation.scannerUserId) {

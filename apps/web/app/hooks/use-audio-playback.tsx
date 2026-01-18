@@ -1,22 +1,22 @@
-import { createContext, useContext, useCallback, useState, type ReactNode, type RefObject } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode, type RefObject } from "react";
 
 interface AudioPlaybackContextType {
   // Current playback state
   currentTime: number;
   duration: number;
   isPlaying: boolean;
-  
+
   // Seek to a specific time (and optionally start playing)
   seekTo: (time: number, autoPlay?: boolean) => void;
-  
+
   // Register the audio element ref (called by TranscriptPlayer)
   registerAudioRef: (ref: RefObject<HTMLAudioElement>) => void;
-  
+
   // Update current time (called by TranscriptPlayer on timeupdate)
   updateCurrentTime: (time: number) => void;
   updateDuration: (duration: number) => void;
   updateIsPlaying: (playing: boolean) => void;
-  
+
   // Highlighted word ID from analytics click
   highlightedWordId: string | null;
   setHighlightedWordId: (wordId: string | null) => void;
@@ -39,7 +39,7 @@ export function AudioPlaybackProvider({ children }: { children: ReactNode }) {
     if (audioRef?.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
-      if (autoPlay && !audioRef.current.paused === false) {
+      if (autoPlay && audioRef.current.paused) {
         audioRef.current.play();
         setIsPlaying(true);
       }
