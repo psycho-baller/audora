@@ -71,17 +71,9 @@ export const analyzeUserSpeech = mutation({
 
     console.log("Filler words found:", fillerInstances.length);
 
-    // 2. Pacing Metrics
-    const wordsPerMinute = Math.round(wordCount / durationMinutes);
-    console.log("Words per minute:", wordsPerMinute);
-
-    // Calculate pacing segments from word-level timing data
-    const durationSeconds = durationMinutes * 60;
-    const pacingSegments: Array<{ startTime: number; endTime: number; wpm: number }> = [];
-    
-    // Collect all words with timing from user turns
+    // Collect all words with timing from user turns FIRST (needed for accurate WPM)
     const allWordsWithTiming: Array<{ word: string; startTime: number; endTime: number }> = [];
-    
+
     // Debug: Check what data is in the turns
     console.log("Checking user turns for word-level timing:");
     userTurns.forEach((turn, idx) => {
@@ -90,7 +82,7 @@ export const analyzeUserSpeech = mutation({
         console.log(`  First word sample:`, turn.words[0]);
       }
     });
-    
+
     userTurns.forEach((turn) => {
       if (turn.words && Array.isArray(turn.words)) {
         turn.words.forEach((w) => {
@@ -102,25 +94,84 @@ export const analyzeUserSpeech = mutation({
         });
       }
     });
-    
+
     console.log(`Total words with timing collected: ${allWordsWithTiming.length}`);
 
-    // If we have word-level timing, compute segments
+    // 2. Pacing Metrics - Calculate user's ACTUAL speaking duration, not total conversation time
+    let userSpeakingDurationMinutes: number;
+
     if (allWordsWithTiming.length > 0) {
-      // Sort by start time
+      // ACCURATE METHOD: Use word-level timing to get actual speaking duration
+      // Sort by start time first
       allWordsWithTiming.sort((a, b) => a.startTime - b.startTime);
-      
+
+      // Calculate total speaking time by summing up each word's duration
+      // This excludes pauses between words and time spent listening
+      let totalSpeakingSeconds = 0;
+
+      // Method 1: Sum individual word durations (most accurate)
+      allWordsWithTiming.forEach((w) => {
+        totalSpeakingSeconds += (w.endTime - w.startTime);
+      });
+
+      // If word durations are suspiciously short/zero, fall back to span method
+      if (totalSpeakingSeconds < 1 && allWordsWithTiming.length > 10) {
+        // Method 2: Use time span from first to last word, minus gaps > 2 seconds
+        let speakingSpan = 0;
+        for (let i = 0; i < allWordsWithTiming.length - 1; i++) {
+          const gap = allWordsWithTiming[i + 1].startTime - allWordsWithTiming[i].endTime;
+          const wordDuration = allWordsWithTiming[i].endTime - allWordsWithTiming[i].startTime;
+          speakingSpan += wordDuration;
+          // Only count gaps under 2 seconds as part of speaking (natural pauses)
+          if (gap < 2) {
+            speakingSpan += gap;
+          }
+        }
+        // Add last word duration
+        const lastWord = allWordsWithTiming[allWordsWithTiming.length - 1];
+        speakingSpan += (lastWord.endTime - lastWord.startTime);
+        totalSpeakingSeconds = speakingSpan;
+      }
+
+      userSpeakingDurationMinutes = Math.max(totalSpeakingSeconds / 60, 0.1); // Min 6 seconds
+      console.log(`User speaking duration (from word timing): ${totalSpeakingSeconds.toFixed(1)}s = ${userSpeakingDurationMinutes.toFixed(2)} minutes`);
+    } else {
+      // FALLBACK: Estimate based on proportion of words spoken
+      // If user spoke 40% of words, assume they spoke for ~40% of the time
+      const totalTurns = await ctx.db
+        .query("transcriptTurns")
+        .withIndex("by_conversation_and_order", (q) =>
+          q.eq("conversationId", args.conversationId)
+        )
+        .collect();
+
+      const totalWordsInConvo = totalTurns.reduce((sum, t) => sum + t.text.split(/\s+/).length, 0);
+      const userWordRatio = totalWordsInConvo > 0 ? wordCount / totalWordsInConvo : 0.5;
+      userSpeakingDurationMinutes = Math.max(durationMinutes * userWordRatio, 0.1);
+      console.log(`User speaking duration (estimated from word ratio ${(userWordRatio * 100).toFixed(0)}%): ${userSpeakingDurationMinutes.toFixed(2)} minutes`);
+    }
+
+    const wordsPerMinute = Math.round(wordCount / userSpeakingDurationMinutes);
+    console.log(`Words per minute: ${wordsPerMinute} (${wordCount} words / ${userSpeakingDurationMinutes.toFixed(2)} min)`);
+
+    // Calculate pacing segments from word-level timing data
+    const durationSeconds = durationMinutes * 60;
+    const pacingSegments: Array<{ startTime: number; endTime: number; wpm: number }> = [];
+
+    // If we have word-level timing, compute segments (array already sorted above)
+    if (allWordsWithTiming.length > 0) {
+
       // Determine segment size (aim for ~10-20 segments)
       const totalDuration = allWordsWithTiming[allWordsWithTiming.length - 1].endTime - allWordsWithTiming[0].startTime;
       const segmentDuration = Math.max(5, totalDuration / 15); // At least 5 seconds per segment
-      
+
       let segmentStart = allWordsWithTiming[0].startTime;
       while (segmentStart < allWordsWithTiming[allWordsWithTiming.length - 1].endTime) {
         const segmentEnd = segmentStart + segmentDuration;
         const wordsInSegment = allWordsWithTiming.filter(
           (w) => w.startTime >= segmentStart && w.startTime < segmentEnd
         );
-        
+
         if (wordsInSegment.length > 0) {
           const segmentWpm = Math.round((wordsInSegment.length / segmentDuration) * 60);
           pacingSegments.push({
@@ -131,7 +182,7 @@ export const analyzeUserSpeech = mutation({
         }
         segmentStart = segmentEnd;
       }
-      
+
       console.log(`Computed ${pacingSegments.length} pacing segments from ${allWordsWithTiming.length} words`);
     } else {
       console.log("No word-level timing data available for pacing segments");
@@ -585,7 +636,7 @@ export const getPersonalizedFeedback = query({
         q.eq("conversationId", args.conversationId).eq("userId", args.userId)
       )
       .first();
-    
+
     return feedback;
   },
 });
@@ -598,26 +649,26 @@ export const generatePersonalizedFeedback = action({
   },
   handler: async (ctx, args) => {
     console.log("=== GENERATE PERSONALIZED FEEDBACK ===");
-    
+
     // Get analytics for this conversation
     const analytics = await ctx.runQuery(api.analytics.getAnalytics, args);
     if (!analytics) {
       console.log("No analytics found");
       return null;
     }
-    
+
     // Get transcript
     const transcript = await ctx.runQuery(api.conversations.getTranscript, {
       conversationId: args.conversationId,
     });
-    
+
     // Get user's previous analytics for comparison
     const allUserAnalytics = await ctx.runQuery(api.analytics.getConversationAnalytics, {
       conversationId: args.conversationId,
     });
-    
+
     const userAnalytics = allUserAnalytics?.filter(a => a.userId === args.userId) || [];
-    
+
     // Prepare context for AI
     const context = {
       currentAnalytics: {
@@ -632,14 +683,14 @@ export const generatePersonalizedFeedback = action({
       },
       transcriptSample: transcript?.slice(0, 5).map(t => t.text).join(" "),
     };
-    
+
     // Call OpenAI for personalized feedback
     const openaiApiKey = process.env.OPENAI_API_KEY;
     if (!openaiApiKey) {
       console.error("OpenAI API key not found");
       return null;
     }
-    
+
     const prompt = `You are an expert communication coach analyzing a speech performance. Based on the following metrics, provide personalized, actionable feedback:
 
 Current Performance:
@@ -690,19 +741,19 @@ Make the feedback:
           response_format: { type: "json_object" },
         }),
       });
-      
+
       if (!response.ok) {
         console.error("OpenAI API error:", response.status, await response.text());
         return null;
       }
-      
+
       const data = await response.json();
       const feedbackText = data.choices[0].message.content;
       const feedback = JSON.parse(feedbackText);
-      
+
       // Save feedback to database
       const existingFeedback = await ctx.runQuery(api.analytics.getPersonalizedFeedback, args);
-      
+
       const feedbackData = {
         conversationId: args.conversationId,
         userId: args.userId,
@@ -713,7 +764,7 @@ Make the feedback:
         comparisonToPrevious: undefined,
         generatedAt: Date.now(),
       };
-      
+
       if (existingFeedback) {
         await ctx.runMutation(api.analytics.updatePersonalizedFeedback, {
           feedbackId: existingFeedback._id,
@@ -722,7 +773,7 @@ Make the feedback:
       } else {
         await ctx.runMutation(api.analytics.createPersonalizedFeedback, feedbackData);
       }
-      
+
       console.log("✅ Personalized feedback generated");
       return feedback;
     } catch (error) {
