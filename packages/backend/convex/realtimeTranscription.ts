@@ -22,19 +22,22 @@ const GRAPH_ID = process.env.ZEP_GRAPH_ID || "all_users_htn";
 export const processRealtimeTranscript = action({
   args: {
     conversationId: v.id("conversations"),
-    transcriptTurns: v.array(
-      v.object({
-        speaker: v.string(),
-        text: v.string(),
-        startTime: v.number(),
-        endTime: v.number(),
-        words: v.optional(v.array(v.object({
-          word: v.string(),
+    transcriptTurns: v.optional(
+      v.array(
+        v.object({
+          speaker: v.string(),
+          text: v.string(),
           startTime: v.number(),
           endTime: v.number(),
-        }))),
-      })
+          words: v.optional(v.array(v.object({
+            word: v.string(),
+            startTime: v.number(),
+            endTime: v.number(),
+          }))),
+        })
+      )
     ),
+    transcriptTurnsJson: v.optional(v.string()), // JSON string alternative for Mac app
     initiatorName: v.optional(v.string()),
     scannerName: v.optional(v.string()),
     userEmail: v.optional(v.string()),
@@ -48,7 +51,35 @@ export const processRealtimeTranscript = action({
   }),
   handler: async (ctx, args) => {
     console.log("Processing real-time transcript with speaker labels...");
-    console.log(`Received ${args.transcriptTurns.length} conversation turns`);
+    
+    // Parse JSON if provided (Mac app), otherwise use array (web app)
+    let transcriptTurns: Array<{
+      speaker: string;
+      text: string;
+      startTime: number;
+      endTime: number;
+      words?: Array<{ word: string; startTime: number; endTime: number }>;
+    }>;
+    
+    if (args.transcriptTurnsJson) {
+      // Mac app sends JSON string - parse it
+      try {
+        transcriptTurns = JSON.parse(args.transcriptTurnsJson);
+        console.log(`Parsed ${transcriptTurns.length} conversation turns from JSON string`);
+      } catch (error) {
+        throw new Error(`Failed to parse transcriptTurnsJson: ${error}`);
+      }
+    } else if (args.transcriptTurns) {
+      // Web app sends array directly
+      transcriptTurns = args.transcriptTurns;
+      console.log(`Received ${transcriptTurns.length} conversation turns as array`);
+    } else {
+      throw new Error("No transcript data provided - must provide either transcriptTurns or transcriptTurnsJson");
+    }
+    
+    if (!transcriptTurns || transcriptTurns.length === 0) {
+      throw new Error("Transcript turns array is empty");
+    }
 
     // Get conversation to access user IDs
     const conversation = await ctx.runQuery(api.conversations.get, {
@@ -74,7 +105,7 @@ export const processRealtimeTranscript = action({
     console.log("Speaker to userId mapping:", speakerToUserIdMap);
 
     // Convert transcript turns with userIds for storage (include word-level data)
-    const transcriptWithUserIds = args.transcriptTurns.map((turn, index) => ({
+    const transcriptWithUserIds = transcriptTurns.map((turn, index) => ({
       userId: (speakerToUserIdMap[turn.speaker] || conversation.initiatorUserId) as Id<"users">,
       text: turn.text,
       words: turn.words?.map((w, wordIndex) => ({
@@ -84,13 +115,13 @@ export const processRealtimeTranscript = action({
     }));
 
     // Convert transcript turns with actual names for AI analysis
-    const transcript = args.transcriptTurns.map(turn => ({
+    const transcript = transcriptTurns.map(turn => ({
       speaker: speakerMap[turn.speaker] || turn.speaker,
       text: turn.text,
     }));
 
     // Format transcript for AI analysis (facts and summary only) with actual names
-    const formattedTranscript = args.transcriptTurns
+    const formattedTranscript = transcriptTurns
       .map(turn => {
         const speakerName = speakerMap[turn.speaker] || turn.speaker;
         return `${speakerName}: ${turn.text}`;
@@ -141,7 +172,7 @@ Provide:
       console.log("Proceeding without AI analysis - conversation will still be saved");
       // Use a basic summary from the transcript
       const wordCount = formattedTranscript.split(/\s+/).length;
-      aiAnalysis.summary = `Conversation with ${args.transcriptTurns.length} turns and approximately ${wordCount} words.`;
+      aiAnalysis.summary = `Conversation with ${transcriptTurns.length} turns and approximately ${wordCount} words.`;
     }
 
     // Process with Zep if available
