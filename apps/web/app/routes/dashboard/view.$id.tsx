@@ -118,7 +118,7 @@ export default function ConversationDetailPage() {
     <AudioPlaybackProvider>
     <div className="flex flex-col h-full bg-background">
       {/* Enhanced Header */}
-      <div className="border-b border-border bg-gradient-to-r from-card via-card/95 to-card/90 backdrop-blur-sm shadow-sm">
+      <div className="border-b border-border bg-card backdrop-blur-sm shadow-sm">
         <div className="px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             {/* Left section */}
@@ -209,7 +209,7 @@ export default function ConversationDetailPage() {
         </div>
 
         {/* Right column: Analytics - hidden on mobile, shown in modal */}
-        <div className="hidden lg:flex lg:flex-col lg:flex-[2] bg-muted/10 h-full min-h-0">
+        <div className="hidden lg:flex lg:flex-col lg:flex-[2] h-full min-h-0">
           <div className="p-6 flex flex-col h-full min-h-0">
             <div className="bg-card border border-border rounded-lg p-6 flex flex-col h-full min-h-0">
               <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
@@ -224,7 +224,7 @@ export default function ConversationDetailPage() {
       </div>
 
       {/* Mobile bottom nav bar - shown on small screens */}
-      <div className="lg:hidden border-t border-border bg-card/50 backdrop-blur-sm p-3 shrink-0">
+      <div className="lg:hidden border-t border-border bg-card backdrop-blur-sm p-3 shrink-0">
         <Button
           variant="outline"
           className="w-full gap-2"
