@@ -1,10 +1,11 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, ArrowLeft, BarChart3, Clock, Loader2, Users, X, Download, Share2, Calendar, MessageSquare } from "lucide-react";
+import { AlertCircle, ArrowLeft, BarChart3, Calendar, Clock, Loader2, MessageSquare, Share2, Users, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
+import { TranscriptChatbot } from "~/components/dashboard/transcript-chatbot";
 import { ExportDialog } from "~/components/export/ExportDialog";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
@@ -188,7 +189,7 @@ export default function ConversationDetailPage() {
       {/* Two-column layout - Responsive */}
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left column: TranscriptPlayer (audio + transcript) */}
-        <div className="flex-1 lg:flex-[3] border-b lg:border-b-0 lg:border-r border-border flex flex-col h-full min-h-0">
+        <div className="flex-1 lg:flex-[3] border-b lg:border-b-0 lg:border-r border-border flex flex-col h-full min-h-0 relative">
           <div className="flex flex-col p-4 sm:p-6 h-full min-h-0">
             <TranscriptPlayer
               conversationId={id as Id<"conversations">}
@@ -204,6 +205,7 @@ export default function ConversationDetailPage() {
               }}
             />
           </div>
+          <TranscriptChatbot />
         </div>
 
         {/* Right column: Analytics - hidden on mobile, shown in modal */}
