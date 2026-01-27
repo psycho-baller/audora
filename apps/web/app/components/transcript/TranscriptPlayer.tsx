@@ -299,7 +299,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
   return (
     <div className="flex flex-col h-full min-h-0 space-y-4">
       {/* Enhanced Audio Player */}
-      <div className="bg-gradient-to-b from-card to-card/80 border border-border rounded-xl p-5 shrink-0 shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-5 shrink-0 shadow-sm">
         <div className="flex items-center gap-4 mb-3">
           <button
             onClick={handlePlayPause}
@@ -475,7 +475,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       </div>
 
       {/* Enhanced Transcript */}
-      <div className="bg-gradient-to-b from-card to-card/80 border border-border rounded-xl p-6 flex flex-col flex-1 min-h-0 shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-6 flex flex-col flex-1 min-h-0 shadow-sm">
         <div className="flex items-center justify-between mb-5 shrink-0 pb-4 border-b border-border/50">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-foreground">Transcript</h3>
