@@ -30,7 +30,7 @@ export const create = mutation({
     // Get user from users table
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier.split("|")[1]))
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
 
     if (!user) {
@@ -87,7 +87,7 @@ export const createMacConversation = mutation({
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => 
-        q.eq("tokenIdentifier", identity.tokenIdentifier.split("|")[1])
+        q.eq("tokenIdentifier", identity.subject)
       )
       .unique();
 
@@ -362,7 +362,7 @@ export const list = query({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier.split("|")[1]))
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
 
     if (!user) {
