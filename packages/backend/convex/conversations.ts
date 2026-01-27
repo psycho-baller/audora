@@ -30,7 +30,7 @@ export const create = mutation({
     // Get user from users table
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier.split("|")[1]))
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
 
     if (!user) {
@@ -66,6 +66,45 @@ export const create = mutation({
       id: conversationId,
       inviteCode,
     };
+  },
+});
+
+// Create conversation for Mac app (single user, no scanner)
+export const createMacConversation = mutation({
+  args: {
+    title: v.optional(v.string()),
+    calendarEventId: v.optional(v.string()),
+  },
+  returns: v.object({
+    id: v.id("conversations"),
+  }),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => 
+        q.eq("tokenIdentifier", identity.subject)
+      )
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Create conversation with initiator only (no scanner for Mac recordings)
+    const conversationId = await ctx.db.insert("conversations", {
+      initiatorUserId: user._id,
+      status: "active",
+      inviteCode: "", // Not needed for Mac app
+      startedAt: Date.now(),
+      ...(args.title && { location: args.title }),
+    });
+
+    return { id: conversationId };
   },
 });
 
@@ -323,7 +362,7 @@ export const list = query({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier.split("|")[1]))
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
       .unique();
 
     if (!user) {
