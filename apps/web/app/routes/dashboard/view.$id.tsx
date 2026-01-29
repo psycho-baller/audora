@@ -203,9 +203,10 @@ export default function ConversationDetailPage() {
                 }
                 return "Speaker";
               }}
-            />
+            >
+              <TranscriptChatbot conversationId={id as Id<"conversations">} />
+            </TranscriptPlayer>
           </div>
-          <TranscriptChatbot conversationId={id as Id<"conversations">} />
         </div>
 
         {/* Right column: Analytics - hidden on mobile, shown in modal */}

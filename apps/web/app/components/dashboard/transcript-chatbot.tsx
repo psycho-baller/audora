@@ -184,7 +184,7 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
       {!isOpen && (
         <div
           onClick={() => setIsOpen(true)}
-          className="absolute bottom-8 left-12 right-12 sm:left-16 sm:right-16 bg-background border border-border rounded-full shadow-lg cursor-pointer z-50 px-4 py-2 flex items-center justify-end hover:bg-muted/50 transition-all duration-300 ease-in-out"
+          className="absolute bottom-2 left-2 right-2 bg-background border border-border rounded-full shadow-lg cursor-pointer z-50 px-4 py-2 flex items-center justify-end hover:bg-muted/50 transition-all duration-300 ease-in-out"
         >
           <span className="text-sm text-muted-foreground mr-2">Ask about this conversation...</span>
           <ChevronUp className="w-4 h-4" />
@@ -192,10 +192,10 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
       )}
 
       {/* Expanded panel */}
-      <div className={`absolute bottom-8 left-12 right-12 sm:left-16 sm:right-16 bg-background border border-border rounded-lg shadow-lg z-40 transition-all duration-300 ease-in-out ${
+      <div className={`absolute top-2 bottom-2 left-2 right-2 bg-background border border-border rounded-lg shadow-lg z-40 flex flex-col transition-all duration-300 ease-in-out ${
         isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none'
       }`}>
-        <div className="h-12 flex items-center justify-between px-4">
+        <div className="h-12 flex items-center justify-between px-4 shrink-0 border-b border-border">
           <span className="text-sm font-medium text-foreground">Conversation Assistant</span>
           <Button
             onClick={() => setIsOpen(false)}
@@ -205,7 +205,7 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
             <X className="w-4 h-4" />
           </Button>
         </div>
-        <div className="h-96 overflow-y-auto p-4 space-y-4 pr-3 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pr-3 custom-scrollbar">
           {chatHistory === undefined ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
