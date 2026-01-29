@@ -30,6 +30,7 @@ interface TranscriptTurn {
 interface TranscriptPlayerProps {
   conversationId: Id<"conversations">;
   getUserName: (userId?: Id<"users">) => string;
+  children?: React.ReactNode;
 }
 
 type HighlightType = "filler" | "weak" | "starter" | null;
@@ -40,7 +41,7 @@ interface WordHighlight {
   word: string;
 }
 
-export default function TranscriptPlayer({ conversationId, getUserName }: TranscriptPlayerProps) {
+export default function TranscriptPlayer({ conversationId, getUserName, children }: TranscriptPlayerProps) {
   const transcriptTurns = useQuery(api.conversations.getTranscript, { conversationId }) || [];
   const audioUrl = useQuery(api.conversations.getAudioUrl, { conversationId });
   const speakers = useQuery(api.conversations.getSpeakers, { conversationId });
@@ -475,7 +476,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
       </div>
 
       {/* Enhanced Transcript */}
-      <div className="bg-card border border-border rounded-xl p-6 flex flex-col flex-1 min-h-0 shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-6 flex flex-col flex-1 min-h-0 shadow-sm relative">
         <div className="flex items-center justify-between mb-5 shrink-0 pb-4 border-b border-border/50">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-foreground">Transcript</h3>
@@ -583,6 +584,7 @@ export default function TranscriptPlayer({ conversationId, getUserName }: Transc
             );
           })}
         </div>
+        {children}
       </div>
     </div>
   );
