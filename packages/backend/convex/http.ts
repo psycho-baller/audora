@@ -6,6 +6,18 @@ import { Id } from "./_generated/dataModel";
 import { httpAction } from "./_generated/server";
 import { paymentWebhook } from "./subscriptions";
 
+// Helper to format seconds into MM:SS or HH:MM:SS
+function formatTimestamp(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
 export const chat = httpAction(async (ctx, req) => {
   // Extract the `messages` and optional `conversationId` from the body of the request
   const { messages, conversationId } = await req.json();
@@ -104,11 +116,13 @@ export const chat = httpAction(async (ctx, req) => {
           conversationContext += `\n`;
         }
 
-        // Add full transcript
+        // Add full transcript with timestamps
         if (transcript && transcript.length > 0) {
           conversationContext += `## FULL RECORDED TRANSCRIPT\n`;
           transcript.forEach((turn: any) => {
-            conversationContext += `[${turn.speaker || 'Speaker'}]: ${turn.text}\n`;
+            const timestamp =
+              turn.timestamp != null ? `[${formatTimestamp(turn.timestamp)}] ` : "";
+            conversationContext += `${timestamp}[${turn.speaker || "Speaker"}]: ${turn.text}\n`;
           });
         }
 

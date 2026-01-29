@@ -184,6 +184,7 @@ export const saveTranscriptData = mutation({
     transcript: v.array(v.object({ 
       userId: v.id("users"), 
       text: v.string(),
+      startTime: v.optional(v.number()), // Turn-level timestamp
       words: v.optional(v.array(v.object({
         word: v.string(),
         startTime: v.number(),
@@ -220,11 +221,17 @@ export const saveTranscriptData = mutation({
     // Save transcript turns (with word-level data if available)
     for (let i = 0; i < args.transcript.length; i++) {
       const turn = args.transcript[i];
+      // Use turn-level startTime if provided, otherwise calculate from first word
+      const timestamp = turn.startTime !== undefined 
+        ? turn.startTime 
+        : (turn.words && turn.words.length > 0 ? turn.words[0].startTime : undefined);
+      
       await ctx.db.insert("transcriptTurns", {
         conversationId: args.conversationId,
         userId: turn.userId,
         text: turn.text,
         order: i,
+        timestamp, // Add timestamp
         words: turn.words, // Word-level data for new conversations
       });
     }

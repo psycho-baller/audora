@@ -255,6 +255,7 @@ export const batchTranscribe = action({
     const transcriptWithUserIds = transcriptTurns.map((turn, index) => ({
       userId: (speakerToUserIdMap[turn.speaker] || conversation.initiatorUserId) as Id<"users">,
       text: turn.text,
+      startTime: turn.startTime, // Include turn-level timestamp
       words: turn.words?.map((w, wordIndex) => ({
         ...w,
         wordId: `t${index}-w${wordIndex}`, // Stable ID for word
