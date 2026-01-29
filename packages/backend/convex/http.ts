@@ -1,56 +1,155 @@
-import { httpRouter } from "convex/server";
-import { paymentWebhook } from "./subscriptions";
-import { httpAction } from "./_generated/server";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { httpRouter } from "convex/server";
 import { api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
+import { httpAction } from "./_generated/server";
+import { paymentWebhook } from "./subscriptions";
 
 export const chat = httpAction(async (ctx, req) => {
-  // Extract the `messages` from the body of the request
-  const { messages } = await req.json();
+  // Extract the `messages` and optional `conversationId` from the body of the request
+  const { messages, conversationId } = await req.json();
 
   // Get user identity from auth
   const identity = await ctx.auth.getUserIdentity();
 
   let conversationContext = "";
+  let isConversationSpecific = false;
 
   if (identity) {
     try {
-      // Fetch user's conversations
-      const conversations = await ctx.runQuery(api.conversations.list, {});
+      if (conversationId) {
+        // === CONVERSATION-SPECIFIC MODE ===
+        // Load detailed analytics for ONE recorded conversation
+        isConversationSpecific = true;
 
-      if (conversations.length > 0) {
-        conversationContext = `\n\n## USER'S CONVERSATION HISTORY\nYou have access to ${conversations.length} conversation(s) from this user:\n\n`;
+        const conversation = await ctx.runQuery(api.conversations.get, {
+          id: conversationId as Id<"conversations">
+        });
 
-        for (const conv of conversations.slice(0, 10)) { // Limit to most recent 10 conversations
-          const transcript = await ctx.runQuery(api.conversations.getTranscript, {
-            conversationId: conv._id
-          });
+        if (!conversation) {
+          throw new Error("Conversation not found");
+        }
 
-          const facts = await ctx.runQuery(api.conversations.getFacts, {
-            conversationId: conv._id
-          });
+        const transcript = await ctx.runQuery(api.conversations.getTranscript, {
+          conversationId: conversationId as Id<"conversations">
+        });
 
-          conversationContext += `### Conversation ${conv._id} (${new Date(conv._creationTime).toLocaleDateString()})\n`;
-          conversationContext += `Status: ${conv.status}\n`;
-          if (conv.summary) conversationContext += `Summary: ${conv.summary}\n`;
+        const facts = await ctx.runQuery(api.conversations.getFacts, {
+          conversationId: conversationId as Id<"conversations">
+        });
 
-          if (transcript.length > 0) {
-            conversationContext += `Transcript:\n`;
-            transcript.forEach((turn: any) => {
-              conversationContext += `  - ${turn.speaker || 'Speaker'}: ${turn.text}\n`;
-            });
-          }
+        // Fetch analytics for all speakers in this conversation
+        const analytics = await ctx.runQuery(api.analytics.getConversationAnalytics, {
+          conversationId: conversationId as Id<"conversations">
+        });
 
-          if (facts.length > 0) {
-            conversationContext += `Key Facts:\n`;
-            facts.forEach((factGroup: any) => {
-              factGroup.facts.forEach((fact: string) => {
-                conversationContext += `  - ${fact}\n`;
-              });
-            });
+        conversationContext = `\n\n## RECORDED CONVERSATION DETAILS\n`;
+        conversationContext += `Date: ${new Date(conversation._creationTime).toLocaleDateString()}\n`;
+        conversationContext += `Status: ${conversation.status}\n`;
+        if (conversation.location) conversationContext += `Location: ${conversation.location}\n`;
+        if (conversation.summary) conversationContext += `Summary: ${conversation.summary}\n\n`;
+
+        // Add analytics data
+        if (analytics && analytics.length > 0) {
+          conversationContext += `## SPEECH ANALYTICS\n`;
+          for (const analytic of analytics) {
+            conversationContext += `\nSpeaker (${analytic.userId}):\n`;
+            conversationContext += `- Filler words: ${analytic.fillerWords.count} instances (${analytic.fillerWords.ratePerMinute.toFixed(1)}/min)\n`;
+            if (analytic.fillerWords.instances && analytic.fillerWords.instances.length > 0) {
+              const fillerSummary = analytic.fillerWords.instances
+                .reduce((acc: Record<string, number>, inst: { word: string }) => {
+                  acc[inst.word] = (acc[inst.word] || 0) + 1;
+                  return acc;
+                }, {});
+              const topFillers = Object.entries(fillerSummary)
+                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                .slice(0, 5)
+                .map(([word, count]) => `"${word}" (${count}×)`)
+                .join(', ');
+              conversationContext += `  Most common: ${topFillers}\n`;
+            }
+            conversationContext += `- Speaking pace: ${analytic.pacing.wordsPerMinute} WPM\n`;
+            if (analytic.pacing.averagePauseDuration) {
+              conversationContext += `- Average pause duration: ${analytic.pacing.averagePauseDuration.toFixed(2)}s\n`;
+            }
+            if (analytic.pacing.longestPause) {
+              conversationContext += `- Longest pause: ${analytic.pacing.longestPause.toFixed(2)}s\n`;
+            }
+            conversationContext += `- Clarity score: ${analytic.scores.clarity}/100\n`;
+            conversationContext += `- Confidence score: ${analytic.scores.confidence}/100\n`;
+            conversationContext += `- Conciseness score: ${analytic.scores.conciseness}/100\n`;
+            
+            // Add weak words if any
+            if (analytic.weakWords && analytic.weakWords.length > 0) {
+              conversationContext += `- Weak words detected: ${analytic.weakWords.slice(0, 5).map((w: { word: string }) => `"${w.word}"`).join(', ')}\n`;
+            }
+            
+            // Add repeated words if any
+            if (analytic.repetitions.repeatedWords && analytic.repetitions.repeatedWords.length > 0) {
+              conversationContext += `- Repeated words: ${analytic.repetitions.repeatedWords.slice(0, 5).map((w: { word: string; count: number }) => `"${w.word}" (${w.count}×)`).join(', ')}\n`;
+            }
           }
           conversationContext += `\n`;
+        }
+
+        // Add key facts
+        if (facts && facts.length > 0) {
+          conversationContext += `## KEY FACTS EXTRACTED FROM THE RECORDED CONVERSATION\n`;
+          facts.forEach((factGroup: any) => {
+            factGroup.facts.forEach((fact: string) => {
+              conversationContext += `- ${fact}\n`;
+            });
+          });
+          conversationContext += `\n`;
+        }
+
+        // Add full transcript
+        if (transcript && transcript.length > 0) {
+          conversationContext += `## FULL RECORDED TRANSCRIPT\n`;
+          transcript.forEach((turn: any) => {
+            conversationContext += `[${turn.speaker || 'Speaker'}]: ${turn.text}\n`;
+          });
+        }
+
+      } else {
+        // === GENERAL MODE ===
+        // Load last 10 conversations (existing behavior)
+        const conversations = await ctx.runQuery(api.conversations.list, {});
+
+        if (conversations.length > 0) {
+          conversationContext = `\n\n## USER'S CONVERSATION HISTORY\nYou have access to ${conversations.length} conversation(s) from this user:\n\n`;
+
+          for (const conv of conversations.slice(0, 10)) {
+            const transcript = await ctx.runQuery(api.conversations.getTranscript, {
+              conversationId: conv._id
+            });
+
+            const facts = await ctx.runQuery(api.conversations.getFacts, {
+              conversationId: conv._id
+            });
+
+            conversationContext += `### Conversation ${conv._id} (${new Date(conv._creationTime).toLocaleDateString()})\n`;
+            conversationContext += `Status: ${conv.status}\n`;
+            if (conv.summary) conversationContext += `Summary: ${conv.summary}\n`;
+
+            if (transcript.length > 0) {
+              conversationContext += `Transcript:\n`;
+              transcript.forEach((turn: any) => {
+                conversationContext += `  - ${turn.speaker || 'Speaker'}: ${turn.text}\n`;
+              });
+            }
+
+            if (facts.length > 0) {
+              conversationContext += `Key Facts:\n`;
+              facts.forEach((factGroup: any) => {
+                factGroup.facts.forEach((fact: string) => {
+                  conversationContext += `  - ${fact}\n`;
+                });
+              });
+            }
+            conversationContext += `\n`;
+          }
         }
       }
     } catch (error) {
@@ -58,7 +157,28 @@ export const chat = httpAction(async (ctx, req) => {
     }
   }
 
-  const systemPrompt = `You are a warm, insightful Communication Coach and Reflection Expert for LinkMaxxing. Your role is to help users become more intentional, articulate communicators and build deeper relationships.
+  // Use different system prompts based on mode (either the user is chatting from one conversation on the analytics page, or the general chatbot)
+  const systemPrompt = isConversationSpecific
+    ? `You are an insightful Communication Analytics Assistant helping a user analyze their recorded conversation. Your role is to provide specific, actionable insights based on the transcript and analytics data.
+
+## YOUR ROLE:
+- Answer questions about the recorded conversation's transcript and analytics
+- Provide specific insights referencing exact metrics (filler word counts, WPM, scores)
+- Help users understand their communication patterns
+- Suggest actionable improvements based on the analytics data
+- Help users recall important points from the conversation
+- Reference specific quotes from the transcript when relevant
+
+## YOUR APPROACH:
+- Be specific and reference exact numbers/quotes
+- Be supportive but honest about areas for improvement
+- Focus on actionable, practical advice
+- Celebrate strengths while noting growth opportunities
+
+${conversationContext}
+
+When discussing analytics, always reference specific numbers and patterns from the data above. Be concise and actionable.`
+    : `You are a warm, insightful Communication Coach and Reflection Expert for LinkMaxxing. Your role is to help users become more intentional, articulate communicators and build deeper relationships.
 
 ## YOUR PERSONALITY:
 - Empathetic and supportive, like a trusted mentor
@@ -106,7 +226,7 @@ Remember: You're helping people "maxx out how they link" — deepening human con
     },
   });
 
-  // Respond with the stream
+  // Respond with text stream (compatible with @ai-sdk/react v1.x)
   return result.toTextStreamResponse({
     headers: {
       "Access-Control-Allow-Origin": process.env.FRONTEND_URL || "http://localhost:5173",

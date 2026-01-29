@@ -9,6 +9,7 @@
  */
 
 import type * as analytics from "../analytics.js";
+import type * as chat from "../chat.js";
 import type * as conversations from "../conversations.js";
 import type * as files from "../files.js";
 import type * as homepage from "../homepage.js";
@@ -43,6 +44,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
+  chat: typeof chat;
   conversations: typeof conversations;
   files: typeof files;
   homepage: typeof homepage;

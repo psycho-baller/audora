@@ -177,4 +177,16 @@ export default defineSchema({
   })
     .index("by_conversation_and_user", ["conversationId", "userId"])
     .index("by_user", ["userId"]),
+
+  // AI Chatbot Messages (for persistent chat history per conversation)
+  chatMessages: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    content: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_conversation_and_user", ["conversationId", "userId"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_user", ["userId"]),
 });

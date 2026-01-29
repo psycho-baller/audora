@@ -205,7 +205,7 @@ export default function ConversationDetailPage() {
               }}
             />
           </div>
-          <TranscriptChatbot />
+          <TranscriptChatbot conversationId={id as Id<"conversations">} />
         </div>
 
         {/* Right column: Analytics - hidden on mobile, shown in modal */}
