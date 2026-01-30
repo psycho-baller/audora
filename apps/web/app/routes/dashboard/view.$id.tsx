@@ -1,12 +1,14 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, ArrowLeft, BarChart3, Calendar, Clock, Loader2, MessageSquare, Share2, Users, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, BarChart3, Calendar, Clock, Loader2, MessageSquare, MoveUpLeft, Share2, Users, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
 import { TranscriptChatbot } from "~/components/dashboard/transcript-chatbot";
 import { ExportDialog } from "~/components/export/ExportDialog";
+import CurrentView from "~/components/recording/CurrentView";
+import PendingView from "~/components/recording/PendingView";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
 import { AudioPlaybackProvider } from "~/hooks/use-audio-playback";
@@ -31,16 +33,16 @@ export default function ConversationDetailPage() {
     id ? { id: id as Id<"conversations"> } : "skip"
   );
 
-  // Fetch transcript
+  // Fetch transcript (only needed for ended conversations)
   const transcript = useQuery(
     api.conversations.getTranscript,
-    id ? { conversationId: id as Id<"conversations"> } : "skip"
+    id && conversation?.status === "ended" ? { conversationId: id as Id<"conversations"> } : "skip"
   );
 
-  // Fetch audio URL
+  // Fetch audio URL (only needed for ended conversations)
   const audioUrl = useQuery(
     api.conversations.getAudioUrl,
-    id ? { conversationId: id as Id<"conversations"> } : "skip"
+    id && conversation?.status === "ended" ? { conversationId: id as Id<"conversations"> } : "skip"
   );
 
   // Fetch initiator and scanner user data for speaker names
@@ -53,8 +55,8 @@ export default function ConversationDetailPage() {
     conversation?.scannerUserId ? { id: conversation.scannerUserId } : "skip"
   );
 
-  // Loading state
-  if (conversation === undefined || transcript === undefined) {
+  // Loading state - only wait for conversation data initially
+  if (conversation === undefined) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-4">
@@ -80,6 +82,74 @@ export default function ConversationDetailPage() {
           <Button onClick={() => navigate("/dashboard")}>
             Return to Dashboard
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // For pending and active conversations, show the recording UI
+  if (conversation.status === "pending" || conversation.status === "active") {
+    const getStatusColor = () => {
+      switch (conversation.status) {
+        case "active":
+          return "bg-green-500/10 text-green-500 border-green-500/20";
+        case "pending":
+          return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+        default:
+          return "bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20";
+      }
+    };
+
+    return (
+      <div className="h-full bg-background flex flex-col">
+        {/* Header Bar */}
+        <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="p-2 rounded-lg hover:bg-muted transition-colors group">
+              <MoveUpLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <h1 className="text-sm font-semibold text-foreground">
+                  Conversation
+                </h1>
+                <p className="text-xs text-muted-foreground font-mono">
+                  #{id.slice(0, 8)}
+                </p>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
+                {conversation.status.toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="min-h-full flex justify-center p-4 md:p-6">
+            <div className="w-full max-w-4xl">
+              {conversation.status === "pending" ? (
+                <PendingView conversationId={id} conversation={conversation} />
+              ) : (
+                <CurrentView conversationId={id} />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For ended conversations, wait for transcript data too
+  if (transcript === undefined) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading conversation...</p>
         </div>
       </div>
     );

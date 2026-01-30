@@ -221,9 +221,13 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
     setIsPlaying(!isPlaying);
   };
 
-  const handleSkip = (seconds: number) => {
+  // Determine skip interval based on conversation length
+  const skipInterval = duration > 10 ? 10 : 2;
+  
+  const handleSkip = (direction: 1 | -1) => {
     if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + seconds));
+      const skipAmount = direction * skipInterval;
+      audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + skipAmount));
     }
   };
 
@@ -265,28 +269,26 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
 
   const getWordClassName = (word: Word, isActive: boolean) => {
     const highlight = wordHighlights.get(word.wordId);
-    const baseClasses = "transition-all duration-200 inline-block";
-    const activeClasses = isActive
-      ? "bg-primary text-primary-foreground font-semibold px-1 py-0.5 rounded-md shadow-sm scale-105"
-      : "hover:bg-muted/60 px-0.5 rounded";
-    const clickableClasses = "cursor-pointer";
-
-    let highlightClasses = "";
-    if (highlight && !isActive) {
+    // Use consistent padding and box-decoration to prevent layout shifts
+    // All words have the same box model, only colors/shadows change
+    const baseClasses = "transition-colors duration-200 inline px-0.5 py-0.5 rounded cursor-pointer";
+    
+    if (isActive) {
+      return `${baseClasses} bg-primary text-primary-foreground font-semibold shadow-sm`;
+    }
+    
+    if (highlight) {
       switch (highlight.type) {
         case "filler":
-          highlightClasses = "bg-yellow-500/15 text-yellow-800 dark:text-yellow-300 font-medium px-1 py-0.5 rounded-md border-b-2 border-yellow-500/60 hover:bg-yellow-500/25 hover:scale-102";
-          break;
+          return `${baseClasses} bg-yellow-500/15 text-yellow-800 dark:text-yellow-300 font-medium shadow-[inset_0_-2px_0_0_rgba(234,179,8,0.6)] hover:bg-yellow-500/25`;
         case "weak":
-          highlightClasses = "bg-orange-500/15 text-orange-800 dark:text-orange-300 font-medium px-1 py-0.5 rounded-md border-b-2 border-orange-500/60 hover:bg-orange-500/25 hover:scale-102";
-          break;
+          return `${baseClasses} bg-orange-500/15 text-orange-800 dark:text-orange-300 font-medium shadow-[inset_0_-2px_0_0_rgba(249,115,22,0.6)] hover:bg-orange-500/25`;
         case "starter":
-          highlightClasses = "bg-blue-500/15 text-blue-800 dark:text-blue-300 font-medium px-1 py-0.5 rounded-md border-b-2 border-blue-500/60 hover:bg-blue-500/25 hover:scale-102";
-          break;
+          return `${baseClasses} bg-blue-500/15 text-blue-800 dark:text-blue-300 font-medium shadow-[inset_0_-2px_0_0_rgba(59,130,246,0.6)] hover:bg-blue-500/25`;
       }
     }
-
-    return `${baseClasses} ${activeClasses} ${clickableClasses} ${highlightClasses}`;
+    
+    return `${baseClasses} hover:bg-muted/60`;
   };
 
   if (!audioUrl) {
@@ -314,20 +316,22 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
             )}
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => handleSkip(-10)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label="Skip back 10 seconds"
+              onClick={() => handleSkip(-1)}
+              className="flex flex-col items-center p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label={`Skip back ${skipInterval} seconds`}
             >
               <SkipBack className="w-4 h-4 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground mt-0.5">-{skipInterval}s</span>
             </button>
             <button
-              onClick={() => handleSkip(10)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label="Skip forward 10 seconds"
+              onClick={() => handleSkip(1)}
+              className="flex flex-col items-center p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label={`Skip forward ${skipInterval} seconds`}
             >
               <SkipForward className="w-4 h-4 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground mt-0.5">+{skipInterval}s</span>
             </button>
           </div>
 

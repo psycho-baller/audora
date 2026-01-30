@@ -27,7 +27,7 @@ export default function RecordPage() {
       const result = await createConversation({
         location: "Mount Royal University Library",
       });
-      navigate(`/conversations/${result.id}`);
+      navigate(`/dashboard/conversations/${result.id}`);
     } catch (error) {
       console.error("Failed to create conversation:", error);
       toast.error("Failed to start recording. Please try again.");
