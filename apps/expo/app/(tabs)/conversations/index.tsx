@@ -147,8 +147,7 @@ export default function ConversationsScreen() {
               <TouchableOpacity
                 key={conversation._id}
                 onPress={() => {
-                  // TODO: Navigate to conversation detail
-                  console.log('View conversation:', conversation._id);
+                  router.push(`/(tabs)/conversations/${conversation._id}`);
                 }}
                 className="bg-card border border-border rounded-xl p-4"
               >
