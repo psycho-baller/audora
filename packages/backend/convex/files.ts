@@ -25,6 +25,18 @@ export const getFileUrl = query({
 });
 
 /**
+ * Deletes a file from storage by ID.
+ * Used by the Mac app to remove the previous audio file when replacing with a new
+ * upload (e.g. after stop/resume), so we keep one file per meeting instead of many.
+ */
+export const deleteStorageId = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    await ctx.storage.delete(args.storageId);
+  },
+});
+
+/**
  * Lists recent file uploads (for debugging/verification).
  * Note: Convex doesn't have a built-in way to list all files,
  * but you can use this to verify a specific file exists.
