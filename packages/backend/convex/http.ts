@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { httpRouter } from "convex/server";
 import { api } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { httpAction } from "./_generated/server";
 import { paymentWebhook } from "./subscriptions";
 

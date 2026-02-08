@@ -14,7 +14,6 @@ import type * as conversations from "../conversations.js";
 import type * as files from "../files.js";
 import type * as homepage from "../homepage.js";
 import type * as http from "../http.js";
-import type * as migrations from "../migrations.js";
 import type * as mobileImport from "../mobileImport.js";
 import type * as network from "../network.js";
 import type * as realtimeTranscription from "../realtimeTranscription.js";
@@ -49,7 +48,6 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   homepage: typeof homepage;
   http: typeof http;
-  migrations: typeof migrations;
   mobileImport: typeof mobileImport;
   network: typeof network;
   realtimeTranscription: typeof realtimeTranscription;

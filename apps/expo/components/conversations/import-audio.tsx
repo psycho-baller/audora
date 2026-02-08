@@ -5,13 +5,13 @@ import { useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 type ProcessingStage =
@@ -103,6 +103,11 @@ export default function ImportAudio() {
     setIsSoloConversation(true);
   };
 
+  // Maximum file size: ~50MB (approximately 30 minutes of audio)
+  // Larger files will timeout during Speechmatics processing
+  const MAX_FILE_SIZE_MB = 50;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
   const handleStartImport = async () => {
     if ((!selectedFriend && !isSoloConversation) || !audioFile) {
       Alert.alert(
@@ -112,6 +117,28 @@ export default function ImportAudio() {
       return;
     }
 
+    // Check file size before processing
+    const fileSizeMB = (audioFile.size || 0) / 1024 / 1024;
+    if (audioFile.size && audioFile.size > MAX_FILE_SIZE_BYTES) {
+      Alert.alert(
+        'File Too Large',
+        `This audio file is ${fileSizeMB.toFixed(1)} MB, which is larger than the ${MAX_FILE_SIZE_MB} MB limit.\n\nLarge files may take too long to process and cause timeouts.\n\nPlease try importing a shorter recording (under ~30 minutes).`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Try Anyway',
+            style: 'destructive',
+            onPress: () => startImportProcess(),
+          },
+        ]
+      );
+      return;
+    }
+
+    await startImportProcess();
+  };
+
+  const startImportProcess = async () => {
     try {
       // Stage 1: Upload audio file
       setStage('uploading');
@@ -169,10 +196,21 @@ export default function ImportAudio() {
     } catch (err: any) {
       console.error('Import failed:', err);
       setStage('error');
-      setStatusMessage(`Error: ${err.message}`);
+
+      // Detect timeout/connection errors for large files
+      const isTimeout = err.message?.includes('Connection lost') ||
+                       err.message?.includes('timeout') ||
+                       err.message?.includes('InternalServerError');
+
+      const fileSizeMB = (audioFile?.size || 0) / 1024 / 1024;
+      const errorMessage = isTimeout && fileSizeMB > 30
+        ? `The audio file (${fileSizeMB.toFixed(1)} MB) is too large and caused a timeout.\n\nPlease try importing a shorter recording (under ~30 minutes).`
+        : err.message || 'An error occurred while importing the audio file.';
+
+      setStatusMessage(`Error: ${isTimeout ? 'Processing timed out' : err.message}`);
       Alert.alert(
-        'Import Failed',
-        err.message || 'An error occurred while importing the audio file.',
+        isTimeout ? 'Processing Timed Out' : 'Import Failed',
+        errorMessage,
         [
           {
             text: 'Try Again',

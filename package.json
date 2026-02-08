@@ -1,6 +1,7 @@
 {
   "private": true,
   "name": "@audora/monorepo",
+  "packageManager": "pnpm@10.29.1",
   "scripts": {
     "dev": "turbo dev",
     "dev:expo": "turbo dev --filter=\"{./apps/expo}...\"",
@@ -10,7 +11,7 @@
     "dev:full-expo": "turbo dev --filter=\"{./apps/expo}...\" --filter=\"{./packages/backend}...\"",
     "lint": "turbo lint",
     "test": "turbo test",
-    "build": "turbo build",
+    "build": "turbo run build --concurrency=1",
     "build:expo": "turbo build --filter=\"...{./apps/expo}\"",
     "build:web": "turbo build --filter=\"...{./apps/web}\"",
     "build:backend": "turbo build --filter=\"...{./packages/backend}\"",

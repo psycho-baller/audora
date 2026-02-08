@@ -16,16 +16,33 @@ interface GraphNode {
   color?: string;
 }
 
+type LinkEndpoint =
+  | string
+  | number
+  | { id?: string | number; x?: number; y?: number }
+  | undefined;
+
 interface GraphLink {
-  source: string;
-  target: string;
-  commonKeywords: string[];
-  strength: number;
+  source: LinkEndpoint;
+  target: LinkEndpoint;
+  type?: "user-keyword" | "keyword-user";
+  commonKeywords?: string[];
+  strength?: number;
 }
 
 interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
+}
+
+function getNodeId(endpoint: LinkEndpoint): string {
+  if (typeof endpoint === "string" || typeof endpoint === "number") {
+    return String(endpoint);
+  }
+  if (endpoint?.id !== undefined && endpoint?.id !== null) {
+    return String(endpoint.id);
+  }
+  return "";
 }
 
 export default function ConnectionGraph() {
@@ -137,10 +154,10 @@ export default function ConnectionGraph() {
     const connectedLinkIds = new Set<string>();
 
     graphData.links.forEach(link => {
-      if (link.source === node.id || link.target === node.id) {
-        connectedLinkIds.add(`${link.source}-${link.target}`);
-        connectedNodeIds.add(typeof link.source === 'string' ? link.source : (link.source as any).id);
-        connectedNodeIds.add(typeof link.target === 'string' ? link.target : (link.target as any).id);
+      if (getNodeId(link.source) === node.id || getNodeId(link.target) === node.id) {
+        connectedLinkIds.add(`${getNodeId(link.source)}-${getNodeId(link.target)}`);
+        connectedNodeIds.add(getNodeId(link.source));
+        connectedNodeIds.add(getNodeId(link.target));
       }
     });
 
@@ -197,14 +214,14 @@ export default function ConnectionGraph() {
 
   // Custom link rendering
   const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const linkId = `${link.source.id || link.source}-${link.target.id || link.target}`;
+    const linkId = `${getNodeId(link.source)}-${getNodeId(link.target)}`;
     const isHighlighted = highlightLinks.size === 0 || highlightLinks.has(linkId);
 
     const start = link.source;
     const end = link.target;
 
     // Calculate link width based on strength
-    const width = Math.max(1, link.strength / 2) / globalScale;
+    const width = Math.max(1, (link.strength ?? 1) / 2) / globalScale;
 
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
@@ -216,13 +233,13 @@ export default function ConnectionGraph() {
     ctx.globalAlpha = 1;
 
     // Draw label on hover/selection
-    if (selectedLink && linkId === `${selectedLink.source}-${selectedLink.target}`) {
+    if (selectedLink && linkId === `${getNodeId(selectedLink.source)}-${getNodeId(selectedLink.target)}`) {
       const midX = (start.x + end.x) / 2;
       const midY = (start.y + end.y) / 2;
       const fontSize = 10 / globalScale;
       ctx.font = `${fontSize}px Sans-Serif`;
       ctx.fillStyle = "#fbbf24";
-      ctx.fillText(`${link.strength} common`, midX, midY);
+      ctx.fillText(`${link.strength ?? 1} common`, midX, midY);
     }
   }, [selectedLink, highlightLinks]);
 
@@ -328,7 +345,7 @@ export default function ConnectionGraph() {
             onBackgroundClick={handleBackgroundClick}
             cooldownTicks={100}
             linkDirectionalParticles={2}
-            linkDirectionalParticleWidth={(link: any) => highlightLinks.has(`${link.source.id || link.source}-${link.target.id || link.target}`) ? 2 : 0}
+            linkDirectionalParticleWidth={(link: any) => highlightLinks.has(`${getNodeId(link.source)}-${getNodeId(link.target)}`) ? 2 : 0}
             d3VelocityDecay={0.3}
             enableNodeDrag={true}
             enableZoomInteraction={true}
@@ -383,17 +400,23 @@ export default function ConnectionGraph() {
           <h4 className="text-xl font-bold text-white mb-3">Connection Details</h4>
           <div className="space-y-3">
             <p className="text-sm text-gray-300">
-              <span className="font-semibold">Common Keywords:</span> {selectedLink.commonKeywords.length}
+              <span className="font-semibold">Common Keywords:</span> {selectedLink.commonKeywords?.length ?? 0}
             </p>
             <div className="flex flex-wrap gap-2">
-              {selectedLink.commonKeywords.map((keyword, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-full font-medium"
-                >
-                  {keyword}
+              {selectedLink.commonKeywords?.length ? (
+                selectedLink.commonKeywords.map((keyword, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-yellow-500/20 text-yellow-300 text-sm rounded-full font-medium"
+                  >
+                    {keyword}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-gray-400">
+                  No keyword details available for this connection.
                 </span>
-              ))}
+              )}
             </div>
           </div>
         </div>
