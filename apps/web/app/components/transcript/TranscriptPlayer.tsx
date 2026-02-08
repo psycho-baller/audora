@@ -480,7 +480,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
       </div>
 
       {/* Enhanced Transcript */}
-      <div className="bg-card border border-border rounded-xl p-6 flex flex-col flex-1 min-h-0 shadow-sm relative">
+      <div className="bg-card border border-border rounded-xl p-6 pb-16 flex flex-col flex-1 min-h-0 shadow-sm relative">
         <div className="flex items-center justify-between mb-5 shrink-0 pb-4 border-b border-border/50">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-foreground">Transcript</h3>
