@@ -30,6 +30,7 @@ interface TranscriptTurn {
 interface TranscriptPlayerProps {
   conversationId: Id<"conversations">;
   getUserName: (userId?: Id<"users">) => string;
+  selectedUserId?: Id<"users"> | null;
   children?: React.ReactNode;
 }
 
@@ -41,7 +42,12 @@ interface WordHighlight {
   word: string;
 }
 
-export default function TranscriptPlayer({ conversationId, getUserName, children }: TranscriptPlayerProps) {
+export default function TranscriptPlayer({
+  conversationId,
+  getUserName,
+  selectedUserId = null,
+  children,
+}: TranscriptPlayerProps) {
   const transcriptTurns = useQuery(api.conversations.getTranscript, { conversationId }) || [];
   const audioUrl = useQuery(api.conversations.getAudioUrl, { conversationId });
   const speakers = useQuery(api.conversations.getSpeakers, { conversationId });
@@ -55,6 +61,14 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
   
   // Audio playback context for syncing with analytics panel
   const audioPlayback = useAudioPlaybackOptional();
+
+  const visibleTranscriptTurns = useMemo(
+    () =>
+      selectedUserId
+        ? transcriptTurns.filter((turn) => turn.userId === selectedUserId)
+        : transcriptTurns,
+    [selectedUserId, transcriptTurns]
+  );
 
   // Enhanced getUserName that uses speaker data
   const getSpeakerName = (userId?: Id<"users">) => {
@@ -82,7 +96,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
 
   // Flatten all words with their turn info - memoized to prevent recalculation on every render
   const allWords = useMemo(() => {
-    return transcriptTurns.flatMap((turn) => {
+    return visibleTranscriptTurns.flatMap((turn) => {
       if (!turn.words || turn.words.length === 0) return [];
       return turn.words.map((word) => ({
         ...word,
@@ -90,7 +104,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
         userId: turn.userId,
       }));
     });
-  }, [transcriptTurns]);
+  }, [visibleTranscriptTurns]);
 
   // Build word highlight map from analytics
   const wordHighlights = useMemo<Map<string, WordHighlight>>(() => {
@@ -102,7 +116,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
     if (analytics.fillerWords?.instances) {
       // We need to find the actual word positions in the transcript
       let wordIndex = 0;
-      transcriptTurns.forEach((turn) => {
+      visibleTranscriptTurns.forEach((turn) => {
         if (turn.userId === currentUser._id && turn.words) {
           turn.words.forEach((word) => {
             const lowerWord = word.word.toLowerCase().replace(/[.,!?;:]/g, "");
@@ -125,7 +139,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
 
     // Map weak words
     if (analytics.weakWords) {
-      transcriptTurns.forEach((turn) => {
+      visibleTranscriptTurns.forEach((turn) => {
         if (turn.userId === currentUser._id && turn.words) {
           turn.words.forEach((word) => {
             const lowerWord = word.word.toLowerCase().replace(/[.,!?;:]/g, "");
@@ -146,7 +160,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
 
     // Map sentence starters (first word of sentences)
     if (analytics.sentenceStarters?.weak) {
-      transcriptTurns.forEach((turn) => {
+      visibleTranscriptTurns.forEach((turn) => {
         if (turn.userId === currentUser._id && turn.words && turn.words.length > 0) {
           const firstWord = turn.words[0];
           const lowerWord = firstWord.word.toLowerCase().replace(/[.,!?;:]/g, "");
@@ -165,11 +179,14 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
     }
 
     return highlights;
-  }, [analytics, transcriptTurns, currentUser]);
+  }, [analytics, visibleTranscriptTurns, currentUser]);
 
   // Find active word based on current time
   useEffect(() => {
-    if (allWords.length === 0) return;
+    if (allWords.length === 0) {
+      setActiveWordId(null);
+      return;
+    }
 
     // Find the word that matches the current time
     const word = allWords.find(
@@ -182,7 +199,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
       // Clear active word if not in any word's time range
       setActiveWordId(null);
     }
-  }, [currentTime, transcriptTurns]); // Use transcriptTurns instead of allWords for stable reference
+  }, [currentTime, visibleTranscriptTurns]); // Use turns instead of allWords for stable reference
 
   useEffect(() => {
     if (activeWordId && activeWordRef.current) {
@@ -289,190 +306,192 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
     return `${baseClasses} ${activeClasses} ${clickableClasses} ${highlightClasses}`;
   };
 
-  if (!audioUrl) {
-    return (
-      <div className="bg-card border border-border rounded-lg p-6">
-        <p className="text-muted-foreground text-center">No audio available</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full min-h-0 space-y-4">
       {/* Enhanced Audio Player */}
       <div className="bg-card border border-border rounded-xl p-5 shrink-0 shadow-sm">
-        <div className="flex items-center gap-4 mb-3">
-          <button
-            onClick={handlePlayPause}
-            className="p-4 bg-primary hover:bg-primary/90 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-            aria-label={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? (
-              <Pause className="w-6 h-6 text-primary-foreground" fill="currentColor" />
-            ) : (
-              <Play className="w-6 h-6 text-primary-foreground ml-0.5" fill="currentColor" />
-            )}
-          </button>
+        {audioUrl ? (
+          <>
+            <div className="flex items-center gap-4 mb-3">
+              <button
+                onClick={handlePlayPause}
+                className="p-4 bg-primary hover:bg-primary/90 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause className="w-6 h-6 text-primary-foreground" fill="currentColor" />
+                ) : (
+                  <Play className="w-6 h-6 text-primary-foreground ml-0.5" fill="currentColor" />
+                )}
+              </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSkip(-10)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label="Skip back 10 seconds"
-            >
-              <SkipBack className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <button
-              onClick={() => handleSkip(10)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label="Skip forward 10 seconds"
-            >
-              <SkipForward className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSkip(-10)}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  aria-label="Skip back 10 seconds"
+                >
+                  <SkipBack className="w-4 h-4 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={() => handleSkip(10)}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  aria-label="Skip forward 10 seconds"
+                >
+                  <SkipForward className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
 
               <div className="flex-1 flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-mono text-muted-foreground min-w-[50px] text-right tabular-nums">
-                {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, "0")}
-              </span>
-              <div className="flex-1 relative">
-                {showWaveform ? (
-                  /* Waveform visualization */
-                  <div className="relative">
-                    <Waveform
-                      audioUrl={audioUrl}
-                      currentTime={currentTime}
-                      duration={duration}
-                      onSeek={handleWaveformSeek}
-                      className="h-16"
-                    />
-                    {/* Timeline markers overlay */}
-                    <div className="absolute inset-x-0 top-0 h-full flex items-center pointer-events-none">
-                      {timelineMarkers.map((marker, i) => {
-                        const position = (marker.time / (duration || 100)) * 100;
-                        let color = "bg-yellow-500";
-                        if (marker.type === "weak") color = "bg-orange-500";
-                        if (marker.type === "starter") color = "bg-blue-500";
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-mono text-muted-foreground min-w-[50px] text-right tabular-nums">
+                    {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, "0")}
+                  </span>
+                  <div className="flex-1 relative">
+                    {showWaveform ? (
+                      /* Waveform visualization */
+                      <div className="relative">
+                        <Waveform
+                          audioUrl={audioUrl}
+                          currentTime={currentTime}
+                          duration={duration}
+                          onSeek={handleWaveformSeek}
+                          className="h-16"
+                        />
+                        {/* Timeline markers overlay */}
+                        <div className="absolute inset-x-0 top-0 h-full flex items-center pointer-events-none">
+                          {timelineMarkers.map((marker, i) => {
+                            const position = (marker.time / (duration || 100)) * 100;
+                            let color = "bg-yellow-500";
+                            if (marker.type === "weak") color = "bg-orange-500";
+                            if (marker.type === "starter") color = "bg-blue-500";
 
-                        return (
-                          <div
-                            key={`${marker.time}-${i}`}
-                            className={`absolute w-1 h-4 ${color} rounded-full opacity-70`}
-                            style={{ left: `${position}%`, transform: 'translateX(-50%)', top: '4px' }}
-                            title={`${marker.type}: ${marker.word}`}
-                          />
-                        );
-                      })}
-                    </div>
+                            return (
+                              <div
+                                key={`${marker.time}-${i}`}
+                                className={`absolute w-1 h-4 ${color} rounded-full opacity-70`}
+                                style={{ left: `${position}%`, transform: 'translateX(-50%)', top: '4px' }}
+                                title={`${marker.type}: ${marker.word}`}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Timeline with markers */
+                      <div className="relative h-10 flex items-center">
+                        {/* Timeline markers */}
+                        <div className="absolute inset-x-0 top-0 h-6 flex items-center pointer-events-none">
+                          {timelineMarkers.map((marker, i) => {
+                            const position = (marker.time / (duration || 100)) * 100;
+                            let color = "bg-yellow-500";
+                            if (marker.type === "weak") color = "bg-orange-500";
+                            if (marker.type === "starter") color = "bg-blue-500";
+
+                            return (
+                              <div
+                                key={`${marker.time}-${i}`}
+                                className={`absolute w-1 h-3 ${color} rounded-full opacity-60 hover:opacity-100 transition-opacity`}
+                                style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
+                                title={`${marker.type}: ${marker.word}`}
+                              />
+                            );
+                          })}
+                        </div>
+
+                        {/* Progress bar */}
+                        <input
+                          type="range"
+                          min={0}
+                          max={duration || 100}
+                          value={currentTime}
+                          onChange={(e) => {
+                            const newTime = parseFloat(e.target.value);
+                            if (audioRef.current) {
+                              audioRef.current.currentTime = newTime;
+                            }
+                            setCurrentTime(newTime);
+                          }}
+                          className="w-full h-2 bg-muted/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-md hover:[&::-moz-range-thumb]:scale-110 [&::-moz-range-thumb]:transition-transform relative z-10"
+                          style={{
+                            background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) 100%)`
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  /* Timeline with markers */
-                  <div className="relative h-10 flex items-center">
-                    {/* Timeline markers */}
-                    <div className="absolute inset-x-0 top-0 h-6 flex items-center pointer-events-none">
-                      {timelineMarkers.map((marker, i) => {
-                        const position = (marker.time / (duration || 100)) * 100;
-                        let color = "bg-yellow-500";
-                        if (marker.type === "weak") color = "bg-orange-500";
-                        if (marker.type === "starter") color = "bg-blue-500";
-
-                        return (
-                          <div
-                            key={`${marker.time}-${i}`}
-                            className={`absolute w-1 h-3 ${color} rounded-full opacity-60 hover:opacity-100 transition-opacity`}
-                            style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
-                            title={`${marker.type}: ${marker.word}`}
-                          />
-                        );
-                      })}
-                    </div>
-
-                    {/* Progress bar */}
-                    <input
-                      type="range"
-                      min={0}
-                      max={duration || 100}
-                      value={currentTime}
-                      onChange={(e) => {
-                        const newTime = parseFloat(e.target.value);
-                        if (audioRef.current) {
-                          audioRef.current.currentTime = newTime;
-                        }
-                        setCurrentTime(newTime);
-                      }}
-                      className="w-full h-2 bg-muted/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-md hover:[&::-moz-range-thumb]:scale-110 [&::-moz-range-thumb]:transition-transform relative z-10"
-                      style={{
-                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) 100%)`
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-              <span className="text-sm font-mono text-muted-foreground min-w-[50px] tabular-nums">
-                {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, "0")}
-              </span>
-              <button
-                onClick={() => setShowWaveform(!showWaveform)}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-                aria-label="Toggle waveform"
-                title={showWaveform ? "Show simple timeline" : "Show waveform"}
-              >
-                <Waves className={`w-4 h-4 ${showWaveform ? 'text-primary' : 'text-muted-foreground'}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Highlight legend */}
-        {wordHighlights.size > 0 && (
-          <div className="flex items-center gap-4 pt-3 border-t border-border/50">
-            <span className="text-xs text-muted-foreground font-medium">Timeline markers:</span>
-            <div className="flex items-center gap-3 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                <span className="text-muted-foreground">Filler words</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                <span className="text-muted-foreground">Weak words</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                <span className="text-muted-foreground">Sentence starters</span>
+                  <span className="text-sm font-mono text-muted-foreground min-w-[50px] tabular-nums">
+                    {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, "0")}
+                  </span>
+                  <button
+                    onClick={() => setShowWaveform(!showWaveform)}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    aria-label="Toggle waveform"
+                    title={showWaveform ? "Show simple timeline" : "Show waveform"}
+                  >
+                    <Waves className={`w-4 h-4 ${showWaveform ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* Highlight legend */}
+            {wordHighlights.size > 0 && (
+              <div className="flex items-center gap-4 pt-3 border-t border-border/50">
+                <span className="text-xs text-muted-foreground font-medium">Timeline markers:</span>
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    <span className="text-muted-foreground">Filler words</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                    <span className="text-muted-foreground">Weak words</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                    <span className="text-muted-foreground">Sentence starters</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <audio
+              ref={audioRef}
+              src={audioUrl}
+              onPlay={() => {
+                setIsPlaying(true);
+                audioPlayback?.updateIsPlaying(true);
+              }}
+              onPause={() => {
+                setIsPlaying(false);
+                audioPlayback?.updateIsPlaying(false);
+              }}
+              onEnded={() => {
+                setIsPlaying(false);
+                audioPlayback?.updateIsPlaying(false);
+              }}
+              onLoadedMetadata={() => {
+                if (audioRef.current) {
+                  setDuration(audioRef.current.duration);
+                  audioPlayback?.updateDuration(audioRef.current.duration);
+                }
+              }}
+              onTimeUpdate={() => {
+                if (audioRef.current) {
+                  setCurrentTime(audioRef.current.currentTime);
+                  audioPlayback?.updateCurrentTime(audioRef.current.currentTime);
+                }
+              }}
+            />
+          </>
+        ) : (
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground text-center">
+              No audio available for this conversation.
+            </p>
           </div>
         )}
-
-        <audio
-          ref={audioRef}
-          src={audioUrl}
-          onPlay={() => {
-            setIsPlaying(true);
-            audioPlayback?.updateIsPlaying(true);
-          }}
-          onPause={() => {
-            setIsPlaying(false);
-            audioPlayback?.updateIsPlaying(false);
-          }}
-          onEnded={() => {
-            setIsPlaying(false);
-            audioPlayback?.updateIsPlaying(false);
-          }}
-          onLoadedMetadata={() => {
-            if (audioRef.current) {
-              setDuration(audioRef.current.duration);
-              audioPlayback?.updateDuration(audioRef.current.duration);
-            }
-          }}
-          onTimeUpdate={() => {
-            if (audioRef.current) {
-              setCurrentTime(audioRef.current.currentTime);
-              audioPlayback?.updateCurrentTime(audioRef.current.currentTime);
-            }
-          }}
-        />
       </div>
 
       {/* Enhanced Transcript */}
@@ -481,7 +500,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-foreground">Transcript</h3>
             <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-              {transcriptTurns.length} turns
+              {visibleTranscriptTurns.length} turns
             </span>
           </div>
           {wordHighlights.size > 0 && (
@@ -502,11 +521,11 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
           )}
         </div>
         <div className="space-y-5 overflow-y-auto flex-1 min-h-0 pr-3 custom-scrollbar">
-          {transcriptTurns.map((turn, turnIndex) => {
+          {visibleTranscriptTurns.map((turn, turnIndex) => {
             const userName = getSpeakerName(turn.userId);
             const hasWords = turn.words && turn.words.length > 0;
             const isFirstTurn = turnIndex === 0;
-            const prevTurn = turnIndex > 0 ? transcriptTurns[turnIndex - 1] : null;
+            const prevTurn = turnIndex > 0 ? visibleTranscriptTurns[turnIndex - 1] : null;
             const sameSpeaker = prevTurn?.userId === turn.userId;
             const isCurrentUser = currentUser && turn.userId === currentUser._id;
             
