@@ -29,6 +29,7 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
   const { isSignedIn, getToken } = useAuth();
   const audioPlayback = useAudioPlaybackOptional();
   const [isOpen, setIsOpen] = useState(false);
+  const [suppressHover, setSuppressHover] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +67,11 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
       scrollToBottom();
     }
   }, [messages, isOpen]);
+
+  const closeChat = () => {
+    setIsOpen(false);
+    setSuppressHover(true);
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,6 +188,7 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
   };
 
   const handleTimestampClick = (seconds: number) => {
+    closeChat();
     if (!audioPlayback) return;
     audioPlayback.seekTo(seconds, true);
   };
@@ -238,8 +245,14 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
           <motion.div
             layoutId="chatbot-panel"
             transition={{ type: "spring", bounce: 0.15, duration: 0.25 }}
-            onClick={() => setIsOpen(true)}
-            className="absolute bottom-2 left-2 right-2 bg-background border border-border rounded-full shadow-lg cursor-pointer z-50 px-4 py-2 flex items-center justify-end hover:bg-muted/50"
+            onClick={() => {
+              setSuppressHover(false);
+              setIsOpen(true);
+            }}
+            onMouseLeave={() => setSuppressHover(false)}
+            className={`absolute bottom-2 left-2 right-2 bg-background border border-border rounded-full shadow-lg cursor-pointer z-50 px-4 py-2 flex items-center justify-end transition-colors ${
+              suppressHover ? "" : "hover:bg-muted/50"
+            }`}
           >
             <span className="text-sm text-muted-foreground mr-2">Ask about this conversation...</span>
             <ChevronUp className="w-4 h-4" />
@@ -256,7 +269,7 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
             <div className="h-12 flex items-center justify-between px-4 shrink-0 border-b border-border">
               <span className="text-sm font-medium text-foreground">Conversation Assistant</span>
               <Button
-                onClick={() => setIsOpen(false)}
+                onClick={closeChat}
                 variant="ghost"
                 size="icon"
               >
