@@ -24,6 +24,7 @@ interface TranscriptTurn {
   _id: Id<"transcriptTurns">;
   text: string;
   userId?: Id<"users">;
+  timestamp?: number;
   words?: Word[];
 }
 
@@ -40,6 +41,19 @@ interface WordHighlight {
   type: HighlightType;
   word: string;
 }
+
+type RenderWord = Word & {
+  turnId: Id<"transcriptTurns">;
+  userId?: Id<"users">;
+  estimated?: boolean;
+};
+
+type RenderTurn = TranscriptTurn & {
+  renderWords: RenderWord[];
+};
+
+const DEFAULT_ESTIMATED_WORD_DURATION_SEC = 0.35;
+const MIN_ESTIMATED_TURN_DURATION_SEC = 0.6;
 
 export default function TranscriptPlayer({ conversationId, getUserName, children }: TranscriptPlayerProps) {
   const transcriptTurns = useQuery(api.conversations.getTranscript, { conversationId }) || [];
@@ -80,17 +94,125 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
     }
   }, [audioPlayback, audioUrl]); // Re-register when audio URL changes
 
-  // Flatten all words with their turn info - memoized to prevent recalculation on every render
-  const allWords = useMemo(() => {
-    return transcriptTurns.flatMap((turn) => {
-      if (!turn.words || turn.words.length === 0) return [];
-      return turn.words.map((word) => ({
-        ...word,
-        turnId: turn._id,
-        userId: turn.userId,
-      }));
+  // Ensure every turn has playable words. If timing is missing, estimate it from text and timeline anchors.
+  const renderTurns = useMemo<RenderTurn[]>(() => {
+    if (transcriptTurns.length === 0) return [];
+
+    const tokenize = (text: string) => text.trim().split(/\s+/).filter(Boolean);
+    const tokenizedTurns = transcriptTurns.map((turn) => tokenize(turn.text));
+    const estimatedDurations = tokenizedTurns.map((tokens) =>
+      Math.max(tokens.length * DEFAULT_ESTIMATED_WORD_DURATION_SEC, MIN_ESTIMATED_TURN_DURATION_SEC)
+    );
+
+    const turnStartTimes: Array<number | null> = new Array(transcriptTurns.length).fill(null);
+    const turnEndTimes: Array<number | null> = new Array(transcriptTurns.length).fill(null);
+
+    let cursor = 0;
+    for (let i = 0; i < transcriptTurns.length; i++) {
+      const turn = transcriptTurns[i];
+      const hasRealWords = !!turn.words?.length;
+
+      if (hasRealWords) {
+        const start = turn.words![0]?.startTime ?? cursor;
+        const end = turn.words![turn.words!.length - 1]?.endTime ?? start;
+        turnStartTimes[i] = start;
+        turnEndTimes[i] = end;
+        cursor = Math.max(cursor, end);
+        continue;
+      }
+
+      const blockStart = Math.max(turn.timestamp ?? cursor, cursor);
+      let nextAnchorIndex = -1;
+      for (let j = i + 1; j < transcriptTurns.length; j++) {
+        const nextTurn = transcriptTurns[j];
+        const nextAnchor = nextTurn.words?.[0]?.startTime ?? nextTurn.timestamp;
+        if (nextAnchor !== undefined) {
+          nextAnchorIndex = j;
+          break;
+        }
+      }
+
+      const nextAnchorTime =
+        nextAnchorIndex >= 0
+          ? transcriptTurns[nextAnchorIndex].words?.[0]?.startTime ?? transcriptTurns[nextAnchorIndex].timestamp
+          : undefined;
+      const blockEnd =
+        nextAnchorTime !== undefined
+          ? nextAnchorTime
+          : duration > blockStart
+            ? duration
+            : undefined;
+      const blockLastIndex = nextAnchorIndex >= 0 ? nextAnchorIndex - 1 : transcriptTurns.length - 1;
+
+      const blockEstimate = estimatedDurations
+        .slice(i, blockLastIndex + 1)
+        .reduce((sum, value) => sum + value, 0);
+      const scale =
+        blockEnd !== undefined && blockEnd > blockStart && blockEstimate > 0
+          ? (blockEnd - blockStart) / blockEstimate
+          : 1;
+
+      let blockCursor = blockStart;
+      for (let j = i; j <= blockLastIndex; j++) {
+        const turnDuration = Math.max(estimatedDurations[j] * scale, 0.2);
+        turnStartTimes[j] = blockCursor;
+        turnEndTimes[j] = blockCursor + turnDuration;
+        blockCursor += turnDuration;
+      }
+
+      cursor = blockCursor;
+      i = blockLastIndex;
+    }
+
+    return transcriptTurns.map((turn, turnIndex) => {
+      if (turn.words && turn.words.length > 0) {
+        return {
+          ...turn,
+          renderWords: turn.words.map((word) => ({
+            ...word,
+            turnId: turn._id,
+            userId: turn.userId,
+          })),
+        };
+      }
+
+      const tokens = tokenizedTurns[turnIndex];
+      if (tokens.length === 0) {
+        return {
+          ...turn,
+          renderWords: [],
+        };
+      }
+
+      const estimatedStart = turnStartTimes[turnIndex] ?? 0;
+      const estimatedEnd =
+        turnEndTimes[turnIndex] ??
+        estimatedStart + Math.max(tokens.length * DEFAULT_ESTIMATED_WORD_DURATION_SEC, MIN_ESTIMATED_TURN_DURATION_SEC);
+      const totalDuration = Math.max(estimatedEnd - estimatedStart, 0.2);
+      const wordDuration = totalDuration / tokens.length;
+
+      return {
+        ...turn,
+        renderWords: tokens.map((token, wordIndex) => ({
+          word: token,
+          startTime: estimatedStart + wordIndex * wordDuration,
+          endTime:
+            wordIndex === tokens.length - 1
+              ? estimatedEnd
+              : estimatedStart + (wordIndex + 1) * wordDuration,
+          wordId: `synthetic-${turn._id}-${wordIndex}`,
+          turnId: turn._id,
+          userId: turn.userId,
+          estimated: true,
+        })),
+      };
     });
-  }, [transcriptTurns]);
+  }, [duration, transcriptTurns]);
+
+  // Flatten all playable words with their turn info
+  const allWords = useMemo(() => {
+    return renderTurns.flatMap((turn) => turn.renderWords);
+  }, [renderTurns]);
 
   // Build word highlight map from analytics
   const wordHighlights = useMemo<Map<string, WordHighlight>>(() => {
@@ -182,7 +304,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
       // Clear active word if not in any word's time range
       setActiveWordId(null);
     }
-  }, [currentTime, transcriptTurns]); // Use transcriptTurns instead of allWords for stable reference
+  }, [currentTime, allWords]);
 
   useEffect(() => {
     if (activeWordId && activeWordRef.current) {
@@ -238,7 +360,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
     }
   };
 
-  const handleWordClick = (word: Word & { turnId: Id<"transcriptTurns"> }) => {
+  const handleWordClick = (word: RenderWord) => {
     if (audioRef.current) {
       audioRef.current.currentTime = word.startTime;
       setActiveWordId(word.wordId);
@@ -485,7 +607,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-foreground">Transcript</h3>
             <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-              {transcriptTurns.length} turns
+              {renderTurns.length} turns
             </span>
           </div>
           {wordHighlights.size > 0 && (
@@ -506,17 +628,17 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
           )}
         </div>
         <div className="space-y-5 overflow-y-auto flex-1 min-h-0 pr-3 custom-scrollbar">
-          {transcriptTurns.map((turn, turnIndex) => {
+          {renderTurns.map((turn, turnIndex) => {
             const userName = getSpeakerName(turn.userId);
-            const hasWords = turn.words && turn.words.length > 0;
+            const hasWords = turn.renderWords.length > 0;
             const isFirstTurn = turnIndex === 0;
-            const prevTurn = turnIndex > 0 ? transcriptTurns[turnIndex - 1] : null;
+            const prevTurn = turnIndex > 0 ? renderTurns[turnIndex - 1] : null;
             const sameSpeaker = prevTurn?.userId === turn.userId;
             const isCurrentUser = currentUser && turn.userId === currentUser._id;
             
             // Get the start time for this turn (from first word or turn timestamp)
-            const turnStartTime = hasWords && turn.words![0] 
-              ? turn.words![0].startTime 
+            const turnStartTime = hasWords && turn.renderWords[0]
+              ? turn.renderWords[0].startTime
               : (turn.timestamp ?? null);
 
             // Different colors for different speakers
@@ -564,18 +686,18 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
                   </div>
                   {hasWords ? (
                     <p className="text-foreground leading-relaxed text-[15px]">
-                      {turn.words!.map((word, idx) => {
+                      {turn.renderWords.map((word, idx) => {
                         const isActive = activeWordId === word.wordId;
                         return (
                           <span
                             key={word.wordId}
                             ref={isActive ? activeWordRef : null}
-                            onClick={() => handleWordClick({ ...word, turnId: turn._id })}
+                            onClick={() => handleWordClick(word)}
                             className={getWordClassName(word, isActive)}
                             title={wordHighlights.get(word.wordId)?.type || undefined}
                           >
                             {word.word}
-                            {idx < turn.words!.length - 1 && " "}
+                            {idx < turn.renderWords.length - 1 && " "}
                           </span>
                         );
                       })}
