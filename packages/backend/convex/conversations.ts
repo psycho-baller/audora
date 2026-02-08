@@ -16,6 +16,8 @@ function generateInviteCode(): string {
 export const create = mutation({
   args: {
     location: v.optional(v.string()),
+    participantMode: v.optional(v.union(v.literal("linked"), v.literal("solo"), v.literal("anonymous"))),
+    reusePending: v.optional(v.boolean()),
   },
   returns: v.object({
     id: v.id("conversations"),
@@ -37,19 +39,21 @@ export const create = mutation({
       throw new Error("User not found");
     }
 
-    // Check for existing pending conversation
-    const existingPending = await ctx.db
-      .query("conversations")
-      .withIndex("by_initiator_and_status", (q) =>
-        q.eq("initiatorUserId", user._id).eq("status", "pending")
-      )
-      .first();
+    if (args.reusePending !== false) {
+      // Check for existing pending conversation
+      const existingPending = await ctx.db
+        .query("conversations")
+        .withIndex("by_initiator_and_status", (q) =>
+          q.eq("initiatorUserId", user._id).eq("status", "pending")
+        )
+        .first();
 
-    if (existingPending) {
-      return {
-        id: existingPending._id,
-        inviteCode: existingPending.inviteCode,
-      };
+      if (existingPending) {
+        return {
+          id: existingPending._id,
+          inviteCode: existingPending.inviteCode,
+        };
+      }
     }
 
     // Create new conversation
@@ -60,6 +64,7 @@ export const create = mutation({
       inviteCode,
       location: args.location,
       startedAt: Date.now(),
+      participantMode: args.participantMode ?? "linked",
     });
 
     return {
@@ -104,6 +109,10 @@ export const claimScanner = mutation({
       throw new Error("Invalid invite code");
     }
 
+    if (conversation.status !== "pending") {
+      throw new Error("Conversation is no longer open for joining");
+    }
+
     if (conversation.scannerUserId) {
       throw new Error("Scanner already claimed");
     }
@@ -113,6 +122,55 @@ export const claimScanner = mutation({
       scannerUserId: user._id,
       scannerEmail: user.email,
       status: "active",
+      startedAt: Date.now(),
+      participantMode: "linked",
+    });
+
+    return null;
+  },
+});
+
+// Start recording without requiring another linked account.
+export const startWithoutLinkedParticipant = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    mode: v.optional(v.union(v.literal("solo"), v.literal("anonymous"))),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier.split("|")[1]))
+      .unique();
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    if (conversation.initiatorUserId !== user._id) {
+      throw new Error("Only the conversation creator can start without invite");
+    }
+
+    if (conversation.status !== "pending") {
+      throw new Error("Conversation is not pending");
+    }
+
+    if (conversation.scannerUserId) {
+      throw new Error("Conversation already has a linked participant");
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      status: "active",
+      participantMode: args.mode ?? "anonymous",
       startedAt: Date.now(),
     });
 
@@ -181,8 +239,9 @@ export const forceCompleteConversation = mutation({
 export const saveTranscriptData = mutation({
   args: {
     conversationId: v.id("conversations"),
-    transcript: v.array(v.object({ 
-      userId: v.id("users"), 
+    transcript: v.array(v.object({
+      userId: v.optional(v.id("users")),
+      speaker: v.optional(v.string()),
       text: v.string(),
       startTime: v.optional(v.number()), // Turn-level timestamp
       words: v.optional(v.array(v.object({
@@ -197,6 +256,7 @@ export const saveTranscriptData = mutation({
     initiatorName: v.optional(v.string()),
     scannerName: v.optional(v.string()),
     summary: v.string(),
+    anonymousSpeakerCount: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -212,11 +272,30 @@ export const saveTranscriptData = mutation({
     }
 
     // Save summary to conversation
-    await ctx.db.patch(args.conversationId, {
+    const detectedAnonymousSpeakers = new Set(
+      args.transcript
+        .filter((turn) => !turn.userId && turn.speaker)
+        .map((turn) => turn.speaker as string)
+    );
+    const anonymousSpeakerCount =
+      args.anonymousSpeakerCount ?? detectedAnonymousSpeakers.size;
+
+    const conversationUpdates: {
+      summary: string;
+      status: "ended";
+      endedAt: number;
+      anonymousSpeakerCount?: number;
+    } = {
       summary: args.summary,
       status: "ended",
       endedAt: Date.now(),
-    });
+    };
+
+    if (anonymousSpeakerCount > 0) {
+      conversationUpdates.anonymousSpeakerCount = anonymousSpeakerCount;
+    }
+
+    await ctx.db.patch(args.conversationId, conversationUpdates);
 
     // Replace existing transcript/facts instead of appending.
     // This prevents full-duplicate transcripts when multiple processors
@@ -250,6 +329,7 @@ export const saveTranscriptData = mutation({
       await ctx.db.insert("transcriptTurns", {
         conversationId: args.conversationId,
         userId: turn.userId,
+        speaker: turn.speaker,
         text: turn.text,
         order: i,
         timestamp, // Add timestamp
@@ -289,6 +369,8 @@ export const get = query({
       initiatorUserId: v.id("users"),
       scannerUserId: v.optional(v.id("users")),
       scannerEmail: v.optional(v.string()),
+      participantMode: v.optional(v.union(v.literal("linked"), v.literal("solo"), v.literal("anonymous"))),
+      anonymousSpeakerCount: v.optional(v.number()),
       status: v.union(v.literal("pending"), v.literal("active"), v.literal("ended")),
       inviteCode: v.string(),
       location: v.optional(v.string()),
@@ -333,6 +415,8 @@ export const list = query({
       initiatorUserId: v.id("users"),
       scannerUserId: v.optional(v.id("users")),
       scannerEmail: v.optional(v.string()),
+      participantMode: v.optional(v.union(v.literal("linked"), v.literal("solo"), v.literal("anonymous"))),
+      anonymousSpeakerCount: v.optional(v.number()),
       status: v.union(v.literal("pending"), v.literal("active"), v.literal("ended")),
       inviteCode: v.string(),
       location: v.optional(v.string()),
@@ -388,6 +472,8 @@ export const getByInviteCode = query({
       initiatorUserId: v.id("users"),
       scannerUserId: v.optional(v.id("users")),
       scannerEmail: v.optional(v.string()),
+      participantMode: v.optional(v.union(v.literal("linked"), v.literal("solo"), v.literal("anonymous"))),
+      anonymousSpeakerCount: v.optional(v.number()),
       status: v.union(v.literal("pending"), v.literal("active"), v.literal("ended")),
       inviteCode: v.string(),
       location: v.optional(v.string()),
@@ -444,7 +530,7 @@ export const getTranscript = query({
     const dedupedTurns: typeof sortedTurns = [];
 
     for (const turn of sortedTurns) {
-      const key = `${turn.order}|${turn.userId ?? "unknown"}|${turn.text}`;
+      const key = `${turn.order}|${turn.userId ?? "unknown"}|${turn.speaker ?? "unknown"}|${turn.text}`;
       if (seen.has(key)) continue;
       seen.add(key);
       dedupedTurns.push(turn);
@@ -484,6 +570,20 @@ export const getSpeakers = query({
           email: scanner.email,
           image: scanner.image,
         };
+      }
+    }
+
+    // Include anonymous speaker labels for conversations without linked users.
+    const turns = await ctx.db
+      .query("transcriptTurns")
+      .withIndex("by_conversation_and_order", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+    for (const turn of turns) {
+      if (!turn.userId && turn.speaker) {
+        const anonymousKey = `anonymous:${turn.speaker}`;
+        if (!speakers[anonymousKey]) {
+          speakers[anonymousKey] = { name: turn.speaker };
+        }
       }
     }
     
@@ -569,6 +669,7 @@ export const linkConversationToFriend = mutation({
       scannerUserId: args.friendId,
       scannerEmail: friend.email,
       status: "active",
+      participantMode: "linked",
     });
 
     return null;

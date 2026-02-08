@@ -48,9 +48,9 @@ export function ExportDialog({ conversationId, trigger }: ExportDialogProps) {
     content += `\n${"=".repeat(50)}\n\n`;
     
     transcript.forEach((turn) => {
-      const speakerName = turn.userId && speakers[turn.userId] 
-        ? speakers[turn.userId].name 
-        : "Unknown Speaker";
+      const speakerName = turn.userId && speakers[turn.userId]
+        ? speakers[turn.userId].name
+        : turn.speaker || "Unknown Speaker";
       content += `${speakerName}: ${turn.text}\n\n`;
     });
     
@@ -79,7 +79,9 @@ export function ExportDialog({ conversationId, trigger }: ExportDialogProps) {
       },
       speakers: speakers,
       transcript: transcript.map((turn) => ({
-        speaker: turn.userId && speakers[turn.userId] ? speakers[turn.userId].name : "Unknown",
+        speaker: turn.userId && speakers[turn.userId]
+          ? speakers[turn.userId].name
+          : turn.speaker || "Unknown",
         text: turn.text,
         timestamp: turn.timestamp,
         words: turn.words,
@@ -235,4 +237,3 @@ export function ExportDialog({ conversationId, trigger }: ExportDialogProps) {
     </Dialog>
   );
 }
-

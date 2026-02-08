@@ -24,6 +24,7 @@ interface TranscriptTurn {
   _id: Id<"transcriptTurns">;
   text: string;
   userId?: Id<"users">;
+  speaker?: string;
   timestamp?: number;
   words?: Word[];
 }
@@ -70,13 +71,20 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
   // Audio playback context for syncing with analytics panel
   const audioPlayback = useAudioPlaybackOptional();
 
-  // Enhanced getUserName that uses speaker data
-  const getSpeakerName = (userId?: Id<"users">) => {
-    if (!userId) return "Unknown Speaker";
-    if (speakers && speakers[userId]) {
-      return speakers[userId].name;
+  // Enhanced speaker name resolution that supports linked users and anonymous labels.
+  const getSpeakerName = (turn: TranscriptTurn) => {
+    if (turn.userId) {
+      if (speakers && speakers[turn.userId]) {
+        return speakers[turn.userId].name;
+      }
+      return getUserName(turn.userId);
     }
-    return getUserName(userId);
+
+    if (turn.speaker) {
+      return turn.speaker;
+    }
+
+    return "Unknown Speaker";
   };
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -629,11 +637,19 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
         </div>
         <div className="space-y-5 overflow-y-auto flex-1 min-h-0 pr-3 custom-scrollbar">
           {renderTurns.map((turn, turnIndex) => {
-            const userName = getSpeakerName(turn.userId);
+            const userName = getSpeakerName(turn);
             const hasWords = turn.renderWords.length > 0;
             const isFirstTurn = turnIndex === 0;
             const prevTurn = turnIndex > 0 ? renderTurns[turnIndex - 1] : null;
-            const sameSpeaker = prevTurn?.userId === turn.userId;
+            const currentSpeakerKey = turn.userId
+              ? `user:${turn.userId}`
+              : `speaker:${turn.speaker || "unknown"}`;
+            const previousSpeakerKey = prevTurn
+              ? prevTurn.userId
+                ? `user:${prevTurn.userId}`
+                : `speaker:${prevTurn.speaker || "unknown"}`
+              : null;
+            const sameSpeaker = previousSpeakerKey === currentSpeakerKey;
             const isCurrentUser = currentUser && turn.userId === currentUser._id;
             
             // Get the start time for this turn (from first word or turn timestamp)

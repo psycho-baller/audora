@@ -1,6 +1,10 @@
+import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
 import { QRCodeSVG } from "qrcode.react";
-import { Clock, Users } from "lucide-react";
+import { Clock, Loader2, Mic, Users } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface PendingViewProps {
   conversationId: string;
@@ -12,6 +16,10 @@ export default function PendingView({
   conversation,
 }: PendingViewProps) {
   const [qrUrl, setQrUrl] = useState("");
+  const [isStartingWithoutInvite, setIsStartingWithoutInvite] = useState(false);
+  const startWithoutLinkedParticipant = useMutation(
+    api.conversations.startWithoutLinkedParticipant
+  );
 
   useEffect(() => {
     // Generate QR URL
@@ -19,6 +27,21 @@ export default function PendingView({
     const url = `${baseUrl}/join/${conversationId}?code=${conversation.inviteCode}`;
     setQrUrl(url);
   }, [conversationId, conversation.inviteCode]);
+
+  const handleStartWithoutInvite = async () => {
+    try {
+      setIsStartingWithoutInvite(true);
+      await startWithoutLinkedParticipant({
+        conversationId: conversationId as Id<"conversations">,
+        mode: "anonymous",
+      });
+    } catch (error) {
+      console.error("Failed to start recording without invite:", error);
+      toast.error("Could not start recording. Please try again.");
+    } finally {
+      setIsStartingWithoutInvite(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
@@ -39,6 +62,20 @@ export default function PendingView({
           <p className="break-all">{qrUrl}</p>
           <p>Invite Code: <span className="font-mono font-bold text-foreground">{conversation.inviteCode}</span></p>
         </div>
+
+        <button
+          type="button"
+          onClick={handleStartWithoutInvite}
+          disabled={isStartingWithoutInvite}
+          className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isStartingWithoutInvite ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Mic className="h-4 w-4" />
+          )}
+          Start recording without invite
+        </button>
       </div>
 
       {/* Status Info */}
@@ -64,6 +101,9 @@ export default function PendingView({
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
           Once your partner scans and confirms, recording will begin automatically
+        </p>
+        <p className="text-sm text-muted-foreground">
+          No one to invite? Start now and record with anonymous speakers.
         </p>
         <p className="text-xs text-muted-foreground/70">
           Both parties must consent before any audio is saved

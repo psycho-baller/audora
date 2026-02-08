@@ -83,6 +83,12 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
 
   // Check if current user is the scanner (not the initiator)
   const isScanner = currentUser && conversation && currentUser._id === conversation.scannerUserId;
+  const expectedSpeakerCount =
+    conversation?.participantMode === "solo"
+      ? 1
+      : conversation?.participantMode === "anonymous"
+        ? 6
+        : 2;
 
   // Auto-start recording when component mounts (only for initiator)
   useEffect(() => {
@@ -268,7 +274,7 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
           // },
           diarization: "speaker", // Enable speaker diarization
           speaker_diarization_config: {
-            max_speakers: 2, // Expecting 2 speakers in conversation
+            max_speakers: expectedSpeakerCount,
           },
           transcript_filtering_config: {
             // remove_disfluencies: true,
@@ -578,7 +584,13 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
             <Users className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Participants</span>
           </div>
-          <span className="text-sm text-foreground">2 active</span>
+          <span className="text-sm text-foreground">
+            {conversation.participantMode === "solo"
+              ? "1 active"
+              : conversation.scannerUserId
+                ? "2 active"
+                : "Anonymous speakers"}
+          </span>
         </div>
       </div>
 

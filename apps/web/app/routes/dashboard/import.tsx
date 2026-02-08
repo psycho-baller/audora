@@ -4,7 +4,7 @@ import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useUser } from "@clerk/react-router";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { ArrowLeft, CheckCircle, Loader2, Upload, Users } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, Upload, User, UserX, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+
+type ImportParticipantMode = "contact" | "solo" | "anonymous";
 
 // Helper function to split audio file into chunks
 async function splitAudioIntoChunks(file: File, chunkDurationMinutes: number = 5): Promise<Blob[]> {
@@ -128,6 +130,7 @@ export default function ImportConversationPage() {
   const { user: clerkUser } = useUser();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<Id<"users"> | null>(null);
+  const [participantMode, setParticipantMode] = useState<ImportParticipantMode>("contact");
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -183,7 +186,7 @@ export default function ImportConversationPage() {
       return;
     }
 
-    if (!selectedFriend) {
+    if (participantMode === "contact" && !selectedFriend) {
       toast.error("Please select a friend to connect this conversation with");
       return;
     }
@@ -206,15 +209,22 @@ export default function ImportConversationPage() {
       toast.info("Creating conversation...");
       const conversation = await createConversation({
         location: "Imported Conversation",
+        participantMode:
+          participantMode === "contact"
+            ? "linked"
+            : participantMode,
+        reusePending: false,
       });
       setUploadProgress(15);
 
-      // Step 2: Link conversation to selected friend
-      toast.info("Linking conversation to friend...");
-      await linkConversationToFriend({
-        conversationId: conversation.id,
-        friendId: selectedFriend,
-      });
+      // Step 2: Link conversation to selected friend when required
+      if (participantMode === "contact" && selectedFriend) {
+        toast.info("Linking conversation to friend...");
+        await linkConversationToFriend({
+          conversationId: conversation.id,
+          friendId: selectedFriend,
+        });
+      }
       setUploadProgress(20);
 
       // Step 3: Split audio into 10-minute chunks
@@ -333,38 +343,102 @@ export default function ImportConversationPage() {
       toast.success("All chunks processed! Saving combined results...");
       setUploadProgress(95);
 
-      // Step 7: Map speakers to user IDs and save to database
-      // S1 → current user (initiator), S2 → selected friend (scanner)
+      // Step 7: Map speakers based on selected participant mode and save to database
       const currentUserId = currentUserData?._id;
       if (!currentUserId) {
         throw new Error("Current user not found");
       }
 
-      const speakerToUserId: Record<string, Id<"users">> = {
-        S1: currentUserId as Id<"users">,
-        S2: selectedFriend as Id<"users">,
+      const selectedFriendId =
+        participantMode === "contact"
+          ? selectedFriend
+          : null;
+      if (participantMode === "contact" && !selectedFriendId) {
+        throw new Error("Friend is required for contact mode");
+      }
+
+      const anonymousSpeakerMap = new Map<string, string>();
+      const getAnonymousSpeakerLabel = (rawSpeaker: string) => {
+        if (!anonymousSpeakerMap.has(rawSpeaker)) {
+          const nextSpeakerNumber = anonymousSpeakerMap.size + 2;
+          anonymousSpeakerMap.set(rawSpeaker, `Speaker ${nextSpeakerNumber}`);
+        }
+        return anonymousSpeakerMap.get(rawSpeaker)!;
       };
-      const transcriptWithUserIds = allTranscripts.map((turn, turnIndex) => ({
-        userId: (speakerToUserId[turn.speaker] || currentUserId) as Id<"users">,
-        text: turn.text,
-        startTime: turn.startTime,
-        words: turn.words.map((word, wordIndex) => ({
+
+      const transcriptForSave = allTranscripts.map((turn, turnIndex) => {
+        const mappedWords = turn.words.map((word, wordIndex) => ({
           word: word.word,
           startTime: word.startTime,
           endTime: word.endTime,
           wordId: `imported-t${turnIndex}-w${wordIndex}`,
-        })),
-      }));
+        }));
+
+        if (participantMode === "solo") {
+          return {
+            userId: currentUserId as Id<"users">,
+            text: turn.text,
+            startTime: turn.startTime,
+            words: mappedWords,
+          };
+        }
+
+        if (participantMode === "contact") {
+          return {
+            userId:
+              turn.speaker === "S1"
+                ? (currentUserId as Id<"users">)
+                : (selectedFriendId as Id<"users">),
+            text: turn.text,
+            startTime: turn.startTime,
+            words: mappedWords,
+          };
+        }
+
+        // Anonymous mode: keep initiator linked, keep other speakers unlinked with labels.
+        if (turn.speaker === "S1") {
+          return {
+            userId: currentUserId as Id<"users">,
+            text: turn.text,
+            startTime: turn.startTime,
+            words: mappedWords,
+          };
+        }
+
+        return {
+          speaker: getAnonymousSpeakerLabel(turn.speaker),
+          text: turn.text,
+          startTime: turn.startTime,
+          words: mappedWords,
+        };
+      });
+
+      const s1Facts =
+        participantMode === "solo"
+          ? [...new Set([...allS1Facts, ...allS2Facts])]
+          : allS1Facts;
+      const s2Facts = participantMode === "contact" ? allS2Facts : [];
+      const anonymousSpeakerCount = new Set(
+        transcriptForSave
+          .filter((turn) => !turn.userId && turn.speaker)
+          .map((turn) => turn.speaker as string)
+      ).size;
 
       // Save combined transcript data to database
       await saveTranscriptData({
         conversationId: conversation.id,
-        transcript: transcriptWithUserIds,
-        S1_facts: allS1Facts,
-        S2_facts: allS2Facts,
+        transcript: transcriptForSave,
+        S1_facts: s1Facts,
+        S2_facts: s2Facts,
         initiatorName: clerkUser?.fullName || clerkUser?.firstName || "You",
-        scannerName: selectedContact?.name || "Friend",
+        scannerName:
+          participantMode === "contact"
+            ? selectedContact?.name || "Friend"
+            : participantMode === "solo"
+              ? "Self"
+              : "Anonymous participant",
         summary: combinedSummary,
+        anonymousSpeakerCount: anonymousSpeakerCount > 0 ? anonymousSpeakerCount : undefined,
       });
 
       setUploadProgress(100);
@@ -387,7 +461,8 @@ export default function ImportConversationPage() {
   };
 
   const handleTextImport = async () => {
-    if (!selectedFile || !selectedFriend) return;
+    if (!selectedFile) return;
+    if (participantMode === "contact" && !selectedFriend) return;
 
     try {
       // Step 1: Read text file
@@ -399,15 +474,22 @@ export default function ImportConversationPage() {
       toast.info("Creating conversation...");
       const conversation = await createConversation({
         location: "Imported Text Transcript",
+        participantMode:
+          participantMode === "contact"
+            ? "linked"
+            : participantMode,
+        reusePending: false,
       });
       setUploadProgress(25);
 
-      // Step 3: Link conversation to selected friend
-      toast.info("Linking conversation to friend...");
-      await linkConversationToFriend({
-        conversationId: conversation.id,
-        friendId: selectedFriend,
-      });
+      // Step 3: Link conversation to selected friend when required
+      if (participantMode === "contact" && selectedFriend) {
+        toast.info("Linking conversation to friend...");
+        await linkConversationToFriend({
+          conversationId: conversation.id,
+          friendId: selectedFriend,
+        });
+      }
       setUploadProgress(35);
 
       setIsUploading(false);
@@ -419,7 +501,12 @@ export default function ImportConversationPage() {
         conversationId: conversation.id,
         textContent,
         initiatorName: clerkUser?.fullName || clerkUser?.firstName || "You",
-        scannerName: selectedContact?.name || "Friend",
+        scannerName:
+          participantMode === "contact"
+            ? selectedContact?.name || "Friend"
+            : participantMode === "solo"
+              ? "Self"
+              : "Anonymous participant",
       });
       setUploadProgress(75);
 
@@ -429,21 +516,81 @@ export default function ImportConversationPage() {
         throw new Error("Current user not found");
       }
 
-      const transcriptWithUserIds = result.transcript.map(turn => ({
-        userId: (turn.speaker === "S1" ? currentUserId : selectedFriend) as Id<"users">,
-        text: turn.text,
-      }));
+      const selectedFriendId =
+        participantMode === "contact"
+          ? selectedFriend
+          : null;
+      if (participantMode === "contact" && !selectedFriendId) {
+        throw new Error("Friend is required for contact mode");
+      }
+
+      const anonymousSpeakerMap = new Map<string, string>();
+      const getAnonymousSpeakerLabel = (rawSpeaker: string) => {
+        if (!anonymousSpeakerMap.has(rawSpeaker)) {
+          const nextSpeakerNumber = anonymousSpeakerMap.size + 2;
+          anonymousSpeakerMap.set(rawSpeaker, `Speaker ${nextSpeakerNumber}`);
+        }
+        return anonymousSpeakerMap.get(rawSpeaker)!;
+      };
+
+      const transcriptForSave = result.transcript.map((turn) => {
+        if (participantMode === "solo") {
+          return {
+            userId: currentUserId as Id<"users">,
+            text: turn.text,
+          };
+        }
+
+        if (participantMode === "contact") {
+          return {
+            userId:
+              turn.speaker === "S1"
+                ? (currentUserId as Id<"users">)
+                : (selectedFriendId as Id<"users">),
+            text: turn.text,
+          };
+        }
+
+        if (turn.speaker === "S1") {
+          return {
+            userId: currentUserId as Id<"users">,
+            text: turn.text,
+          };
+        }
+
+        return {
+          speaker: getAnonymousSpeakerLabel(turn.speaker),
+          text: turn.text,
+        };
+      });
+
+      const s1Facts =
+        participantMode === "solo"
+          ? [...new Set([...result.S1_facts, ...result.S2_facts])]
+          : result.S1_facts;
+      const s2Facts = participantMode === "contact" ? result.S2_facts : [];
+      const anonymousSpeakerCount = new Set(
+        transcriptForSave
+          .filter((turn) => !turn.userId && turn.speaker)
+          .map((turn) => turn.speaker as string)
+      ).size;
 
       // Step 6: Save transcript data to database
       toast.info("Saving to database...");
       await saveTranscriptData({
         conversationId: conversation.id,
-        transcript: transcriptWithUserIds,
-        S1_facts: result.S1_facts,
-        S2_facts: result.S2_facts,
+        transcript: transcriptForSave,
+        S1_facts: s1Facts,
+        S2_facts: s2Facts,
         initiatorName: clerkUser?.fullName || clerkUser?.firstName || "You",
-        scannerName: selectedContact?.name || "Friend",
+        scannerName:
+          participantMode === "contact"
+            ? selectedContact?.name || "Friend"
+            : participantMode === "solo"
+              ? "Self"
+              : "Anonymous participant",
         summary: result.summary,
+        anonymousSpeakerCount: anonymousSpeakerCount > 0 ? anonymousSpeakerCount : undefined,
       });
 
       setUploadProgress(100);
@@ -478,7 +625,7 @@ export default function ImportConversationPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Import Conversation</h1>
-              <p className="text-sm text-muted-foreground">Upload an audio file and connect it to a friend</p>
+              <p className="text-sm text-muted-foreground">Upload an audio file and choose how participants should be represented</p>
             </div>
           </div>
         </div>
@@ -518,19 +665,78 @@ export default function ImportConversationPage() {
             </div>
           </div>
 
-          {/* Step 2: Select Friend */}
+          {/* Step 2: Participant Mode */}
           <div className="bg-card border border-border rounded-xl p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Step 2: Select Friend</h2>
-                <p className="text-sm text-muted-foreground">Who was in this conversation with you?</p>
+                <h2 className="text-lg font-semibold text-foreground">Step 2: Participants</h2>
+                <p className="text-sm text-muted-foreground">Choose who was in this recording</p>
               </div>
             </div>
 
-            {contacts.length === 0 ? (
+            <div className="grid gap-3 md:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setParticipantMode("contact")}
+                disabled={isUploading || isProcessing}
+                className={`rounded-lg border-2 p-4 text-left transition-all ${
+                  participantMode === "contact"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/50"
+                }`}
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">Connected contact</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Link this conversation to someone in your network.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setParticipantMode("solo")}
+                disabled={isUploading || isProcessing}
+                className={`rounded-lg border-2 p-4 text-left transition-all ${
+                  participantMode === "solo"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/50"
+                }`}
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">Only me speaking</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Treat every speaker turn as your own voice.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setParticipantMode("anonymous")}
+                disabled={isUploading || isProcessing}
+                className={`rounded-lg border-2 p-4 text-left transition-all ${
+                  participantMode === "anonymous"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/50"
+                }`}
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <UserX className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">Other speaker(s) no account</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Keep extra speakers anonymous without linking platform accounts.
+                </p>
+              </button>
+            </div>
+
+            {participantMode === "contact" ? (contacts.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">You don't have any contacts yet.</p>
                 <Button
@@ -573,6 +779,12 @@ export default function ImportConversationPage() {
                   </button>
                 ))}
               </div>
+            )) : (
+              <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                {participantMode === "solo"
+                  ? "This import will be processed as a single-person recording."
+                  : "This import will preserve additional speakers as anonymous labels (for example Speaker 2, Speaker 3)."}
+              </div>
             )}
           </div>
 
@@ -603,7 +815,7 @@ export default function ImportConversationPage() {
           {/* Import Button */}
           <Button
             onClick={handleImport}
-            disabled={!selectedFile || !selectedFriend || isUploading || isProcessing}
+            disabled={!selectedFile || (participantMode === "contact" && !selectedFriend) || isUploading || isProcessing}
             size="lg"
             className="w-full"
           >

@@ -255,42 +255,67 @@ export const batchTranscribe = action({
       throw new Error("Conversation not found");
     }
 
-    // Step 4: Map S1 to initiator userId, S2 to scanner userId
-    const speakerToUserIdMap: Record<string, Id<"users">> = {
-      S1: conversation.initiatorUserId as Id<"users">,
-      S2: (conversation.scannerUserId || conversation.initiatorUserId) as Id<"users">,
-    };
+    const participantMode = conversation.participantMode
+      ?? (conversation.scannerUserId ? "linked" : "anonymous");
 
-    // Map for display names (for AI processing)
+    // Map for known display names (for AI processing and UI response)
     const speakerMap: Record<string, string> = {
-      S1: args.initiatorName || "S1",
-      S2: args.scannerName || "S2",
+      S1: args.initiatorName || "Speaker 1",
+      S2: args.scannerName || "Speaker 2",
+    };
+    const anonymousSpeakerMap = new Map<string, string>();
+
+    const getDisplaySpeakerName = (speakerId: string): string => {
+      if (speakerMap[speakerId]) {
+        return speakerMap[speakerId];
+      }
+
+      if (!anonymousSpeakerMap.has(speakerId)) {
+        const nextSpeakerNumber = anonymousSpeakerMap.size + 3;
+        anonymousSpeakerMap.set(speakerId, `Speaker ${nextSpeakerNumber}`);
+      }
+
+      return anonymousSpeakerMap.get(speakerId)!;
     };
 
     console.log("Speaker mapping:", speakerMap);
-    console.log("Speaker to userId mapping:", speakerToUserIdMap);
+    console.log("Participant mode:", participantMode);
 
-    // Step 5: Convert transcript turns with userIds for storage (include word-level data)
-    const transcriptWithUserIds = transcriptTurns.map((turn, index) => ({
-      userId: (speakerToUserIdMap[turn.speaker] || conversation.initiatorUserId) as Id<"users">,
-      text: turn.text,
-      startTime: turn.startTime, // Include turn-level timestamp
-      words: turn.words?.map((w, wordIndex) => ({
-        ...w,
-        wordId: `t${index}-w${wordIndex}`, // Stable ID for word
-      })),
-    }));
+    // Step 5: Convert transcript turns for storage.
+    const transcriptForStorage = transcriptTurns.map((turn, index) => {
+      let userId: Id<"users"> | undefined;
+      let speaker: string | undefined;
 
-    // Convert transcript turns with actual names for AI analysis
-    const transcript = transcriptTurns.map(turn => ({
-      speaker: speakerMap[turn.speaker] || turn.speaker,
+      if (turn.speaker === "S1" || participantMode === "solo") {
+        userId = conversation.initiatorUserId as Id<"users">;
+      } else if (turn.speaker === "S2" && conversation.scannerUserId) {
+        userId = conversation.scannerUserId as Id<"users">;
+      } else {
+        speaker = getDisplaySpeakerName(turn.speaker);
+      }
+
+      return {
+        userId,
+        speaker,
+        text: turn.text,
+        startTime: turn.startTime,
+        words: turn.words?.map((w, wordIndex) => ({
+          ...w,
+          wordId: `t${index}-w${wordIndex}`,
+        })),
+      };
+    });
+
+    // Convert transcript turns with display names for AI analysis
+    const transcript = transcriptTurns.map((turn) => ({
+      speaker: getDisplaySpeakerName(turn.speaker),
       text: turn.text,
     }));
 
     // Step 6: Format transcript for AI analysis with actual names
     const formattedTranscript = transcriptTurns
-      .map(turn => {
-        const speakerName = speakerMap[turn.speaker] || turn.speaker;
+      .map((turn) => {
+        const speakerName = getDisplaySpeakerName(turn.speaker);
         return `${speakerName}: ${turn.text}`;
       })
       .join("\n");
@@ -346,12 +371,17 @@ Provide:
     // Step 9: Save to Convex database
     await ctx.runMutation(api.conversations.saveTranscriptData, {
       conversationId: args.conversationId,
-      transcript: transcriptWithUserIds,
+      transcript: transcriptForStorage,
       S1_facts: aiAnalysis.S1_facts,
       S2_facts: aiAnalysis.S2_facts,
       initiatorName: args.initiatorName,
       scannerName: args.scannerName,
       summary: aiAnalysis.summary,
+      anonymousSpeakerCount: new Set(
+        transcriptForStorage
+          .filter((turn) => !turn.userId && turn.speaker)
+          .map((turn) => turn.speaker as string)
+      ).size,
     });
 
     return {

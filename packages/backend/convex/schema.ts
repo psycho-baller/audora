@@ -52,6 +52,12 @@ export default defineSchema({
     initiatorUserId: v.id("users"),
     scannerUserId: v.optional(v.id("users")),
     scannerEmail: v.optional(v.string()),
+    participantMode: v.optional(v.union(
+      v.literal("linked"),
+      v.literal("solo"),
+      v.literal("anonymous")
+    )),
+    anonymousSpeakerCount: v.optional(v.number()),
     status: v.union(
       v.literal("pending"),
       v.literal("active"),
@@ -73,7 +79,8 @@ export default defineSchema({
 
   transcriptTurns: defineTable({
     conversationId: v.id("conversations"),
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    speaker: v.optional(v.string()),
     text: v.string(),
     order: v.number(),
     timestamp: v.optional(v.number()), // Timestamp in seconds from start of conversation

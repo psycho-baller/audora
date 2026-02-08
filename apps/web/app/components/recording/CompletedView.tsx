@@ -137,20 +137,32 @@ export default function CompletedView({
     }
   };
 
-  // Get unique user IDs from transcript
-  const userIds = Array.from(
-    new Set(transcriptTurns.map((turn) => turn.userId))
+  // Get participants from transcript (linked users + anonymous speaker labels)
+  const linkedUserIds = Array.from(
+    new Set(
+      transcriptTurns
+        .map((turn) => turn.userId)
+        .filter((userId): userId is Id<"users"> => Boolean(userId))
+    )
   );
+  const anonymousSpeakers = Array.from(
+    new Set(
+      transcriptTurns
+        .map((turn) => turn.speaker)
+        .filter((speaker): speaker is string => Boolean(speaker))
+    )
+  );
+  const participantCount = linkedUserIds.length + anonymousSpeakers.length;
 
   // Determine the other participant (not current user)
   useEffect(() => {
-    if (currentUser && userIds.length > 0) {
-      const otherId = userIds.find(id => id !== currentUser._id);
+    if (currentUser && linkedUserIds.length > 0) {
+      const otherId = linkedUserIds.find((id) => id !== currentUser._id);
       if (otherId) {
         setOtherParticipantId(otherId as Id<"users">);
       }
     }
-  }, [currentUser, userIds]);
+  }, [currentUser, linkedUserIds]);
 
   // Get current user's facts only
   const currentUserFactsList = currentUserFacts.length > 0 ? currentUserFacts[0].facts : [];
@@ -164,6 +176,13 @@ export default function CompletedView({
       return scannerUser.name || "Speaker 2";
     }
     return "Unknown";
+  };
+
+  const getTurnSpeakerName = (turn: { userId?: Id<"users">; speaker?: string }) => {
+    if (turn.userId) {
+      return getUserName(turn.userId);
+    }
+    return turn.speaker || "Unknown";
   };
 
   const handleCallClick = () => {
@@ -198,7 +217,7 @@ export default function CompletedView({
   const handleDownload = () => {
     // Create downloadable transcript
     const transcriptText = transcriptTurns
-      .map((turn) => `${getUserName(turn.userId)}: ${turn.text}`)
+      .map((turn) => `${getTurnSpeakerName(turn)}: ${turn.text}`)
       .join("\n\n");
 
     const factsSection = currentUserFactsList.length > 0
@@ -281,7 +300,7 @@ export default function CompletedView({
           </div>
           <div className="flex items-center space-x-2">
             <Users className="w-4 h-4 text-muted-foreground" />
-            <span className="text-muted-foreground">{userIds.length} participants</span>
+            <span className="text-muted-foreground">{participantCount} participants</span>
           </div>
           <div className="text-muted-foreground">
             {formatDate(conversation._creationTime)}
@@ -335,7 +354,7 @@ export default function CompletedView({
       )}
 
       {/* User Filter */}
-      {userIds.length > 0 && (
+      {linkedUserIds.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setSelectedUserId(null)}
@@ -346,7 +365,7 @@ export default function CompletedView({
             }`}>
             All Participants
           </button>
-          {userIds.map((userId) => (
+          {linkedUserIds.map((userId) => (
             <button
               key={userId}
               onClick={() => setSelectedUserId(userId)}

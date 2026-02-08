@@ -181,7 +181,11 @@ export default function ConversationDetailPage() {
   };
 
   const participantCount = transcript
-    ? new Set(transcript.map((turn) => turn.userId)).size
+    ? new Set(
+        transcript.map((turn) =>
+          turn.userId ? `user:${turn.userId}` : `speaker:${turn.speaker || "unknown"}`
+        )
+      ).size
     : 0;
 
   return (
