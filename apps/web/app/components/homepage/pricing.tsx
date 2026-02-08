@@ -34,7 +34,7 @@ export default function Pricing({ loaderData }: { loaderData: any }) {
 
     try {
       // Ensure user exists in database before action
-      await upsertUser();
+      await upsertUser({});
 
       // If user has active subscription, redirect to customer portal for plan changes
       if (

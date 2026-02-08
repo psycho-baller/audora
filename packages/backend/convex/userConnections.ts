@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 
 // Extract keywords from facts (strict - only meaningful topics)
 function extractKeywords(facts: string[]): string[] {
