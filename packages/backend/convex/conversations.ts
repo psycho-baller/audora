@@ -218,6 +218,27 @@ export const saveTranscriptData = mutation({
       endedAt: Date.now(),
     });
 
+    // Replace existing transcript/facts instead of appending.
+    // This prevents full-duplicate transcripts when multiple processors
+    // (e.g. realtime + batch) submit results for the same conversation.
+    const existingTurns = await ctx.db
+      .query("transcriptTurns")
+      .withIndex("by_conversation_and_order", (q) =>
+        q.eq("conversationId", args.conversationId)
+      )
+      .collect();
+    for (const turn of existingTurns) {
+      await ctx.db.delete(turn._id);
+    }
+
+    const existingFacts = await ctx.db
+      .query("conversationFacts")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+    for (const fact of existingFacts) {
+      await ctx.db.delete(fact._id);
+    }
+
     // Save transcript turns (with word-level data if available)
     for (let i = 0; i < args.transcript.length; i++) {
       const turn = args.transcript[i];
@@ -415,7 +436,21 @@ export const getTranscript = query({
         q.eq("conversationId", args.conversationId)
       )
       .collect();
-    return turns.sort((a, b) => a.order - b.order);
+
+    // Sort first, then drop exact duplicates (same order + speaker + text).
+    // This protects UI for older conversations that were double-saved.
+    const sortedTurns = turns.sort((a, b) => a.order - b.order);
+    const seen = new Set<string>();
+    const dedupedTurns: typeof sortedTurns = [];
+
+    for (const turn of sortedTurns) {
+      const key = `${turn.order}|${turn.userId ?? "unknown"}|${turn.text}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      dedupedTurns.push(turn);
+    }
+
+    return dedupedTurns;
   },
 });
 
