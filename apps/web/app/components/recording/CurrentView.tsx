@@ -340,7 +340,7 @@ export default function CurrentView({ conversationId }: CurrentViewProps) {
         try {
           // Create audio blob from collected chunks
           const audioBlob = new Blob(audioChunksRef.current, {
-            type: "audio/webm",
+            type: mimeType,
           });
 
           // Upload audio to Convex storage

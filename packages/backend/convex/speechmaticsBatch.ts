@@ -25,7 +25,19 @@ export const transcribeChunkOnly = action({
     storageId: v.id("_storage"),
   },
   returns: v.object({
-    transcript: v.array(v.object({ speaker: v.string(), text: v.string() })),
+    transcript: v.array(v.object({
+      speaker: v.string(),
+      text: v.string(),
+      startTime: v.number(),
+      endTime: v.number(),
+      words: v.array(v.object({
+        word: v.string(),
+        startTime: v.number(),
+        endTime: v.number(),
+        wordId: v.string(),
+      })),
+    })),
+    durationSeconds: v.number(),
     S1_facts: v.array(v.string()),
     S2_facts: v.array(v.string()),
     summary: v.string(),
@@ -98,11 +110,17 @@ export const transcribeChunkOnly = action({
       throw new Error(`Speechmatics transcription failed: ${error.message}`);
     }
 
-    // Simple transcript format for chunks
+    // Transcript format for chunks (keep timing + words so callers can preserve sync)
     const transcript = transcriptTurns.map(turn => ({
       speaker: turn.speaker,
       text: turn.text,
+      startTime: turn.startTime,
+      endTime: turn.endTime,
+      words: turn.words,
     }));
+    const durationSeconds = transcriptTurns.length > 0
+      ? transcriptTurns[transcriptTurns.length - 1].endTime
+      : 0;
 
     // Format for AI analysis
     const formattedTranscript = transcriptTurns
@@ -122,6 +140,7 @@ export const transcribeChunkOnly = action({
 
     return {
       transcript,
+      durationSeconds,
       S1_facts: aiAnalysis.S1_facts,
       S2_facts: aiAnalysis.S2_facts,
       summary: aiAnalysis.summary,

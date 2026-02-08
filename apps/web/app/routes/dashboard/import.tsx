@@ -234,10 +234,22 @@ export default function ImportConversationPage() {
       setIsProcessing(true);
 
       // Step 4: Process each chunk
-      const allTranscripts: Array<{ speaker: string; text: string }> = [];
+      const allTranscripts: Array<{
+        speaker: string;
+        text: string;
+        startTime: number;
+        endTime: number;
+        words: Array<{
+          word: string;
+          startTime: number;
+          endTime: number;
+          wordId: string;
+        }>;
+      }> = [];
       let allS1Facts: string[] = [];
       let allS2Facts: string[] = [];
       let allSummaries: string[] = [];
+      let cumulativeOffsetSeconds = 0;
 
       for (let i = 0; i < audioChunks.length; i++) {
         const chunkNum = i + 1;
@@ -250,7 +262,7 @@ export default function ImportConversationPage() {
         const uploadUrl = await generateUploadUrl();
         const uploadResult = await fetch(uploadUrl, {
           method: "POST",
-          headers: { "Content-Type": "audio/wav" },
+          headers: { "Content-Type": chunk.type || selectedFile.type || "audio/wav" },
           body: chunk,
         });
 
@@ -270,15 +282,39 @@ export default function ImportConversationPage() {
 
         // Transcribe this chunk (no DB save)
         toast.info(`Transcribing chunk ${chunkNum}/${totalChunks}... This may take a few minutes.`);
-        const chunkResult = await transcribeChunkOnly({
+        const chunkResult: any = await transcribeChunkOnly({
           storageId: storageId as Id<"_storage">,
         });
 
-        // Combine results
-        allTranscripts.push(...chunkResult.transcript);
+        const rawTurns = Array.isArray(chunkResult?.transcript) ? chunkResult.transcript : [];
+        const offsetTurns = rawTurns.map((turn: any) => ({
+          speaker: turn.speaker,
+          text: turn.text,
+          startTime: (turn.startTime || 0) + cumulativeOffsetSeconds,
+          endTime: (turn.endTime || 0) + cumulativeOffsetSeconds,
+          words: Array.isArray(turn.words)
+            ? turn.words.map((word: any) => ({
+                word: word.word,
+                startTime: (word.startTime || 0) + cumulativeOffsetSeconds,
+                endTime: (word.endTime || 0) + cumulativeOffsetSeconds,
+                wordId: word.wordId || "",
+              }))
+            : [],
+        }));
+
+        // Combine results (with timeline offsets so playback sync is continuous across chunks)
+        allTranscripts.push(...offsetTurns);
         allS1Facts.push(...chunkResult.S1_facts);
         allS2Facts.push(...chunkResult.S2_facts);
         allSummaries.push(chunkResult.summary);
+
+        const inferredDuration = rawTurns.reduce(
+          (max: number, turn: any) => Math.max(max, Number(turn?.endTime) || 0),
+          0
+        );
+        const reportedDuration =
+          typeof chunkResult?.durationSeconds === "number" ? chunkResult.durationSeconds : 0;
+        cumulativeOffsetSeconds += Math.max(inferredDuration, reportedDuration, 0);
 
         // Update progress
         const progress = 70 + (25 * (chunkNum / totalChunks));
@@ -304,15 +340,21 @@ export default function ImportConversationPage() {
         throw new Error("Current user not found");
       }
 
-      const transcriptWithUserIds = allTranscripts.map(turn => {
-        // Determine user ID based on speaker
-        const userId = turn.speaker === "S1" ? currentUserId : selectedFriend;
-
-        return {
-          userId: userId as Id<"users">,
-          text: turn.text,
-        };
-      });
+      const speakerToUserId: Record<string, Id<"users">> = {
+        S1: currentUserId as Id<"users">,
+        S2: selectedFriend as Id<"users">,
+      };
+      const transcriptWithUserIds = allTranscripts.map((turn, turnIndex) => ({
+        userId: (speakerToUserId[turn.speaker] || currentUserId) as Id<"users">,
+        text: turn.text,
+        startTime: turn.startTime,
+        words: turn.words.map((word, wordIndex) => ({
+          word: word.word,
+          startTime: word.startTime,
+          endTime: word.endTime,
+          wordId: `imported-t${turnIndex}-w${wordIndex}`,
+        })),
+      }));
 
       // Save combined transcript data to database
       await saveTranscriptData({

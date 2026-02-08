@@ -155,9 +155,6 @@ export default function CompletedView({
   // Get current user's facts only
   const currentUserFactsList = currentUserFacts.length > 0 ? currentUserFacts[0].facts : [];
 
-  // Check if any turn has word-level data
-  const hasWordLevelData = transcriptTurns.some((turn) => turn.words && turn.words.length > 0);
-
   // Helper function to get user name from userId
   const getUserName = (userId?: Id<"users">) => {
     if (!userId) return "Unknown";
@@ -365,40 +362,10 @@ export default function CompletedView({
       )}
 
       {/* Transcript */}
-      {hasWordLevelData ? (
-        <TranscriptPlayer
-          conversationId={conversationId as Id<"conversations">}
-          getUserName={getUserName}
-        />
-      ) : (
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Transcript</h3>
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {transcriptTurns
-              .filter((turn) => !selectedUserId || turn.userId === selectedUserId)
-              .map((turn, index) => {
-                const userName = getUserName(turn.userId);
-                return (
-                  <div key={turn._id} className="flex space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-xs font-medium text-primary-foreground">
-                        {userName.charAt(0).toUpperCase()}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-medium text-foreground">
-                          {userName}
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed">{turn.text}</p>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
+      <TranscriptPlayer
+        conversationId={conversationId as Id<"conversations">}
+        getUserName={getUserName}
+      />
 
       {/* Key Facts - Current User Only */}
       {currentUserFactsList.length > 0 && (
