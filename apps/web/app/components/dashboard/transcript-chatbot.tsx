@@ -4,10 +4,11 @@ import { useAuth } from "@clerk/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronUp, Loader2, Send, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Children, useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { useAudioPlaybackOptional } from "~/hooks/use-audio-playback";
 
 const CONVEX_SITE_URL = import.meta.env.VITE_CONVEX_URL!.replace(
   /.cloud$/,
@@ -26,6 +27,7 @@ interface TranscriptChatbotProps {
 
 export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
   const { isSignedIn, getToken } = useAuth();
+  const audioPlayback = useAudioPlaybackOptional();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -179,6 +181,55 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
     }
   };
 
+  const handleTimestampClick = (seconds: number) => {
+    if (!audioPlayback) return;
+    audioPlayback.seekTo(seconds, true);
+  };
+
+  const renderTimestampText = (children: React.ReactNode) => {
+    const timestampRegex = /\b(?:(\d{1,2}):)?(\d{1,3}):([0-5]\d)\b/g;
+
+    return Children.map(children, (child) => {
+      if (typeof child !== "string") return child;
+
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+
+      while ((match = timestampRegex.exec(child)) !== null) {
+        const [fullMatch, hours, minutes, seconds] = match;
+        const matchIndex = match.index;
+
+        if (matchIndex > lastIndex) {
+          parts.push(child.slice(lastIndex, matchIndex));
+        }
+
+        const totalSeconds = (hours ? Number(hours) * 3600 : 0)
+          + Number(minutes) * 60
+          + Number(seconds);
+
+        parts.push(
+          <button
+            key={`${matchIndex}-${fullMatch}`}
+            type="button"
+            onClick={() => handleTimestampClick(totalSeconds)}
+            className="inline-flex items-center rounded-sm px-1 font-mono text-xs text-primary hover:underline"
+          >
+            {fullMatch}
+          </button>
+        );
+
+        lastIndex = matchIndex + fullMatch.length;
+      }
+
+      if (lastIndex < child.length) {
+        parts.push(child.slice(lastIndex));
+      }
+
+      return parts.length > 0 ? parts : child;
+    });
+  };
+
   return (
     <>
       <AnimatePresence initial={false} mode="wait">
@@ -240,7 +291,18 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
                       {msg.role === 'assistant' ? (
                         msg.content ? (
                           <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                            <Markdown>{msg.content}</Markdown>
+                            <Markdown
+                              components={{
+                                p: ({ children }) => (
+                                  <p>{renderTimestampText(children)}</p>
+                                ),
+                                li: ({ children }) => (
+                                  <li>{renderTimestampText(children)}</li>
+                                ),
+                              }}
+                            >
+                              {msg.content}
+                            </Markdown>
                           </div>
                         ) : (
                           <Loader2 className="w-4 h-4 animate-spin" />
