@@ -6,7 +6,7 @@ import { generateObject } from "ai";
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { z } from "zod";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
 
 // Initialize clients

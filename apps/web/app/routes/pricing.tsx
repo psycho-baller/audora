@@ -36,7 +36,7 @@ export default function IntegratedPricing() {
   // Sync user when signed in
   React.useEffect(() => {
     if (isSignedIn) {
-      upsertUser().catch(console.error);
+      upsertUser({}).catch(console.error);
     }
   }, [isSignedIn, upsertUser]);
 
@@ -66,7 +66,7 @@ export default function IntegratedPricing() {
 
     try {
       // Ensure user exists in database before action
-      await upsertUser();
+      await upsertUser({});
 
       // If user has active subscription, redirect to customer portal for plan changes
       if (

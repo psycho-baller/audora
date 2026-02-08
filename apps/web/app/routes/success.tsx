@@ -22,7 +22,7 @@ export default function Success() {
   // Ensure user is created/updated when they land on success page
   useEffect(() => {
     if (isSignedIn) {
-      upsertUser();
+      upsertUser({}).catch(console.error);
     }
   }, [isSignedIn, upsertUser]);
 

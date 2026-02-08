@@ -1,7 +1,7 @@
 "use node";
 
 import { v } from "convex/values";
-import { action, ActionCtx } from "./_generated/server";
+import { action } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { api } from "./_generated/api";
 /**
