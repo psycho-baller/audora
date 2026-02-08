@@ -5,7 +5,7 @@ import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useUser } from "@clerk/react-router";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowLeft, CheckCircle, Loader2, Upload, User, UserX, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -31,6 +31,13 @@ async function splitAudioIntoChunks(file: File, chunkDurationMinutes: number = 5
         const samplesPerChunk = sampleRate * chunkDuration;
         const totalSamples = audioBuffer.length;
         const numberOfChunks = Math.ceil(totalSamples / samplesPerChunk);
+
+        // Keep the original encoded file when no split is needed.
+        // Re-encoding a single chunk to WAV can inflate small compressed files dramatically.
+        if (numberOfChunks <= 1) {
+          resolve([file]);
+          return;
+        }
 
         const chunks: Blob[] = [];
 
@@ -128,12 +135,17 @@ async function audioBufferToWav(buffer: AudioBuffer): Promise<Blob> {
 export default function ImportConversationPage() {
   const navigate = useNavigate();
   const { user: clerkUser } = useUser();
+  const apiAny = api as any;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<Id<"users"> | null>(null);
   const [participantMode, setParticipantMode] = useState<ImportParticipantMode>("contact");
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [processingLabel, setProcessingLabel] = useState("Preparing background import...");
+  const [currentImportJobId, setCurrentImportJobId] = useState<string | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<Id<"conversations"> | null>(null);
+  const handledTerminalJobIdRef = useRef<string | null>(null);
 
   // Get user's network/contacts
   const contacts = useQuery(api.network.list) || [];
@@ -146,12 +158,76 @@ export default function ImportConversationPage() {
   const createConversation = useMutation(api.conversations.create);
   const saveAudioStorageId = useMutation(api.conversations.saveAudioStorageId);
   const linkConversationToFriend = useMutation(api.conversations.linkConversationToFriend);
-  const transcribeChunkOnly = useAction(api.speechmaticsBatch.transcribeChunkOnly);
+  const enqueueAudioImportJob = useMutation(apiAny.importJobs.createAudioImportJob);
   const saveTranscriptData = useMutation(api.conversations.saveTranscriptData);
   const importTextTranscript = useAction(api.conversations.importTextTranscript);
 
   // Get current user ID
   const currentUserData = useQuery(api.users.getCurrentUser);
+  const importJob = useQuery(
+    apiAny.importJobs.get,
+    currentImportJobId ? { jobId: currentImportJobId } : "skip"
+  );
+
+  useEffect(() => {
+    if (!importJob || !currentImportJobId) return;
+
+    if (importJob.status === "queued") {
+      setUploadProgress(70);
+      setProcessingLabel("Queued for background processing...");
+      return;
+    }
+
+    if (importJob.status === "processing") {
+      const ratio =
+        importJob.totalChunks > 0
+          ? importJob.processedChunks / importJob.totalChunks
+          : 0;
+      const progress = 70 + Math.round(ratio * 20);
+      setUploadProgress(Math.max(70, Math.min(progress, 90)));
+      setProcessingLabel(
+        `Transcribing chunk ${Math.min(importJob.processedChunks + 1, importJob.totalChunks)}/${importJob.totalChunks}...`
+      );
+      return;
+    }
+
+    if (importJob.status === "finalizing") {
+      setUploadProgress(95);
+      setProcessingLabel("Combining transcript and saving results...");
+      return;
+    }
+
+    if (handledTerminalJobIdRef.current === importJob._id) {
+      return;
+    }
+
+    if (importJob.status === "completed") {
+      handledTerminalJobIdRef.current = importJob._id;
+      setUploadProgress(100);
+      setProcessingLabel("Import complete!");
+      setIsUploading(false);
+      setIsProcessing(false);
+      setCurrentImportJobId(null);
+      toast.success("Conversation imported successfully!");
+
+      const conversationId = activeConversationId || importJob.conversationId;
+      setTimeout(() => {
+        navigate(`/dashboard/conversations/${conversationId}`);
+      }, 1000);
+      return;
+    }
+
+    if (importJob.status === "failed") {
+      handledTerminalJobIdRef.current = importJob._id;
+      setIsUploading(false);
+      setIsProcessing(false);
+      setUploadProgress(0);
+      setCurrentImportJobId(null);
+      setActiveConversationId(null);
+      setProcessingLabel("Processing failed.");
+      toast.error(`Failed to import conversation: ${importJob.error || "Unknown error"}`);
+    }
+  }, [activeConversationId, currentImportJobId, importJob, navigate]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -227,48 +303,39 @@ export default function ImportConversationPage() {
       }
       setUploadProgress(20);
 
-      // Step 3: Split audio into 10-minute chunks
-      toast.info("Splitting audio into manageable chunks...");
+      // Step 3: Split audio into smaller chunks when needed
       let audioChunks: Blob[];
-      try {
-        audioChunks = await splitAudioIntoChunks(selectedFile, 10);
-        toast.success(`Split into ${audioChunks.length} chunk(s) of ~10 minutes each`);
-      } catch (splitError) {
-        console.error("Failed to split audio, using full file:", splitError);
-        toast.warning("Could not split audio, processing as single file...");
+      const maxDirectUploadBytes = 25 * 1024 * 1024;
+      const chunkDurationMinutes = 2;
+      if (selectedFile.size <= maxDirectUploadBytes) {
         audioChunks = [selectedFile];
+        toast.info("Using original compressed audio file (no chunk split needed).");
+      } else {
+        toast.info("Splitting audio into manageable chunks...");
+        try {
+          audioChunks = await splitAudioIntoChunks(selectedFile, chunkDurationMinutes);
+          if (audioChunks.length === 1 && audioChunks[0] === selectedFile) {
+            toast.success("Audio fits in one chunk. Keeping original file format for upload.");
+          } else {
+            toast.success(`Split into ${audioChunks.length} chunk(s) of ~${chunkDurationMinutes} minutes each`);
+          }
+        } catch (splitError) {
+          console.error("Failed to split audio, using full file:", splitError);
+          toast.warning("Could not split audio, processing as single file...");
+          audioChunks = [selectedFile];
+        }
       }
       setUploadProgress(25);
 
-      setIsUploading(false);
-      setIsProcessing(true);
-
-      // Step 4: Process each chunk
-      const allTranscripts: Array<{
-        speaker: string;
-        text: string;
-        startTime: number;
-        endTime: number;
-        words: Array<{
-          word: string;
-          startTime: number;
-          endTime: number;
-          wordId: string;
-        }>;
-      }> = [];
-      let allS1Facts: string[] = [];
-      let allS2Facts: string[] = [];
-      let allSummaries: string[] = [];
-      let cumulativeOffsetSeconds = 0;
-
+      // Step 4: Upload each chunk
+      const uploadedChunkStorageIds: Id<"_storage">[] = [];
       for (let i = 0; i < audioChunks.length; i++) {
         const chunkNum = i + 1;
         const totalChunks = audioChunks.length;
         const chunk = audioChunks[i];
 
-        toast.info(`Processing chunk ${chunkNum}/${totalChunks}...`);
+        toast.info(`Uploading chunk ${chunkNum}/${totalChunks}...`);
 
-        // Upload this chunk
         const uploadUrl = await generateUploadUrl();
         const uploadResult = await fetch(uploadUrl, {
           method: "POST",
@@ -281,6 +348,7 @@ export default function ImportConversationPage() {
         }
 
         const { storageId } = await uploadResult.json();
+        uploadedChunkStorageIds.push(storageId as Id<"_storage">);
 
         // Save storage ID for the first chunk only (for playback)
         if (i === 0) {
@@ -290,146 +358,22 @@ export default function ImportConversationPage() {
           });
         }
 
-        // Transcribe this chunk (no DB save)
-        toast.info(`Transcribing chunk ${chunkNum}/${totalChunks}... This may take a few minutes.`);
-        const chunkResult: any = await transcribeChunkOnly({
-          storageId: storageId as Id<"_storage">,
-        });
-
-        const rawTurns = Array.isArray(chunkResult?.transcript) ? chunkResult.transcript : [];
-        const offsetTurns = rawTurns.map((turn: any) => ({
-          speaker: turn.speaker,
-          text: turn.text,
-          startTime: (turn.startTime || 0) + cumulativeOffsetSeconds,
-          endTime: (turn.endTime || 0) + cumulativeOffsetSeconds,
-          words: Array.isArray(turn.words)
-            ? turn.words.map((word: any) => ({
-                word: word.word,
-                startTime: (word.startTime || 0) + cumulativeOffsetSeconds,
-                endTime: (word.endTime || 0) + cumulativeOffsetSeconds,
-                wordId: word.wordId || "",
-              }))
-            : [],
-        }));
-
-        // Combine results (with timeline offsets so playback sync is continuous across chunks)
-        allTranscripts.push(...offsetTurns);
-        allS1Facts.push(...chunkResult.S1_facts);
-        allS2Facts.push(...chunkResult.S2_facts);
-        allSummaries.push(chunkResult.summary);
-
-        const inferredDuration = rawTurns.reduce(
-          (max: number, turn: any) => Math.max(max, Number(turn?.endTime) || 0),
-          0
-        );
-        const reportedDuration =
-          typeof chunkResult?.durationSeconds === "number" ? chunkResult.durationSeconds : 0;
-        cumulativeOffsetSeconds += Math.max(inferredDuration, reportedDuration, 0);
-
-        // Update progress
-        const progress = 70 + (25 * (chunkNum / totalChunks));
-        setUploadProgress(Math.round(progress));
+        const uploadRatio = chunkNum / totalChunks;
+        setUploadProgress(25 + Math.round(uploadRatio * 35));
       }
 
-      // Step 5: Deduplicate facts
-      allS1Facts = [...new Set(allS1Facts)];
-      allS2Facts = [...new Set(allS2Facts)];
+      // Step 5: Enqueue background processing job
+      setIsUploading(false);
+      setIsProcessing(true);
+      setUploadProgress(70);
+      setProcessingLabel("Queued for background processing...");
+      handledTerminalJobIdRef.current = null;
 
-      // Step 6: Combine summaries
-      const combinedSummary = allSummaries.length > 1
-        ? `Combined conversation summary:\n\n${allSummaries.map((s, i) => `Part ${i + 1}: ${s}`).join('\n\n')}`
-        : allSummaries[0] || "Conversation imported from audio file.";
-
-      toast.success("All chunks processed! Saving combined results...");
-      setUploadProgress(95);
-
-      // Step 7: Map speakers based on selected participant mode and save to database
-      const currentUserId = currentUserData?._id;
-      if (!currentUserId) {
-        throw new Error("Current user not found");
-      }
-
-      const selectedFriendId =
-        participantMode === "contact"
-          ? selectedFriend
-          : null;
-      if (participantMode === "contact" && !selectedFriendId) {
-        throw new Error("Friend is required for contact mode");
-      }
-
-      const anonymousSpeakerMap = new Map<string, string>();
-      const getAnonymousSpeakerLabel = (rawSpeaker: string) => {
-        if (!anonymousSpeakerMap.has(rawSpeaker)) {
-          const nextSpeakerNumber = anonymousSpeakerMap.size + 2;
-          anonymousSpeakerMap.set(rawSpeaker, `Speaker ${nextSpeakerNumber}`);
-        }
-        return anonymousSpeakerMap.get(rawSpeaker)!;
-      };
-
-      const transcriptForSave = allTranscripts.map((turn, turnIndex) => {
-        const mappedWords = turn.words.map((word, wordIndex) => ({
-          word: word.word,
-          startTime: word.startTime,
-          endTime: word.endTime,
-          wordId: `imported-t${turnIndex}-w${wordIndex}`,
-        }));
-
-        if (participantMode === "solo") {
-          return {
-            userId: currentUserId as Id<"users">,
-            text: turn.text,
-            startTime: turn.startTime,
-            words: mappedWords,
-          };
-        }
-
-        if (participantMode === "contact") {
-          return {
-            userId:
-              turn.speaker === "S1"
-                ? (currentUserId as Id<"users">)
-                : (selectedFriendId as Id<"users">),
-            text: turn.text,
-            startTime: turn.startTime,
-            words: mappedWords,
-          };
-        }
-
-        // Anonymous mode: keep initiator linked, keep other speakers unlinked with labels.
-        if (turn.speaker === "S1") {
-          return {
-            userId: currentUserId as Id<"users">,
-            text: turn.text,
-            startTime: turn.startTime,
-            words: mappedWords,
-          };
-        }
-
-        return {
-          speaker: getAnonymousSpeakerLabel(turn.speaker),
-          text: turn.text,
-          startTime: turn.startTime,
-          words: mappedWords,
-        };
-      });
-
-      const s1Facts =
-        participantMode === "solo"
-          ? [...new Set([...allS1Facts, ...allS2Facts])]
-          : allS1Facts;
-      const s2Facts = participantMode === "contact" ? allS2Facts : [];
-      const anonymousSpeakerCount = new Set(
-        transcriptForSave
-          .filter((turn) => !turn.userId && turn.speaker)
-          .map((turn) => turn.speaker as string)
-      ).size;
-
-      // Save combined transcript data to database
-      await saveTranscriptData({
+      const enqueueResult = await enqueueAudioImportJob({
         conversationId: conversation.id,
-        transcript: transcriptForSave,
-        S1_facts: s1Facts,
-        S2_facts: s2Facts,
+        chunkStorageIds: uploadedChunkStorageIds,
+        participantMode,
+        friendId: participantMode === "contact" ? selectedFriend! : undefined,
         initiatorName: clerkUser?.fullName || clerkUser?.firstName || "You",
         scannerName:
           participantMode === "contact"
@@ -437,19 +381,11 @@ export default function ImportConversationPage() {
             : participantMode === "solo"
               ? "Self"
               : "Anonymous participant",
-        summary: combinedSummary,
-        anonymousSpeakerCount: anonymousSpeakerCount > 0 ? anonymousSpeakerCount : undefined,
       });
 
-      setUploadProgress(100);
-      setIsProcessing(false);
-
-      toast.success("Conversation imported successfully!");
-
-      // Navigate to the conversation
-      setTimeout(() => {
-        navigate(`/dashboard/conversations/${conversation.id}`);
-      }, 1000);
+      setCurrentImportJobId(enqueueResult.jobId as string);
+      setActiveConversationId(conversation.id);
+      toast.info("Upload complete. Transcription is running in the background.");
 
     } catch (error: any) {
       console.error("Import failed:", error);
@@ -457,6 +393,9 @@ export default function ImportConversationPage() {
       setIsUploading(false);
       setIsProcessing(false);
       setUploadProgress(0);
+      setCurrentImportJobId(null);
+      setActiveConversationId(null);
+      setProcessingLabel("Preparing background import...");
     }
   };
 
@@ -494,6 +433,7 @@ export default function ImportConversationPage() {
 
       setIsUploading(false);
       setIsProcessing(true);
+      setProcessingLabel("Processing text transcript...");
 
       // Step 4: Process text transcript with AI
       toast.info("Processing transcript and extracting facts...");
@@ -577,6 +517,7 @@ export default function ImportConversationPage() {
 
       // Step 6: Save transcript data to database
       toast.info("Saving to database...");
+      setProcessingLabel("Saving transcript...");
       await saveTranscriptData({
         conversationId: conversation.id,
         transcript: transcriptForSave,
@@ -595,6 +536,7 @@ export default function ImportConversationPage() {
 
       setUploadProgress(100);
       setIsProcessing(false);
+      setProcessingLabel("Preparing background import...");
 
       toast.success("Text transcript imported successfully!");
 
@@ -606,6 +548,7 @@ export default function ImportConversationPage() {
     } catch (error: any) {
       console.error("Text import failed:", error);
       toast.error(`Failed to import text transcript: ${error.message}`);
+      setProcessingLabel("Preparing background import...");
       throw error;
     }
   };
@@ -795,10 +738,12 @@ export default function ImportConversationPage() {
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
                 <div className="flex-1">
                   <p className="font-medium text-foreground">
-                    {isUploading ? "Uploading..." : "Processing audio..."}
+                    {isUploading ? "Uploading audio chunks..." : processingLabel}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {isProcessing && "This may take a few minutes depending on the audio length"}
+                    {isUploading
+                      ? "Preparing files for import..."
+                      : "Background processing is running on the server."}
                   </p>
                 </div>
                 <span className="text-sm font-medium text-primary">{uploadProgress}%</span>

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
-import { action, mutation, query } from "./_generated/server";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 
 // Generate a random invite code
 function generateInviteCode(): string {
@@ -236,28 +236,122 @@ export const forceCompleteConversation = mutation({
 });
 
 // Save transcript data after processing
+const saveTranscriptDataArgs = {
+  conversationId: v.id("conversations"),
+  transcript: v.array(v.object({
+    userId: v.optional(v.id("users")),
+    speaker: v.optional(v.string()),
+    text: v.string(),
+    startTime: v.optional(v.number()), // Turn-level timestamp
+    words: v.optional(v.array(v.object({
+      word: v.string(),
+      startTime: v.number(),
+      endTime: v.number(),
+      wordId: v.string(),
+    }))),
+  })),
+  S1_facts: v.array(v.string()),
+  S2_facts: v.array(v.string()),
+  initiatorName: v.optional(v.string()),
+  scannerName: v.optional(v.string()),
+  summary: v.string(),
+  anonymousSpeakerCount: v.optional(v.number()),
+};
+
+async function saveTranscriptDataImpl(ctx: any, args: any) {
+  // Get conversation to extract user IDs
+  const conversation = await ctx.db.get(args.conversationId);
+  if (!conversation) {
+    throw new Error("Conversation not found");
+  }
+
+  // Save summary to conversation
+  const detectedAnonymousSpeakers = new Set(
+    args.transcript
+      .filter((turn: any) => !turn.userId && turn.speaker)
+      .map((turn: any) => turn.speaker as string)
+  );
+  const anonymousSpeakerCount =
+    args.anonymousSpeakerCount ?? detectedAnonymousSpeakers.size;
+
+  const conversationUpdates: {
+    summary: string;
+    status: "ended";
+    endedAt: number;
+    anonymousSpeakerCount?: number;
+  } = {
+    summary: args.summary,
+    status: "ended",
+    endedAt: Date.now(),
+  };
+
+  if (anonymousSpeakerCount > 0) {
+    conversationUpdates.anonymousSpeakerCount = anonymousSpeakerCount;
+  }
+
+  await ctx.db.patch(args.conversationId, conversationUpdates);
+
+  // Replace existing transcript/facts instead of appending.
+  // This prevents full-duplicate transcripts when multiple processors
+  // (e.g. realtime + batch) submit results for the same conversation.
+  const existingTurns = await ctx.db
+    .query("transcriptTurns")
+    .withIndex("by_conversation_and_order", (q: any) =>
+      q.eq("conversationId", args.conversationId)
+    )
+    .collect();
+  for (const turn of existingTurns) {
+    await ctx.db.delete(turn._id);
+  }
+
+  const existingFacts = await ctx.db
+    .query("conversationFacts")
+    .withIndex("by_conversation", (q: any) => q.eq("conversationId", args.conversationId))
+    .collect();
+  for (const fact of existingFacts) {
+    await ctx.db.delete(fact._id);
+  }
+
+  // Save transcript turns (with word-level data if available)
+  for (let i = 0; i < args.transcript.length; i++) {
+    const turn = args.transcript[i];
+    // Use turn-level startTime if provided, otherwise calculate from first word
+    const timestamp = turn.startTime !== undefined
+      ? turn.startTime
+      : (turn.words && turn.words.length > 0 ? turn.words[0].startTime : undefined);
+
+    await ctx.db.insert("transcriptTurns", {
+      conversationId: args.conversationId,
+      userId: turn.userId,
+      speaker: turn.speaker,
+      text: turn.text,
+      order: i,
+      timestamp,
+      words: turn.words,
+    });
+  }
+
+  // Save S1 facts (initiator) - all facts in one row
+  if (args.S1_facts.length > 0) {
+    await ctx.db.insert("conversationFacts", {
+      conversationId: args.conversationId,
+      userId: conversation.initiatorUserId,
+      facts: args.S1_facts,
+    });
+  }
+
+  // Save S2 facts (scanner) - all facts in one row
+  if (conversation.scannerUserId && args.S2_facts.length > 0) {
+    await ctx.db.insert("conversationFacts", {
+      conversationId: args.conversationId,
+      userId: conversation.scannerUserId,
+      facts: args.S2_facts,
+    });
+  }
+}
+
 export const saveTranscriptData = mutation({
-  args: {
-    conversationId: v.id("conversations"),
-    transcript: v.array(v.object({
-      userId: v.optional(v.id("users")),
-      speaker: v.optional(v.string()),
-      text: v.string(),
-      startTime: v.optional(v.number()), // Turn-level timestamp
-      words: v.optional(v.array(v.object({
-        word: v.string(),
-        startTime: v.number(),
-        endTime: v.number(),
-        wordId: v.string(),
-      }))),
-    })),
-    S1_facts: v.array(v.string()),
-    S2_facts: v.array(v.string()),
-    initiatorName: v.optional(v.string()),
-    scannerName: v.optional(v.string()),
-    summary: v.string(),
-    anonymousSpeakerCount: v.optional(v.number()),
-  },
+  args: saveTranscriptDataArgs,
   returns: v.null(),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -265,96 +359,16 @@ export const saveTranscriptData = mutation({
       throw new Error("Not authenticated");
     }
 
-    // Get conversation to extract user IDs
-    const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation) {
-      throw new Error("Conversation not found");
-    }
+    await saveTranscriptDataImpl(ctx, args);
+    return null;
+  },
+});
 
-    // Save summary to conversation
-    const detectedAnonymousSpeakers = new Set(
-      args.transcript
-        .filter((turn) => !turn.userId && turn.speaker)
-        .map((turn) => turn.speaker as string)
-    );
-    const anonymousSpeakerCount =
-      args.anonymousSpeakerCount ?? detectedAnonymousSpeakers.size;
-
-    const conversationUpdates: {
-      summary: string;
-      status: "ended";
-      endedAt: number;
-      anonymousSpeakerCount?: number;
-    } = {
-      summary: args.summary,
-      status: "ended",
-      endedAt: Date.now(),
-    };
-
-    if (anonymousSpeakerCount > 0) {
-      conversationUpdates.anonymousSpeakerCount = anonymousSpeakerCount;
-    }
-
-    await ctx.db.patch(args.conversationId, conversationUpdates);
-
-    // Replace existing transcript/facts instead of appending.
-    // This prevents full-duplicate transcripts when multiple processors
-    // (e.g. realtime + batch) submit results for the same conversation.
-    const existingTurns = await ctx.db
-      .query("transcriptTurns")
-      .withIndex("by_conversation_and_order", (q) =>
-        q.eq("conversationId", args.conversationId)
-      )
-      .collect();
-    for (const turn of existingTurns) {
-      await ctx.db.delete(turn._id);
-    }
-
-    const existingFacts = await ctx.db
-      .query("conversationFacts")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
-      .collect();
-    for (const fact of existingFacts) {
-      await ctx.db.delete(fact._id);
-    }
-
-    // Save transcript turns (with word-level data if available)
-    for (let i = 0; i < args.transcript.length; i++) {
-      const turn = args.transcript[i];
-      // Use turn-level startTime if provided, otherwise calculate from first word
-      const timestamp = turn.startTime !== undefined 
-        ? turn.startTime 
-        : (turn.words && turn.words.length > 0 ? turn.words[0].startTime : undefined);
-      
-      await ctx.db.insert("transcriptTurns", {
-        conversationId: args.conversationId,
-        userId: turn.userId,
-        speaker: turn.speaker,
-        text: turn.text,
-        order: i,
-        timestamp, // Add timestamp
-        words: turn.words, // Word-level data for new conversations
-      });
-    }
-
-    // Save S1 facts (initiator) - all facts in one row
-    if (args.S1_facts.length > 0) {
-      await ctx.db.insert("conversationFacts", {
-        conversationId: args.conversationId,
-        userId: conversation.initiatorUserId,
-        facts: args.S1_facts,
-      });
-    }
-
-    // Save S2 facts (scanner) - all facts in one row
-    if (conversation.scannerUserId && args.S2_facts.length > 0) {
-      await ctx.db.insert("conversationFacts", {
-        conversationId: args.conversationId,
-        userId: conversation.scannerUserId,
-        facts: args.S2_facts,
-      });
-    }
-
+export const saveTranscriptDataInternal = internalMutation({
+  args: saveTranscriptDataArgs,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await saveTranscriptDataImpl(ctx, args);
     return null;
   },
 });

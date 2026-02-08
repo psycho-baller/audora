@@ -15,6 +15,45 @@ const zepClient = new ZepClient({
 });
 
 const GRAPH_ID = process.env.ZEP_GRAPH_ID || "mru-2025";
+const MAX_SPEECHMATICS_ATTEMPTS = 3;
+const RETRYABLE_HTTP_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function extractHttpStatus(error: any): number | undefined {
+  if (typeof error?.statusCode === "number") return error.statusCode;
+  if (typeof error?.status === "number") return error.status;
+  if (typeof error?.response?.status === "number") return error.response.status;
+  if (typeof error?.response?.statusCode === "number") return error.response.statusCode;
+  return undefined;
+}
+
+function safeSerialize(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "[unserializable response]";
+  }
+}
+
+function isRetryableSpeechmaticsError(error: any): boolean {
+  const status = extractHttpStatus(error);
+  if (typeof status === "number" && RETRYABLE_HTTP_STATUS.has(status)) {
+    return true;
+  }
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("timed out")
+    || message.includes("timeout")
+    || message.includes("connection")
+    || message.includes("try again later")
+    || message.includes("temporar")
+    || message.includes("network")
+  );
+}
 
 /**
  * Transcribe audio file using Speechmatics Batch API (chunk only - no DB save)
@@ -56,6 +95,7 @@ export const transcribeChunkOnly = action({
     const buffer = Buffer.from(arrayBuffer);
 
     console.log(`Audio file size: ${buffer.length} bytes`);
+    console.log(`Audio MIME type: ${audioBlob.type || "unknown"}`);
 
     // Determine file extension
     const mimeType = audioBlob.type || "audio/webm";
@@ -88,26 +128,52 @@ export const transcribeChunkOnly = action({
         endTime: number;
         wordId: string;
       }>;
-    }>;
+    }> = [];
 
-    try {
-      const response = await client.transcribe(
-        file,
-        {
-          transcription_config: {
-            language: "en",
-            operating_point: "enhanced",
-            diarization: "speaker",
-            speaker_diarization_config: {},
+    let lastSpeechmaticsError: any = null;
+    for (let attempt = 1; attempt <= MAX_SPEECHMATICS_ATTEMPTS; attempt++) {
+      try {
+        const response = await client.transcribe(
+          file,
+          {
+            transcription_config: {
+              language: "en",
+              operating_point: "enhanced",
+              diarization: "speaker",
+              speaker_diarization_config: {},
+            },
           },
-        },
-        "json-v2"
-      );
+          "json-v2"
+        );
 
-      transcriptTurns = processTranscriptResponse(response);
-    } catch (error: any) {
-      console.error("Speechmatics error:", error);
-      throw new Error(`Speechmatics transcription failed: ${error.message}`);
+        transcriptTurns = processTranscriptResponse(response);
+        break;
+      } catch (error: any) {
+        lastSpeechmaticsError = error;
+        const status = extractHttpStatus(error);
+        const shouldRetry = attempt < MAX_SPEECHMATICS_ATTEMPTS && isRetryableSpeechmaticsError(error);
+        console.error(
+          `Speechmatics chunk transcription failed (attempt ${attempt}/${MAX_SPEECHMATICS_ATTEMPTS})`,
+          {
+            name: error?.name,
+            message: error?.message,
+            status,
+            shouldRetry,
+            response: safeSerialize(error?.response),
+          }
+        );
+        if (shouldRetry) {
+          await sleep(attempt * 1500);
+          continue;
+        }
+        break;
+      }
+    }
+
+    if (!transcriptTurns.length && lastSpeechmaticsError) {
+      throw new Error(
+        `Speechmatics transcription failed: ${lastSpeechmaticsError?.message || "Unknown provider error"}`
+      );
     }
 
     // Transcript format for chunks (keep timing + words so callers can preserve sync)
@@ -128,15 +194,43 @@ export const transcribeChunkOnly = action({
       .join("\n");
 
     // AI analysis for facts & summary
-    const { object: aiAnalysis } = await generateObject({
-      model: openaiProvider("gpt-4o"),
-      schema: z.object({
-        S1_facts: z.array(z.string()).default([]),
-        S2_facts: z.array(z.string()).default([]),
-        summary: z.string().default(""),
-      }),
-      prompt: `Extract key facts from this conversation transcript:\n\n${formattedTranscript}`,
-    });
+    const fallbackSummary = transcriptTurns.length > 0
+      ? "Transcript imported. AI summary is temporarily unavailable."
+      : "No transcript was detected for this chunk.";
+    let aiAnalysis: { S1_facts: string[]; S2_facts: string[]; summary: string } = {
+      S1_facts: [],
+      S2_facts: [],
+      summary: fallbackSummary,
+    };
+    if (formattedTranscript.trim().length > 0) {
+      try {
+        const promptTranscript =
+          formattedTranscript.length > 120_000
+            ? `${formattedTranscript.slice(0, 120_000)}\n\n[Transcript truncated due to length]`
+            : formattedTranscript;
+        const { object } = await generateObject({
+          model: openaiProvider("gpt-4o"),
+          schema: z.object({
+            S1_facts: z.array(z.string()).default([]),
+            S2_facts: z.array(z.string()).default([]),
+            summary: z.string().default(""),
+          }),
+          prompt: `Extract key facts from this conversation transcript:\n\n${promptTranscript}`,
+        });
+        aiAnalysis = {
+          S1_facts: object.S1_facts,
+          S2_facts: object.S2_facts,
+          summary: object.summary || fallbackSummary,
+        };
+      } catch (error: any) {
+        console.error("AI analysis failed for chunk, continuing with transcript only:", {
+          name: error?.name,
+          message: error?.message,
+          status: extractHttpStatus(error),
+          response: safeSerialize(error?.response),
+        });
+      }
+    }
 
     return {
       transcript,
@@ -240,7 +334,7 @@ export const batchTranscribe = action({
       console.error("Speechmatics error:", error);
       console.error("Error details:", error.message);
       if (error.response) {
-        console.error("Error response:", JSON.stringify(error.response));
+        console.error("Error response:", safeSerialize(error.response));
       }
       throw new Error(`Speechmatics transcription failed: ${error.message}`);
     }

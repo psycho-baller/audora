@@ -196,4 +196,56 @@ export default defineSchema({
     .index("by_conversation_and_user", ["conversationId", "userId"])
     .index("by_conversation", ["conversationId"])
     .index("by_user", ["userId"]),
+
+  // Background import jobs for long-running audio transcription.
+  importJobs: defineTable({
+    conversationId: v.id("conversations"),
+    initiatorUserId: v.id("users"),
+    friendId: v.optional(v.id("users")),
+    participantMode: v.union(
+      v.literal("contact"),
+      v.literal("solo"),
+      v.literal("anonymous")
+    ),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("processing"),
+      v.literal("finalizing"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    totalChunks: v.number(),
+    processedChunks: v.number(),
+    chunkStorageIds: v.array(v.id("_storage")),
+    initiatorName: v.optional(v.string()),
+    scannerName: v.optional(v.string()),
+    error: v.optional(v.string()),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_import_conversation", ["conversationId"])
+    .index("by_import_initiator", ["initiatorUserId"])
+    .index("by_import_status", ["status"]),
+
+  importJobChunkResults: defineTable({
+    jobId: v.id("importJobs"),
+    chunkIndex: v.number(),
+    transcript: v.array(v.object({
+      speaker: v.string(),
+      text: v.string(),
+      startTime: v.number(),
+      endTime: v.number(),
+      words: v.array(v.object({
+        word: v.string(),
+        startTime: v.number(),
+        endTime: v.number(),
+        wordId: v.string(),
+      })),
+    })),
+    S1_facts: v.array(v.string()),
+    S2_facts: v.array(v.string()),
+    summary: v.string(),
+  })
+    .index("by_import_job_and_chunk", ["jobId", "chunkIndex"])
+    .index("by_import_job", ["jobId"]),
 });

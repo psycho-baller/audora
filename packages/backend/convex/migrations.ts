@@ -88,8 +88,9 @@ export const migrateTranscriptTurnsToUserId = mutation({
         continue;
       }
 
-      // Type guard to ensure we have a conversations document
-      if (!('initiatorUserId' in conversation)) {
+      // Type guard to ensure we have a conversations document.
+      // Multiple tables now include initiatorUserId, so include inviteCode too.
+      if (!('initiatorUserId' in conversation) || !('inviteCode' in conversation)) {
         console.error(`Conversation ${turn.conversationId} is not a valid conversation`);
         errors++;
         continue;
