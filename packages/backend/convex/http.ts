@@ -6,6 +6,41 @@ import type { Id } from "./_generated/dataModel";
 import { httpAction } from "./_generated/server";
 import { paymentWebhook } from "./subscriptions";
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "https://www.getaudora.app",
+  "https://linkmaxxeng.netlify.app",
+];
+
+function getAllowedOrigin(origin: string | null): string | null {
+  if (!origin) return null;
+
+  const configuredOrigin = process.env.FRONTEND_URL?.trim();
+  const allowedOrigins = new Set(DEFAULT_ALLOWED_ORIGINS);
+
+  if (configuredOrigin) {
+    allowedOrigins.add(configuredOrigin);
+  }
+
+  return allowedOrigins.has(origin) ? origin : null;
+}
+
+function buildCorsHeaders(origin: string | null, methods: string): HeadersInit {
+  const allowedOrigin = getAllowedOrigin(origin);
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": methods,
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
+    Vary: "origin",
+  };
+
+  if (allowedOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowedOrigin;
+  }
+
+  return headers;
+}
+
 // Helper to format seconds into MM:SS or HH:MM:SS
 function formatTimestamp(seconds: number): string {
   const hrs = Math.floor(seconds / 3600);
@@ -19,6 +54,13 @@ function formatTimestamp(seconds: number): string {
 }
 
 export const chat = httpAction(async (ctx, req) => {
+  const origin = req.headers.get("Origin");
+  const allowedOrigin = getAllowedOrigin(origin);
+
+  if (origin && !allowedOrigin) {
+    return new Response("Origin not allowed", { status: 403 });
+  }
+
   // Extract the `messages` and optional `conversationId` from the body of the request
   const { messages, conversationId } = await req.json();
 
@@ -242,13 +284,7 @@ Remember: You're helping people "maxx out how they link" — deepening human con
 
   // Respond with text stream (compatible with @ai-sdk/react v1.x)
   return result.toTextStreamResponse({
-    headers: {
-      "Access-Control-Allow-Origin": process.env.FRONTEND_URL || "http://localhost:5173",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Credentials": "true",
-      Vary: "origin",
-    },
+    headers: buildCorsHeaders(origin, "POST, OPTIONS"),
   });
 });
 
@@ -272,12 +308,14 @@ http.route({
       headers.get("Access-Control-Request-Method") !== null &&
       headers.get("Access-Control-Request-Headers") !== null
     ) {
+      const origin = headers.get("Origin");
+      if (origin && !getAllowedOrigin(origin)) {
+        return new Response(null, { status: 403 });
+      }
+
       return new Response(null, {
         headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.FRONTEND_URL || "http://localhost:5173",
-          "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Credentials": "true",
+          ...buildCorsHeaders(origin, "POST"),
           "Access-Control-Max-Age": "86400",
         }),
       });
@@ -299,12 +337,14 @@ http.route({
       headers.get("Access-Control-Request-Method") !== null &&
       headers.get("Access-Control-Request-Headers") !== null
     ) {
+      const origin = headers.get("Origin");
+      if (origin && !getAllowedOrigin(origin)) {
+        return new Response(null, { status: 403 });
+      }
+
       return new Response(null, {
         headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.FRONTEND_URL || "http://localhost:5173",
-          "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Credentials": "true",
+          ...buildCorsHeaders(origin, "POST"),
           "Access-Control-Max-Age": "86400",
         }),
       });

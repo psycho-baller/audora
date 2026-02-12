@@ -111,10 +111,14 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
       { id: assistantMessageId, role: "assistant", content: "" },
     ]);
 
+    let failureStep = "init";
+
     try {
       // Get auth token for the HTTP request
+      failureStep = "auth-token";
       const token = await getToken({ template: "convex" });
-      
+
+      failureStep = "send-request";
       const response = await fetch(`${CONVEX_SITE_URL}/api/chat`, {
         method: "POST",
         headers: {
@@ -132,27 +136,30 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      failureStep = "read-stream";
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = "";
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      if (!reader) {
+        throw new Error("Response body is empty");
+      }
 
-          const chunk = decoder.decode(value, { stream: true });
-          assistantContent += chunk;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          // Update the assistant message with streamed content
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: assistantContent }
-                : msg
-            )
-          );
-        }
+        const chunk = decoder.decode(value, { stream: true });
+        assistantContent += chunk;
+
+        // Update the assistant message with streamed content
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: assistantContent }
+              : msg
+          )
+        );
       }
 
       // Save assistant message to database (don't block on this)
@@ -166,12 +173,16 @@ export function TranscriptChatbot({ conversationId }: TranscriptChatbotProps) {
         });
       }
     } catch (error) {
-      console.error("Chat error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Chat error (step: ${failureStep}):`, error);
       // Update assistant message with error
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMessageId
-            ? { ...msg, content: "Sorry, there was an error processing your request." }
+            ? {
+                ...msg,
+                content: `Sorry, there was an error processing your request (step: ${failureStep}). ${errorMessage}`,
+              }
             : msg
         )
       );
