@@ -1,0 +1,28 @@
+{
+  "name": "@audora/playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/dev.mjs",
+    "dev:web": "vite --config vite.config.ts",
+    "dev:api": "python3 -m transcript_lab.api",
+    "build": "vite build --config vite.config.ts",
+    "preview": "vite preview --config vite.config.ts",
+    "bootstrap": "python3 -m transcript_lab.cli bootstrap",
+    "ingest": "python3 -m transcript_lab.cli ingest",
+    "run": "python3 -m transcript_lab.cli run",
+    "archive": "python3 -m transcript_lab.cli archive",
+    "typecheck": "tsc --noEmit",
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py'"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.3"
+  }
+}

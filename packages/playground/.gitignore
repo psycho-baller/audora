@@ -1,0 +1,14 @@
+node_modules
+dist
+__pycache__
+*.pyc
+.DS_Store
+
+# Data and Analysis Files
+*.csv
+archive/
+normalized/
+raw/
+runs/
+transcript_lab/
+output/

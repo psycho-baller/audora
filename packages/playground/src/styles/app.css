@@ -1,0 +1,509 @@
+:root {
+  --bg: #111313;
+  --bg-soft: #171a1a;
+  --bg-panel: rgba(19, 24, 24, 0.82);
+  --bg-panel-strong: rgba(26, 32, 31, 0.96);
+  --line: rgba(215, 208, 185, 0.12);
+  --line-strong: rgba(215, 208, 185, 0.22);
+  --text: #f4efe1;
+  --text-soft: rgba(244, 239, 225, 0.72);
+  --text-muted: rgba(244, 239, 225, 0.5);
+  --accent: #d98b3a;
+  --accent-soft: rgba(217, 139, 58, 0.18);
+  --accent-cool: #8fc0b4;
+  --danger: #cc6246;
+  --positive: #8fbf73;
+  --shadow: 0 26px 90px rgba(0, 0, 0, 0.28);
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(143, 192, 180, 0.12), transparent 32%),
+    radial-gradient(circle at right, rgba(217, 139, 58, 0.12), transparent 28%),
+    linear-gradient(180deg, #0c0d0d 0%, #121515 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: transparent;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.rail {
+  border-right: 1px solid var(--line);
+  padding: 28px 24px 24px;
+  background:
+    linear-gradient(180deg, rgba(16, 18, 18, 0.98), rgba(14, 17, 16, 0.92)),
+    radial-gradient(circle at top, rgba(217, 139, 58, 0.14), transparent 24%);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+}
+
+.rail__hero h1,
+.stage__header h2,
+.panel__title,
+.findingCard h3,
+.runRow strong,
+.drillCard h3 {
+  font-family: 'Fraunces', serif;
+  letter-spacing: -0.03em;
+}
+
+.rail__kicker,
+.stage__eyebrow,
+.panel__eyebrow,
+.subtleLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  color: var(--accent-cool);
+  margin: 0 0 8px;
+}
+
+.rail__summary,
+.detailCopy,
+.findingCard p,
+.evidenceCard p,
+.drillCard p,
+.emptyState {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.rail__nav,
+.rail__metrics,
+.rail__actions {
+  margin-top: 28px;
+}
+
+.rail__navButton,
+.actionButton,
+.subtleButton,
+.runRow__button,
+.noteRow,
+.findingCard,
+.evidenceCard {
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+}
+
+.rail__navButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 16px;
+  margin-bottom: 8px;
+  text-align: left;
+  color: var(--text-soft);
+  transition: 160ms ease;
+}
+
+.rail__navButton:hover,
+.rail__navButton--active {
+  background: rgba(244, 239, 225, 0.05);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.rail__metrics {
+  display: grid;
+  gap: 10px;
+}
+
+.statCard {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.statCard span,
+.statCard small,
+.metricPair span,
+.meter__subtitle,
+.noteRow p,
+.noteRow__meta small,
+.runRow span,
+.runRow__metrics small,
+.selectedNote__meta,
+.findingCard__footer small {
+  color: var(--text-muted);
+}
+
+.statCard strong,
+.metricPair strong,
+.tagCard strong {
+  display: block;
+  font-size: 1.2rem;
+  margin: 6px 0;
+}
+
+.rail__actions {
+  display: grid;
+  gap: 10px;
+}
+
+.actionButton,
+.subtleButton {
+  border-radius: 999px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.actionButton {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.actionButton--solid {
+  background: linear-gradient(135deg, rgba(217, 139, 58, 0.94), rgba(168, 96, 36, 0.96));
+  color: #17110e;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.stage {
+  padding: 28px;
+  overflow: auto;
+}
+
+.stage__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stage__runChooser {
+  display: grid;
+  gap: 8px;
+  color: var(--text-soft);
+}
+
+.stage__runChooser select {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  padding: 10px 12px;
+  min-width: 240px;
+}
+
+.heroGrid,
+.contentGrid {
+  display: grid;
+  gap: 20px;
+}
+
+.heroGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.contentGrid {
+  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+}
+
+.contentGrid--wide {
+  grid-template-columns: minmax(340px, 480px) minmax(0, 1fr);
+}
+
+.panel {
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(20, 24, 24, 0.94), rgba(13, 16, 16, 0.92)),
+    radial-gradient(circle at top right, rgba(143, 192, 180, 0.08), transparent 30%);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.panel__body {
+  padding: 24px;
+}
+
+.meterGrid,
+.badgeGrid,
+.metricPairGrid,
+.drillGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.meterGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.badgeGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tagCard,
+.metricPair,
+.chip,
+.chip--ghost {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tagCard,
+.metricPair {
+  padding: 14px 16px;
+}
+
+.chip,
+.chip--ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.chip {
+  background: var(--accent-soft);
+  border-color: rgba(217, 139, 58, 0.22);
+}
+
+.chip--ghost {
+  margin: 0 8px 8px 0;
+}
+
+.meter__labelRow,
+.findingCard__header,
+.evidenceCard__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meter__track {
+  margin-top: 10px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.findingList,
+.noteList,
+.evidenceList,
+.runList {
+  display: grid;
+  gap: 12px;
+}
+
+.findingCard,
+.noteRow,
+.evidenceCard,
+.runRow {
+  border-radius: 20px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.findingCard:hover,
+.noteRow:hover,
+.evidenceCard:hover,
+.runRow__button:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.findingCard--active,
+.noteRow--active,
+.runRow__button--active {
+  border-color: rgba(217, 139, 58, 0.4);
+  background: rgba(217, 139, 58, 0.08);
+}
+
+.findingCard__footer,
+.noteRow__meta,
+.selectedNote__chips,
+.drillEvidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detailStack {
+  display: grid;
+  gap: 18px;
+}
+
+.hypothesis {
+  border-left: 2px solid rgba(143, 192, 180, 0.42);
+  padding-left: 14px;
+  color: var(--text-soft);
+}
+
+.selectedNote {
+  display: grid;
+  gap: 16px;
+}
+
+.transcriptBox {
+  white-space: pre-wrap;
+  line-height: 1.68;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(7, 9, 9, 0.64);
+  border: 1px solid rgba(143, 192, 180, 0.12);
+  color: #f5f1e7;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.88rem;
+  max-height: 560px;
+  overflow: auto;
+}
+
+.drillCard {
+  border-radius: 24px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.drillCard__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0;
+}
+
+.plainList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.runRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.runRow__button {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid transparent;
+}
+
+.runRow--archived {
+  cursor: default;
+}
+
+.evidenceCard--positive {
+  border-color: rgba(143, 191, 115, 0.28);
+  background: rgba(143, 191, 115, 0.06);
+}
+
+.errorBox {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(204, 98, 70, 0.3);
+  background: rgba(204, 98, 70, 0.08);
+  color: #f6c2b3;
+}
+
+.emptyState {
+  margin: 0;
+}
+
+@media (max-width: 1200px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    position: relative;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .heroGrid,
+  .contentGrid,
+  .contentGrid--wide,
+  .drillCard__grid,
+  .meterGrid,
+  .badgeGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stage {
+    padding: 18px;
+  }
+
+  .panel__header,
+  .panel__body,
+  .rail {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .stage__header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .runRow {
+    grid-template-columns: 1fr;
+  }
+}
