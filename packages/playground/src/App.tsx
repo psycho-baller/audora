@@ -8,14 +8,15 @@ import type {
   FindingsPayload,
   NoteAnalysis,
   NoteDetail,
-  RunSummary
+  RunSummary,
+  VocabularyWordBank
 } from './types';
 import { Panel } from './components/Panel';
 import { Meter } from './components/Meter';
 
-type ViewKey = 'Corpus' | 'Weaknesses' | 'Evidence' | 'Drills' | 'Experiments' | 'Archive';
+type ViewKey = 'Corpus' | 'Weaknesses' | 'Vocabulary' | 'Evidence' | 'Drills' | 'Experiments' | 'Archive';
 
-const VIEWS: ViewKey[] = ['Corpus', 'Weaknesses', 'Evidence', 'Drills', 'Experiments', 'Archive'];
+const VIEWS: ViewKey[] = ['Corpus', 'Weaknesses', 'Vocabulary', 'Evidence', 'Drills', 'Experiments', 'Archive'];
 
 function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`;
@@ -31,6 +32,7 @@ function App() {
   const [archive, setArchive] = useState<RunSummary[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined);
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+  const [selectedVocabularyId, setSelectedVocabularyId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<NoteDetail | null>(null);
   const [selectedNoteAnalysis, setSelectedNoteAnalysis] = useState<NoteAnalysis | null>(null);
@@ -60,6 +62,12 @@ function App() {
         ? selectedNoteId
         : firstNoteFromFinding ?? findingsPayload.notes[0]?.id ?? null;
       setSelectedNoteId(nextNoteId);
+
+      const nextVocabularyId =
+        selectedVocabularyId && findingsPayload.vocabulary?.targets.some((item) => item.id === selectedVocabularyId)
+          ? selectedVocabularyId
+          : findingsPayload.vocabulary?.targets[0]?.id ?? null;
+      setSelectedVocabularyId(nextVocabularyId);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     }
@@ -95,6 +103,11 @@ function App() {
     () => findings?.findings.find((item) => item.id === selectedFindingId) ?? corpusFindings[0] ?? null,
     [corpusFindings, findings, selectedFindingId]
   );
+  const vocabularyTargets = useMemo(() => findings?.vocabulary?.targets ?? [], [findings]);
+  const selectedVocabulary = useMemo(
+    () => vocabularyTargets.find((item) => item.id === selectedVocabularyId) ?? vocabularyTargets[0] ?? null,
+    [selectedVocabularyId, vocabularyTargets]
+  );
   const evidenceMap = useMemo(
     () => new Map((findings?.evidence ?? []).map((item) => [item.id, item])),
     [findings]
@@ -124,6 +137,16 @@ function App() {
         : [],
     [findings?.drills, selectedFinding]
   );
+  const selectedVocabularyEvidence = useMemo(
+    () =>
+      selectedVocabulary
+        ? selectedVocabulary.evidenceSpanIds
+            .map((id) => evidenceMap.get(id))
+            .filter((item): item is EvidenceSpan => Boolean(item))
+        : [],
+    [evidenceMap, selectedVocabulary]
+  );
+  const vocabularyBanks = useMemo(() => findings?.vocabulary?.banks ?? [], [findings]);
 
   const noteRows = useMemo(() => {
     if (!findings) {
@@ -202,6 +225,23 @@ function App() {
             <strong>{findings ? formatPercent(findings.metrics.overallQuality) : '...'}</strong>
             <small>coverage + stability + actionability</small>
           </div>
+          <div className="statCard">
+            <span>OpenAI</span>
+            <strong>
+              {findings?.llm?.enabled
+                ? findings.llm.model
+                : findings?.llm?.configured
+                  ? 'ready'
+                  : 'off'}
+            </strong>
+            <small>
+              {findings?.llm?.enabled
+                ? 'current run uses OpenAI synthesis'
+                : findings?.llm?.configured
+                  ? 'configured but not used in this run'
+                  : 'set OPENAI_API_KEY to enable'}
+            </small>
+          </div>
         </div>
 
         <div className="rail__actions">
@@ -218,13 +258,13 @@ function App() {
               void handleAction('run', () =>
                 triggerRun({
                   name: 'baseline-hybrid',
-                  llm: { enabled: false }
+                  llm: { enabled: true }
                 })
               )
             }
             disabled={busy !== null}
           >
-            {busy === 'run' ? 'Running experiment...' : 'Run baseline'}
+            {busy === 'run' ? 'Running experiment...' : 'Run baseline + OpenAI'}
           </button>
         </div>
 
@@ -395,6 +435,201 @@ function App() {
                 <p className="emptyState">Choose a weakness to inspect its severity model and strongest notes.</p>
               )}
             </Panel>
+          </section>
+        ) : null}
+
+        {view === 'Vocabulary' ? (
+          <section className="contentGrid contentGrid--wide">
+            <Panel eyebrow="Vocabulary scan" title="Crutch words and phrase habits">
+              <div className="metricPairGrid">
+                <div className="metricPair">
+                  <span>tracked targets</span>
+                  <strong>{findings?.vocabulary?.overview.trackedTargetCount ?? 0}</strong>
+                </div>
+                <div className="metricPair">
+                  <span>generic word load</span>
+                  <strong>{findings ? `${findings.vocabulary.overview.genericWordLoad}%` : '0%'}</strong>
+                </div>
+                <div className="metricPair">
+                  <span>phrase habit load</span>
+                  <strong>{findings ? `${findings.vocabulary.overview.phraseHabitLoad}%` : '0%'}</strong>
+                </div>
+                <div className="metricPair">
+                  <span>lexical diversity</span>
+                  <strong>{findings?.vocabulary?.overview.lexicalDiversity ?? 0}</strong>
+                </div>
+              </div>
+
+              <div className="vocabList">
+                {vocabularyTargets.map((target) => (
+                  <button
+                    key={target.id}
+                    className={`vocabCard ${selectedVocabulary?.id === target.id ? 'vocabCard--active' : ''}`}
+                    onClick={() => setSelectedVocabularyId(target.id)}
+                  >
+                    <div className="findingCard__header">
+                      <h3>{target.label}</h3>
+                      <span>{Math.round(target.overuseScore)}</span>
+                    </div>
+                    <p>{target.why_it_limits_you}</p>
+                    <div className="findingCard__footer">
+                      <small>{target.totalOccurrences} hits</small>
+                      <small>{Math.round(target.noteCoverage * 100)}% of eligible notes</small>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </Panel>
+
+            <div className="stackPanel">
+              <Panel eyebrow="Selected target" title={selectedVocabulary?.label ?? 'Choose a target'}>
+                {selectedVocabulary ? (
+                  <div className="detailStack">
+                    <Meter
+                      label="Overuse score"
+                      value={selectedVocabulary.overuseScore}
+                      subtitle={`Confidence ${Math.round(selectedVocabulary.confidence * 100)}%`}
+                    />
+                    <p className="detailCopy">{selectedVocabulary.why_it_limits_you}</p>
+
+                    <div className="metricPairGrid">
+                      <div className="metricPair">
+                        <span>occurrences</span>
+                        <strong>{selectedVocabulary.totalOccurrences}</strong>
+                      </div>
+                      <div className="metricPair">
+                        <span>notes impacted</span>
+                        <strong>{selectedVocabulary.notesImpacted}</strong>
+                      </div>
+                      <div className="metricPair">
+                        <span>coverage</span>
+                        <strong>{Math.round(selectedVocabulary.noteCoverage * 100)}%</strong>
+                      </div>
+                      <div className="metricPair">
+                        <span>context spread</span>
+                        <strong>{Math.round(selectedVocabulary.clusterSpread * 100)}%</strong>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="subtleLabel">Where it shows up</p>
+                      <div className="drillEvidence">
+                        {selectedVocabulary.contexts.map((context) => (
+                          <div className="chip chip--ghost" key={context.label}>
+                            {context.label} · {context.count}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="subtleLabel">Replacement bank</p>
+                      <div className="replacementGrid">
+                        {selectedVocabulary.replacementOptions.map((option) => (
+                          <article className="replacementCard" key={`${selectedVocabulary.id}-${option.word}`}>
+                            <div className="replacementCard__header">
+                              <strong>{option.word}</strong>
+                              <span>{selectedVocabulary.kind}</span>
+                            </div>
+                            <p>{option.useWhen}</p>
+                            <small>{option.caution}</small>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="subtleLabel">Evidence spans</p>
+                      <div className="evidenceList">
+                        {selectedVocabularyEvidence.map((span) => (
+                          <button
+                            key={span.id}
+                            className="evidenceCard"
+                            onClick={() => {
+                              setSelectedNoteId(span.note_id);
+                              setView('Evidence');
+                            }}
+                          >
+                            <div className="evidenceCard__header">
+                              <strong>{span.note_title}</strong>
+                              <span>{span.metrics.suggestedReplacement as string}</span>
+                            </div>
+                            <p>{span.text}</p>
+                            <small>{span.rationale}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="emptyState">Choose a vocabulary target to inspect its replacements and evidence.</p>
+                )}
+              </Panel>
+
+              <Panel eyebrow="Practice loop" title="Rewrites and learnable words">
+                {selectedVocabulary ? (
+                  <div className="detailStack">
+                    <div>
+                      <p className="subtleLabel">Sample rewrites</p>
+                      {selectedVocabulary.sampleRewrites.length ? (
+                        <div className="rewriteList">
+                          {selectedVocabulary.sampleRewrites.map((rewrite, index) => (
+                            <article className="rewriteCard" key={`${selectedVocabulary.id}-rewrite-${index}`}>
+                              <div className="rewriteCard__header">
+                                <strong>{rewrite.noteTitle ?? 'Rewrite draft'}</strong>
+                                <span>{rewrite.replacement}</span>
+                              </div>
+                              <p className="rewriteCard__original">{rewrite.original}</p>
+                              <p className="rewriteCard__arrow">to</p>
+                              <p className="rewriteCard__rewrite">{rewrite.rewritten}</p>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="emptyState">
+                          Automatic rewrites only appear when the replacement is context-safe. Use the bank above to rewrite this family manually.
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="subtleLabel">Today's vocabulary loop</p>
+                      <ul className="plainList">
+                        {selectedVocabulary.learningSystem.map((step) => (
+                          <li key={step}>{step}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="subtleLabel">Context word banks</p>
+                      <div className="wordBankList">
+                        {vocabularyBanks.map((bank) => (
+                          <WordBankView key={bank.context} bank={bank} />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="subtleLabel">Active experiments</p>
+                      <div className="experimentList">
+                        {(findings?.vocabulary?.experiments ?? []).map((experiment) => (
+                          <article className="replacementCard" key={experiment.id}>
+                            <div className="replacementCard__header">
+                              <strong>{experiment.label}</strong>
+                              <span>{experiment.status}</span>
+                            </div>
+                            <p>{experiment.description}</p>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="emptyState">The vocabulary workspace will populate once a target is selected.</p>
+                )}
+              </Panel>
+            </div>
           </section>
         ) : null}
 
@@ -604,6 +839,28 @@ function DrillView({
             );
           })}
         </div>
+      </div>
+    </article>
+  );
+}
+
+function WordBankView({ bank }: { key?: string; bank: VocabularyWordBank }) {
+  return (
+    <article className="wordBank">
+      <div className="wordBank__header">
+        <div>
+          <p className="panel__eyebrow">{bank.context}</p>
+          <h3>{bank.noteCount} notes</h3>
+        </div>
+      </div>
+      <div className="wordBank__grid">
+        {bank.words.map((entry) => (
+          <div className="wordBank__entry" key={`${bank.context}-${entry.word}`}>
+            <strong>{entry.word}</strong>
+            <p>{entry.useWhen}</p>
+            <small>{entry.example}</small>
+          </div>
+        ))}
       </div>
     </article>
   );

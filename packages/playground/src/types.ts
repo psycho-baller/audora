@@ -124,12 +124,95 @@ export interface RunSummary {
   topDimension?: string | null;
 }
 
+export interface VocabularyReplacementOption {
+  word: string;
+  useWhen: string;
+  caution: string;
+}
+
+export interface VocabularyRewrite {
+  noteId?: string | null;
+  noteTitle?: string | null;
+  original: string;
+  rewritten: string;
+  replacement: string;
+}
+
+export interface VocabularyContextCount {
+  label: string;
+  count: number;
+}
+
+export interface VocabularyTarget {
+  id: string;
+  source: string;
+  label: string;
+  kind: 'word' | 'phrase';
+  category: string;
+  overuseScore: number;
+  confidence: number;
+  totalOccurrences: number;
+  occurrenceRatePerThousand: number;
+  noteCoverage: number;
+  clusterSpread: number;
+  notesImpacted: number;
+  contexts: VocabularyContextCount[];
+  why_it_limits_you: string;
+  replacementOptions: VocabularyReplacementOption[];
+  evidenceSpanIds: string[];
+  sampleRewrites: VocabularyRewrite[];
+  learningSystem: string[];
+  evidenceSamples?: string[];
+}
+
+export interface VocabularyWordBankEntry {
+  word: string;
+  useWhen: string;
+  example: string;
+}
+
+export interface VocabularyWordBank {
+  context: string;
+  noteCount: number;
+  words: VocabularyWordBankEntry[];
+}
+
+export interface VocabularyExperiment {
+  id: string;
+  label: string;
+  description: string;
+  status: string;
+}
+
+export interface VocabularyPayload {
+  overview: {
+    eligibleNoteCount: number;
+    trackedTargetCount: number;
+    lexicalDiversity: number;
+    genericWordLoad: number;
+    phraseHabitLoad: number;
+    focusTargets: string[];
+  };
+  targets: VocabularyTarget[];
+  banks: VocabularyWordBank[];
+  experiments: VocabularyExperiment[];
+}
+
 export interface FindingsPayload {
   runId: string;
   findings: Finding[];
   evidence: EvidenceSpan[];
   drills: DrillCard[];
   notes: NoteIndexItem[];
+  vocabulary: VocabularyPayload;
+  llm: {
+    enabled: boolean;
+    requested: boolean;
+    configured: boolean;
+    model: string;
+    reasoningEffort: string;
+    disabledReason?: string | null;
+  };
   metrics: RunSummary['metrics'];
   comparisons: {
     previousRunId?: string | null;

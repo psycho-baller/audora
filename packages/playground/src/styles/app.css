@@ -64,6 +64,8 @@ select {
 .stage__header h2,
 .panel__title,
 .findingCard h3,
+.vocabCard h3,
+.wordBank h3,
 .runRow strong,
 .drillCard h3 {
   font-family: 'Fraunces', serif;
@@ -380,6 +382,129 @@ select {
   gap: 18px;
 }
 
+.stackPanel,
+.rewriteList,
+.wordBankList,
+.experimentList,
+.replacementGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.vocabList {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.vocabCard,
+.replacementCard,
+.rewriteCard,
+.wordBank {
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.vocabCard {
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.vocabCard:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vocabCard--active {
+  border-color: rgba(143, 192, 180, 0.34);
+  background:
+    linear-gradient(180deg, rgba(143, 192, 180, 0.12), rgba(143, 192, 180, 0.04)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.replacementGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.replacementCard,
+.wordBank__entry {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.replacementCard__header,
+.rewriteCard__header,
+.wordBank__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.replacementCard span,
+.rewriteCard span {
+  color: var(--accent-cool);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.66rem;
+}
+
+.replacementCard p,
+.rewriteCard p,
+.wordBank p,
+.wordBank small {
+  color: var(--text-soft);
+}
+
+.rewriteCard {
+  border-color: rgba(217, 139, 58, 0.18);
+  background:
+    linear-gradient(180deg, rgba(217, 139, 58, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.rewriteCard__original,
+.rewriteCard__rewrite,
+.rewriteCard__arrow {
+  margin: 0;
+}
+
+.rewriteCard__original {
+  color: var(--text-muted);
+}
+
+.rewriteCard__rewrite {
+  color: var(--text);
+}
+
+.rewriteCard__arrow {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+}
+
+.wordBank {
+  background:
+    linear-gradient(180deg, rgba(143, 192, 180, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.wordBank__grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.wordBank__entry {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+}
+
 .hypothesis {
   border-left: 2px solid rgba(143, 192, 180, 0.42);
   padding-left: 14px;
@@ -481,7 +606,8 @@ select {
   .contentGrid--wide,
   .drillCard__grid,
   .meterGrid,
-  .badgeGrid {
+  .badgeGrid,
+  .replacementGrid {
     grid-template-columns: 1fr;
   }
 }

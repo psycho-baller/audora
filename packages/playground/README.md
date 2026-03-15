@@ -28,4 +28,6 @@ pnpm --filter @audora/playground typecheck
 ## Notes
 
 - v1 is transcript-only and does not claim vocal-tone or prosody diagnosis.
-- LLM synthesis is opt-in. Set `PLAYGROUND_ENABLE_LLM=1` and `PLAYGROUND_OPENAI_MODEL` with `OPENAI_API_KEY` if you want the synthesis layer enabled.
+- OpenAI synthesis runs through the Responses API when you trigger a run with `llm.enabled = true`.
+- `OPENAI_API_KEY` is required. `PLAYGROUND_OPENAI_MODEL` is optional and defaults to `gpt-5-mini`.
+- Set `PLAYGROUND_ENABLE_LLM=0` only if you want to hard-disable OpenAI even when the app requests it.
