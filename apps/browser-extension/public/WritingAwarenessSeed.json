@@ -1,0 +1,2140 @@
+{
+  "sourceRunId": "run-20260313-220116-898632-7b5fdc6ab8b3",
+  "generatedAt": "2026-03-13T22:01:16.898511+00:00",
+  "rules": [
+    {
+      "id": "avoid:thing_family:something",
+      "type": "avoid",
+      "term": "something",
+      "replacementOptions": [
+        {
+          "word": "constraint",
+          "useWhen": "You mean a limit, blocker, or condition shaping what’s possible.",
+          "caution": "Don’t use for a physical object, emotion, or general activity."
+        },
+        {
+          "word": "pattern",
+          "useWhen": "You’re describing a repeated behavior, habit, or recurring shape in data or events.",
+          "caution": "Only use when repetition or recurrence is actually present."
+        },
+        {
+          "word": "decision",
+          "useWhen": "You’re referring to a choice, tradeoff, or judgment someone must make.",
+          "caution": "Avoid if there’s no active choice or decision-maker involved."
+        },
+        {
+          "word": "feature",
+          "useWhen": "The vague word stands for a product capability, interface element, or workflow step.",
+          "caution": "Use only for software/product behaviors or documented features."
+        },
+        {
+          "word": "request",
+          "useWhen": "You mean an ask, instruction, or specific need from someone.",
+          "caution": "Don’t use when you actually mean a problem, obstacle, or object."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 5,
+      "notes": "Using placeholder nouns like \"thing(s)/something/stuff\" hides the concrete object, action, or constraint, so listeners can’t picture what you mean or act on it.",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:thing_family:stuff",
+      "type": "avoid",
+      "term": "stuff",
+      "replacementOptions": [
+        {
+          "word": "constraint",
+          "useWhen": "You mean a limit, blocker, or condition shaping what’s possible.",
+          "caution": "Don’t use for a physical object, emotion, or general activity."
+        },
+        {
+          "word": "pattern",
+          "useWhen": "You’re describing a repeated behavior, habit, or recurring shape in data or events.",
+          "caution": "Only use when repetition or recurrence is actually present."
+        },
+        {
+          "word": "decision",
+          "useWhen": "You’re referring to a choice, tradeoff, or judgment someone must make.",
+          "caution": "Avoid if there’s no active choice or decision-maker involved."
+        },
+        {
+          "word": "feature",
+          "useWhen": "The vague word stands for a product capability, interface element, or workflow step.",
+          "caution": "Use only for software/product behaviors or documented features."
+        },
+        {
+          "word": "request",
+          "useWhen": "You mean an ask, instruction, or specific need from someone.",
+          "caution": "Don’t use when you actually mean a problem, obstacle, or object."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 5,
+      "notes": "Using placeholder nouns like \"thing(s)/something/stuff\" hides the concrete object, action, or constraint, so listeners can’t picture what you mean or act on it.",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:thing_family:thing",
+      "type": "avoid",
+      "term": "thing",
+      "replacementOptions": [
+        {
+          "word": "constraint",
+          "useWhen": "You mean a limit, blocker, or condition shaping what’s possible.",
+          "caution": "Don’t use for a physical object, emotion, or general activity."
+        },
+        {
+          "word": "pattern",
+          "useWhen": "You’re describing a repeated behavior, habit, or recurring shape in data or events.",
+          "caution": "Only use when repetition or recurrence is actually present."
+        },
+        {
+          "word": "decision",
+          "useWhen": "You’re referring to a choice, tradeoff, or judgment someone must make.",
+          "caution": "Avoid if there’s no active choice or decision-maker involved."
+        },
+        {
+          "word": "feature",
+          "useWhen": "The vague word stands for a product capability, interface element, or workflow step.",
+          "caution": "Use only for software/product behaviors or documented features."
+        },
+        {
+          "word": "request",
+          "useWhen": "You mean an ask, instruction, or specific need from someone.",
+          "caution": "Don’t use when you actually mean a problem, obstacle, or object."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 5,
+      "notes": "Using placeholder nouns like \"thing(s)/something/stuff\" hides the concrete object, action, or constraint, so listeners can’t picture what you mean or act on it.",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:thing_family:things",
+      "type": "avoid",
+      "term": "things",
+      "replacementOptions": [
+        {
+          "word": "constraint",
+          "useWhen": "You mean a limit, blocker, or condition shaping what’s possible.",
+          "caution": "Don’t use for a physical object, emotion, or general activity."
+        },
+        {
+          "word": "pattern",
+          "useWhen": "You’re describing a repeated behavior, habit, or recurring shape in data or events.",
+          "caution": "Only use when repetition or recurrence is actually present."
+        },
+        {
+          "word": "decision",
+          "useWhen": "You’re referring to a choice, tradeoff, or judgment someone must make.",
+          "caution": "Avoid if there’s no active choice or decision-maker involved."
+        },
+        {
+          "word": "feature",
+          "useWhen": "The vague word stands for a product capability, interface element, or workflow step.",
+          "caution": "Use only for software/product behaviors or documented features."
+        },
+        {
+          "word": "request",
+          "useWhen": "You mean an ask, instruction, or specific need from someone.",
+          "caution": "Don’t use when you actually mean a problem, obstacle, or object."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 5,
+      "notes": "Using placeholder nouns like \"thing(s)/something/stuff\" hides the concrete object, action, or constraint, so listeners can’t picture what you mean or act on it.",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:people_family:people",
+      "type": "avoid",
+      "term": "people",
+      "replacementOptions": [
+        {
+          "word": "customer",
+          "useWhen": "You mean someone evaluating, buying, or using a product or service.",
+          "caution": "Limit to market, sales, or product contexts; don’t use for personal relationships or abstract groups."
+        },
+        {
+          "word": "listener",
+          "useWhen": "You mean the person hearing or interpreting your words—e.g., during a talk, pitch, or explanation.",
+          "caution": "Use only for communication contexts; avoid if you’re talking about behavior or motivations outside a listening situation."
+        },
+        {
+          "word": "teammate",
+          "useWhen": "You mean a collaborator, co-worker, or someone on the same project or company.",
+          "caution": "Avoid for customers, external partners, or strangers."
+        },
+        {
+          "word": "founder",
+          "useWhen": "You mean someone who runs or started a company—use when that identity changes expectations or incentives.",
+          "caution": "Only use if the startup/operator role is relevant to the point you’re making."
+        },
+        {
+          "word": "friend",
+          "useWhen": "You mean someone in a personal or social relationship, not a formal or transactional role.",
+          "caution": "Don’t use in business, legal, or formal contexts."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Using vague labels like “people” or “someone” hides who you’re addressing, which reduces specificity, weakens persuasive impact, and makes it harder to show empathy or credibility.",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:people_family:person",
+      "type": "avoid",
+      "term": "person",
+      "replacementOptions": [
+        {
+          "word": "customer",
+          "useWhen": "You mean someone evaluating, buying, or using a product or service.",
+          "caution": "Limit to market, sales, or product contexts; don’t use for personal relationships or abstract groups."
+        },
+        {
+          "word": "listener",
+          "useWhen": "You mean the person hearing or interpreting your words—e.g., during a talk, pitch, or explanation.",
+          "caution": "Use only for communication contexts; avoid if you’re talking about behavior or motivations outside a listening situation."
+        },
+        {
+          "word": "teammate",
+          "useWhen": "You mean a collaborator, co-worker, or someone on the same project or company.",
+          "caution": "Avoid for customers, external partners, or strangers."
+        },
+        {
+          "word": "founder",
+          "useWhen": "You mean someone who runs or started a company—use when that identity changes expectations or incentives.",
+          "caution": "Only use if the startup/operator role is relevant to the point you’re making."
+        },
+        {
+          "word": "friend",
+          "useWhen": "You mean someone in a personal or social relationship, not a formal or transactional role.",
+          "caution": "Don’t use in business, legal, or formal contexts."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Using vague labels like “people” or “someone” hides who you’re addressing, which reduces specificity, weakens persuasive impact, and makes it harder to show empathy or credibility.",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:people_family:someone",
+      "type": "avoid",
+      "term": "someone",
+      "replacementOptions": [
+        {
+          "word": "customer",
+          "useWhen": "You mean someone evaluating, buying, or using a product or service.",
+          "caution": "Limit to market, sales, or product contexts; don’t use for personal relationships or abstract groups."
+        },
+        {
+          "word": "listener",
+          "useWhen": "You mean the person hearing or interpreting your words—e.g., during a talk, pitch, or explanation.",
+          "caution": "Use only for communication contexts; avoid if you’re talking about behavior or motivations outside a listening situation."
+        },
+        {
+          "word": "teammate",
+          "useWhen": "You mean a collaborator, co-worker, or someone on the same project or company.",
+          "caution": "Avoid for customers, external partners, or strangers."
+        },
+        {
+          "word": "founder",
+          "useWhen": "You mean someone who runs or started a company—use when that identity changes expectations or incentives.",
+          "caution": "Only use if the startup/operator role is relevant to the point you’re making."
+        },
+        {
+          "word": "friend",
+          "useWhen": "You mean someone in a personal or social relationship, not a formal or transactional role.",
+          "caution": "Don’t use in business, legal, or formal contexts."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Using vague labels like “people” or “someone” hides who you’re addressing, which reduces specificity, weakens persuasive impact, and makes it harder to show empathy or credibility.",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:really_very:really",
+      "type": "avoid",
+      "term": "really",
+      "replacementOptions": [
+        {
+          "word": "remove the intensifier",
+          "useWhen": "The adjective already conveys the necessary strength (e.g., “scary,” “clear,” “unlikely”).",
+          "caution": "Keep the intensifier when your goal is to signal genuine, subjective intensity (e.g., reporting a strong emotional reaction)."
+        },
+        {
+          "word": "choose a sharper adjective",
+          "useWhen": "A single, specific adjective can express the intended degree or quality more efficiently (e.g., “terrifying” instead of “very scary”; “unlikely” instead of “very unlikely”).",
+          "caution": "Avoid hyperbolic words that overstate the facts or change the meaning."
+        },
+        {
+          "word": "use a number, timeframe, or condition",
+          "useWhen": "You can quantify or qualify the claim (e.g., “three people,” “in the last week,” “under these conditions”).",
+          "caution": "Only quantify when you have a real measure or clear constraint; don’t invent precise-sounding figures."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Frequent use of intensifiers like “really” or “very” bulks up speech without adding precise information, making claims feel emotionally loaded or vague.",
+      "family": "really_very",
+      "pinned": false
+    },
+    {
+      "id": "avoid:really_very:very",
+      "type": "avoid",
+      "term": "very",
+      "replacementOptions": [
+        {
+          "word": "remove the intensifier",
+          "useWhen": "The adjective already conveys the necessary strength (e.g., “scary,” “clear,” “unlikely”).",
+          "caution": "Keep the intensifier when your goal is to signal genuine, subjective intensity (e.g., reporting a strong emotional reaction)."
+        },
+        {
+          "word": "choose a sharper adjective",
+          "useWhen": "A single, specific adjective can express the intended degree or quality more efficiently (e.g., “terrifying” instead of “very scary”; “unlikely” instead of “very unlikely”).",
+          "caution": "Avoid hyperbolic words that overstate the facts or change the meaning."
+        },
+        {
+          "word": "use a number, timeframe, or condition",
+          "useWhen": "You can quantify or qualify the claim (e.g., “three people,” “in the last week,” “under these conditions”).",
+          "caution": "Only quantify when you have a real measure or clear constraint; don’t invent precise-sounding figures."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Frequent use of intensifiers like “really” or “very” bulks up speech without adding precise information, making claims feel emotionally loaded or vague.",
+      "family": "really_very",
+      "pinned": false
+    },
+    {
+      "id": "target:thing_family:constraint",
+      "type": "target",
+      "term": "constraint",
+      "replacementOptions": [
+        {
+          "word": "constraint",
+          "useWhen": "You mean a limit, blocker, or condition shaping what’s possible.",
+          "caution": "Don’t use for a physical object, emotion, or general activity."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Derived from thing / things / something / stuff",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "target:thing_family:decision",
+      "type": "target",
+      "term": "decision",
+      "replacementOptions": [
+        {
+          "word": "decision",
+          "useWhen": "You’re referring to a choice, tradeoff, or judgment someone must make.",
+          "caution": "Avoid if there’s no active choice or decision-maker involved."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Derived from thing / things / something / stuff",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "target:thing_family:feature",
+      "type": "target",
+      "term": "feature",
+      "replacementOptions": [
+        {
+          "word": "feature",
+          "useWhen": "The vague word stands for a product capability, interface element, or workflow step.",
+          "caution": "Use only for software/product behaviors or documented features."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Derived from thing / things / something / stuff",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "target:thing_family:pattern",
+      "type": "target",
+      "term": "pattern",
+      "replacementOptions": [
+        {
+          "word": "pattern",
+          "useWhen": "You’re describing a repeated behavior, habit, or recurring shape in data or events.",
+          "caution": "Only use when repetition or recurrence is actually present."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Derived from thing / things / something / stuff",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "target:thing_family:request",
+      "type": "target",
+      "term": "request",
+      "replacementOptions": [
+        {
+          "word": "request",
+          "useWhen": "You mean an ask, instruction, or specific need from someone.",
+          "caution": "Don’t use when you actually mean a problem, obstacle, or object."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 4,
+      "notes": "Derived from thing / things / something / stuff",
+      "family": "thing_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:good_family:crazy",
+      "type": "avoid",
+      "term": "crazy",
+      "replacementOptions": [
+        {
+          "word": "useful",
+          "useWhen": "The thing helps someone act, solve a problem, or move work forward.",
+          "caution": "Don’t use for reactions that are mainly emotional, aesthetic, or moral."
+        },
+        {
+          "word": "compelling",
+          "useWhen": "An argument, story, or feature grabs attention or makes a strong case.",
+          "caution": "Reserve for things that clearly persuade or attract; avoid for neutral facts."
+        },
+        {
+          "word": "revealing",
+          "useWhen": "Something exposed a pattern, gap, or new insight you hadn’t seen.",
+          "caution": "Use only when the main value is increased understanding."
+        },
+        {
+          "word": "damaging",
+          "useWhen": "A flaw or outcome causes real harm, cost, or risk.",
+          "caution": "Don’t use for minor annoyances or stylistic dislikes."
+        },
+        {
+          "word": "unexpected",
+          "useWhen": "The main reaction is surprise or departure from norms.",
+          "caution": "Avoid when the surprise is predictable or irrelevant to the point."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Single-word reactions like “good/interesting/crazy” tell listeners how you feel but not what specifically caused that reaction, so they block useful follow-up and clear feedback.",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:good_family:good",
+      "type": "avoid",
+      "term": "good",
+      "replacementOptions": [
+        {
+          "word": "useful",
+          "useWhen": "The thing helps someone act, solve a problem, or move work forward.",
+          "caution": "Don’t use for reactions that are mainly emotional, aesthetic, or moral."
+        },
+        {
+          "word": "compelling",
+          "useWhen": "An argument, story, or feature grabs attention or makes a strong case.",
+          "caution": "Reserve for things that clearly persuade or attract; avoid for neutral facts."
+        },
+        {
+          "word": "revealing",
+          "useWhen": "Something exposed a pattern, gap, or new insight you hadn’t seen.",
+          "caution": "Use only when the main value is increased understanding."
+        },
+        {
+          "word": "damaging",
+          "useWhen": "A flaw or outcome causes real harm, cost, or risk.",
+          "caution": "Don’t use for minor annoyances or stylistic dislikes."
+        },
+        {
+          "word": "unexpected",
+          "useWhen": "The main reaction is surprise or departure from norms.",
+          "caution": "Avoid when the surprise is predictable or irrelevant to the point."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Single-word reactions like “good/interesting/crazy” tell listeners how you feel but not what specifically caused that reaction, so they block useful follow-up and clear feedback.",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:good_family:interesting",
+      "type": "avoid",
+      "term": "interesting",
+      "replacementOptions": [
+        {
+          "word": "useful",
+          "useWhen": "The thing helps someone act, solve a problem, or move work forward.",
+          "caution": "Don’t use for reactions that are mainly emotional, aesthetic, or moral."
+        },
+        {
+          "word": "compelling",
+          "useWhen": "An argument, story, or feature grabs attention or makes a strong case.",
+          "caution": "Reserve for things that clearly persuade or attract; avoid for neutral facts."
+        },
+        {
+          "word": "revealing",
+          "useWhen": "Something exposed a pattern, gap, or new insight you hadn’t seen.",
+          "caution": "Use only when the main value is increased understanding."
+        },
+        {
+          "word": "damaging",
+          "useWhen": "A flaw or outcome causes real harm, cost, or risk.",
+          "caution": "Don’t use for minor annoyances or stylistic dislikes."
+        },
+        {
+          "word": "unexpected",
+          "useWhen": "The main reaction is surprise or departure from norms.",
+          "caution": "Avoid when the surprise is predictable or irrelevant to the point."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Single-word reactions like “good/interesting/crazy” tell listeners how you feel but not what specifically caused that reaction, so they block useful follow-up and clear feedback.",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:i_think_feel_guess:i-feel",
+      "type": "avoid",
+      "term": "i feel",
+      "replacementOptions": [
+        {
+          "word": "My view is",
+          "useWhen": "You have a considered position and want to state it directly without hedging.",
+          "caution": "Don’t use this for off-the-cuff guesses or facts you aren’t confident about."
+        },
+        {
+          "word": "The core point is",
+          "useWhen": "You want to compress your message into one clear, emphatic sentence.",
+          "caution": "Only use it when you can state the main point sharply and briefly."
+        },
+        {
+          "word": "drop the opener",
+          "useWhen": "Your sentence is clear and stands on its own; the audience can evaluate it without a preface.",
+          "caution": "If the claim is uncertain, keep a later qualifier (e.g., “probably,” “it seems”) rather than a front-loaded hedge."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Openers like “I think / I feel / I guess” signal uncertainty before you make a point, which trains listeners to discount what follows and weakens your presence in spoken interactions.",
+      "family": "i_think_feel_guess",
+      "pinned": false
+    },
+    {
+      "id": "avoid:i_think_feel_guess:i-guess",
+      "type": "avoid",
+      "term": "i guess",
+      "replacementOptions": [
+        {
+          "word": "My view is",
+          "useWhen": "You have a considered position and want to state it directly without hedging.",
+          "caution": "Don’t use this for off-the-cuff guesses or facts you aren’t confident about."
+        },
+        {
+          "word": "The core point is",
+          "useWhen": "You want to compress your message into one clear, emphatic sentence.",
+          "caution": "Only use it when you can state the main point sharply and briefly."
+        },
+        {
+          "word": "drop the opener",
+          "useWhen": "Your sentence is clear and stands on its own; the audience can evaluate it without a preface.",
+          "caution": "If the claim is uncertain, keep a later qualifier (e.g., “probably,” “it seems”) rather than a front-loaded hedge."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Openers like “I think / I feel / I guess” signal uncertainty before you make a point, which trains listeners to discount what follows and weakens your presence in spoken interactions.",
+      "family": "i_think_feel_guess",
+      "pinned": false
+    },
+    {
+      "id": "avoid:i_think_feel_guess:i-think",
+      "type": "avoid",
+      "term": "i think",
+      "replacementOptions": [
+        {
+          "word": "My view is",
+          "useWhen": "You have a considered position and want to state it directly without hedging.",
+          "caution": "Don’t use this for off-the-cuff guesses or facts you aren’t confident about."
+        },
+        {
+          "word": "The core point is",
+          "useWhen": "You want to compress your message into one clear, emphatic sentence.",
+          "caution": "Only use it when you can state the main point sharply and briefly."
+        },
+        {
+          "word": "drop the opener",
+          "useWhen": "Your sentence is clear and stands on its own; the audience can evaluate it without a preface.",
+          "caution": "If the claim is uncertain, keep a later qualifier (e.g., “probably,” “it seems”) rather than a front-loaded hedge."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Openers like “I think / I feel / I guess” signal uncertainty before you make a point, which trains listeners to discount what follows and weakens your presence in spoken interactions.",
+      "family": "i_think_feel_guess",
+      "pinned": false
+    },
+    {
+      "id": "avoid:way_family:way",
+      "type": "avoid",
+      "term": "way",
+      "replacementOptions": [
+        {
+          "word": "approach",
+          "useWhen": "You mean a deliberate method, plan, or strategy someone chooses.",
+          "caution": "Don't use it for automatic processes or just to sound formal."
+        },
+        {
+          "word": "sequence",
+          "useWhen": "You are describing steps, order, or progression.",
+          "caution": "Only use it when the order of things matters."
+        },
+        {
+          "word": "mechanism",
+          "useWhen": "You mean the causal process or how something works to produce an outcome.",
+          "caution": "Avoid using it as a fancier synonym for 'method.'"
+        },
+        {
+          "word": "signal",
+          "useWhen": "You are pointing to an indicator, cue, or piece of evidence that implies something.",
+          "caution": "Only use it when the point functions diagnostically or as a sign."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "'Way' is vague: it can mean method, order, cause, or signal. Listeners must guess which you mean, which weakens clarity in spoken exchanges.",
+      "family": "way_family",
+      "pinned": false
+    },
+    {
+      "id": "target:people_family:customer",
+      "type": "target",
+      "term": "customer",
+      "replacementOptions": [
+        {
+          "word": "customer",
+          "useWhen": "You mean someone evaluating, buying, or using a product or service.",
+          "caution": "Limit to market, sales, or product contexts; don’t use for personal relationships or abstract groups."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Derived from people / person / someone",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "target:people_family:founder",
+      "type": "target",
+      "term": "founder",
+      "replacementOptions": [
+        {
+          "word": "founder",
+          "useWhen": "You mean someone who runs or started a company—use when that identity changes expectations or incentives.",
+          "caution": "Only use if the startup/operator role is relevant to the point you’re making."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Derived from people / person / someone",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "target:people_family:friend",
+      "type": "target",
+      "term": "friend",
+      "replacementOptions": [
+        {
+          "word": "friend",
+          "useWhen": "You mean someone in a personal or social relationship, not a formal or transactional role.",
+          "caution": "Don’t use in business, legal, or formal contexts."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Derived from people / person / someone",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "target:people_family:listener",
+      "type": "target",
+      "term": "listener",
+      "replacementOptions": [
+        {
+          "word": "listener",
+          "useWhen": "You mean the person hearing or interpreting your words—e.g., during a talk, pitch, or explanation.",
+          "caution": "Use only for communication contexts; avoid if you’re talking about behavior or motivations outside a listening situation."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Derived from people / person / someone",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "target:people_family:teammate",
+      "type": "target",
+      "term": "teammate",
+      "replacementOptions": [
+        {
+          "word": "teammate",
+          "useWhen": "You mean a collaborator, co-worker, or someone on the same project or company.",
+          "caution": "Avoid for customers, external partners, or strangers."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 3,
+      "notes": "Derived from people / person / someone",
+      "family": "people_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:kind_of_sort_of:kind-of",
+      "type": "avoid",
+      "term": "kind of",
+      "replacementOptions": [
+        {
+          "word": "roughly",
+          "useWhen": "You mean approximate magnitude or a loose estimate.",
+          "caution": "Use it only for quantity or degree."
+        },
+        {
+          "word": "partly",
+          "useWhen": "You mean one contributing factor rather than the whole cause.",
+          "caution": "Do not use it when the issue is uncertainty rather than partial contribution."
+        },
+        {
+          "word": "drop the blur phrase",
+          "useWhen": "The claim is already clear enough without softening.",
+          "caution": "If the claim is truly approximate, replace it with a precise qualifier instead of pretending certainty."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "These blur phrases lower precision right at the moment the listener needs sharper wording.",
+      "family": "kind_of_sort_of",
+      "pinned": false
+    },
+    {
+      "id": "avoid:kind_of_sort_of:sort-of",
+      "type": "avoid",
+      "term": "sort of",
+      "replacementOptions": [
+        {
+          "word": "roughly",
+          "useWhen": "You mean approximate magnitude or a loose estimate.",
+          "caution": "Use it only for quantity or degree."
+        },
+        {
+          "word": "partly",
+          "useWhen": "You mean one contributing factor rather than the whole cause.",
+          "caution": "Do not use it when the issue is uncertainty rather than partial contribution."
+        },
+        {
+          "word": "drop the blur phrase",
+          "useWhen": "The claim is already clear enough without softening.",
+          "caution": "If the claim is truly approximate, replace it with a precise qualifier instead of pretending certainty."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "These blur phrases lower precision right at the moment the listener needs sharper wording.",
+      "family": "kind_of_sort_of",
+      "pinned": false
+    },
+    {
+      "id": "avoid:problem_family:idea",
+      "type": "avoid",
+      "term": "idea",
+      "replacementOptions": [
+        {
+          "word": "bottleneck",
+          "useWhen": "The point is a constraint slowing progress.",
+          "caution": "Use it only when throughput or pace is affected."
+        },
+        {
+          "word": "objection",
+          "useWhen": "The point is resistance from another person.",
+          "caution": "Do not use it for technical problems."
+        },
+        {
+          "word": "proposal",
+          "useWhen": "You are describing a suggestion, plan, or recommendation.",
+          "caution": "Use it only when the idea is concrete enough to be presented."
+        },
+        {
+          "word": "failure mode",
+          "useWhen": "The point is the way a system or habit breaks down.",
+          "caution": "Avoid it for purely emotional or relational friction."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "These abstract nouns stay one level above the actual failure mode, need, or proposal.",
+      "family": "problem_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:problem_family:issue",
+      "type": "avoid",
+      "term": "issue",
+      "replacementOptions": [
+        {
+          "word": "bottleneck",
+          "useWhen": "The point is a constraint slowing progress.",
+          "caution": "Use it only when throughput or pace is affected."
+        },
+        {
+          "word": "objection",
+          "useWhen": "The point is resistance from another person.",
+          "caution": "Do not use it for technical problems."
+        },
+        {
+          "word": "proposal",
+          "useWhen": "You are describing a suggestion, plan, or recommendation.",
+          "caution": "Use it only when the idea is concrete enough to be presented."
+        },
+        {
+          "word": "failure mode",
+          "useWhen": "The point is the way a system or habit breaks down.",
+          "caution": "Avoid it for purely emotional or relational friction."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "These abstract nouns stay one level above the actual failure mode, need, or proposal.",
+      "family": "problem_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:problem_family:problem",
+      "type": "avoid",
+      "term": "problem",
+      "replacementOptions": [
+        {
+          "word": "bottleneck",
+          "useWhen": "The point is a constraint slowing progress.",
+          "caution": "Use it only when throughput or pace is affected."
+        },
+        {
+          "word": "objection",
+          "useWhen": "The point is resistance from another person.",
+          "caution": "Do not use it for technical problems."
+        },
+        {
+          "word": "proposal",
+          "useWhen": "You are describing a suggestion, plan, or recommendation.",
+          "caution": "Use it only when the idea is concrete enough to be presented."
+        },
+        {
+          "word": "failure mode",
+          "useWhen": "The point is the way a system or habit breaks down.",
+          "caution": "Avoid it for purely emotional or relational friction."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "These abstract nouns stay one level above the actual failure mode, need, or proposal.",
+      "family": "problem_family",
+      "pinned": false
+    },
+    {
+      "id": "avoid:you_know:you-know",
+      "type": "avoid",
+      "term": "you know",
+      "replacementOptions": [
+        {
+          "word": "pause",
+          "useWhen": "You need a beat to think and can hold silence instead.",
+          "caution": "The pause should be deliberate, not a new filler habit."
+        },
+        {
+          "word": "for example",
+          "useWhen": "You were reaching for shared understanding but really needed an example.",
+          "caution": "Only use it if an example immediately follows."
+        },
+        {
+          "word": "which means",
+          "useWhen": "You need to connect the idea to its implication.",
+          "caution": "Use it only if the next clause actually explains the consequence."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "This phrase asks the listener to bridge the gap for you instead of letting the sentence carry itself.",
+      "family": "you_know",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:communication:cadence",
+      "type": "target",
+      "term": "cadence",
+      "replacementOptions": [
+        {
+          "word": "cadence",
+          "useWhen": "You are describing pace and sentence rhythm in speech.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "communication"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "A steadier cadence would make the idea land harder.",
+      "family": "context:communication",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:communication:framing",
+      "type": "target",
+      "term": "framing",
+      "replacementOptions": [
+        {
+          "word": "framing",
+          "useWhen": "You mean the angle or interpretive lens that shapes how a point is received.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "communication"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The framing made the answer sound defensive instead of decisive.",
+      "family": "context:communication",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:communication:precision",
+      "type": "target",
+      "term": "precision",
+      "replacementOptions": [
+        {
+          "word": "precision",
+          "useWhen": "You want one word for verbal exactness and specificity.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "communication"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The explanation needs more precision in the middle.",
+      "family": "context:communication",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:communication:qualifier",
+      "type": "target",
+      "term": "qualifier",
+      "replacementOptions": [
+        {
+          "word": "qualifier",
+          "useWhen": "You want to name a hedge or narrowing phrase precisely.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "communication"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "That qualifier weakens the opening sentence.",
+      "family": "context:communication",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:communication:throughline",
+      "type": "target",
+      "term": "throughline",
+      "replacementOptions": [
+        {
+          "word": "throughline",
+          "useWhen": "You need a word for the main thread connecting your points.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "communication"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The throughline disappears when the answer opens too many loops.",
+      "family": "context:communication",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:identity:avoidance",
+      "type": "target",
+      "term": "avoidance",
+      "replacementOptions": [
+        {
+          "word": "avoidance",
+          "useWhen": "You are naming behavior that evades discomfort instead of solving it.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "identity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The rambling is a form of avoidance under pressure.",
+      "family": "context:identity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:identity:baseline",
+      "type": "target",
+      "term": "baseline",
+      "replacementOptions": [
+        {
+          "word": "baseline",
+          "useWhen": "You need a reference level for comparison.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "identity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Your baseline energy changes the way the transcript reads.",
+      "family": "context:identity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:identity:conviction",
+      "type": "target",
+      "term": "conviction",
+      "replacementOptions": [
+        {
+          "word": "conviction",
+          "useWhen": "You mean inner certainty or owned belief.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "identity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The sentence needs more conviction and less hedging.",
+      "family": "context:identity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:identity:self-concept",
+      "type": "target",
+      "term": "self-concept",
+      "replacementOptions": [
+        {
+          "word": "self-concept",
+          "useWhen": "You are talking about the identity model you carry around yourself.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "identity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The self-concept behind the note sounds unstable.",
+      "family": "context:identity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:identity:standard",
+      "type": "target",
+      "term": "standard",
+      "replacementOptions": [
+        {
+          "word": "standard",
+          "useWhen": "You mean the bar you expect yourself to meet.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "identity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The standard is clear; the execution is not.",
+      "family": "context:identity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:productivity:blocker",
+      "type": "target",
+      "term": "blocker",
+      "replacementOptions": [
+        {
+          "word": "blocker",
+          "useWhen": "A specific obstacle stops progress.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "productivity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Clarity is the blocker, not effort.",
+      "family": "context:productivity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:productivity:constraint",
+      "type": "target",
+      "term": "constraint",
+      "replacementOptions": [
+        {
+          "word": "constraint",
+          "useWhen": "A limit or condition shapes what is possible.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "productivity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Energy is the real constraint, not motivation.",
+      "family": "context:productivity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:productivity:sequence",
+      "type": "target",
+      "term": "sequence",
+      "replacementOptions": [
+        {
+          "word": "sequence",
+          "useWhen": "Order matters and you need to name the order explicitly.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "productivity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The morning sequence matters more than the task list.",
+      "family": "context:productivity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:productivity:throughput",
+      "type": "target",
+      "term": "throughput",
+      "replacementOptions": [
+        {
+          "word": "throughput",
+          "useWhen": "You are describing how much work moves through a system over time.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "productivity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The workflow has low throughput because context switching is constant.",
+      "family": "context:productivity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:productivity:trigger",
+      "type": "target",
+      "term": "trigger",
+      "replacementOptions": [
+        {
+          "word": "trigger",
+          "useWhen": "You need a word for the cue that starts a behavior.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "productivity"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The trigger should happen before the phone comes out.",
+      "family": "context:productivity",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:relationships:boundary",
+      "type": "target",
+      "term": "boundary",
+      "replacementOptions": [
+        {
+          "word": "boundary",
+          "useWhen": "You mean a clear interpersonal limit.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The conversation needs a boundary, not more explanation.",
+      "family": "context:relationships",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:relationships:expectation",
+      "type": "target",
+      "term": "expectation",
+      "replacementOptions": [
+        {
+          "word": "expectation",
+          "useWhen": "You want to name the standard one side assumed.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The disappointment came from an unstated expectation.",
+      "family": "context:relationships",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:relationships:reciprocity",
+      "type": "target",
+      "term": "reciprocity",
+      "replacementOptions": [
+        {
+          "word": "reciprocity",
+          "useWhen": "The issue is mutual give-and-take.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The resentment comes from low reciprocity.",
+      "family": "context:relationships",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:relationships:repair",
+      "type": "target",
+      "term": "repair",
+      "replacementOptions": [
+        {
+          "word": "repair",
+          "useWhen": "You are talking about restoring trust after friction.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The conflict needs repair before it needs analysis.",
+      "family": "context:relationships",
+      "pinned": false
+    },
+    {
+      "id": "target:bank:relationships:resentment",
+      "type": "target",
+      "term": "resentment",
+      "replacementOptions": [
+        {
+          "word": "resentment",
+          "useWhen": "A relationship problem is driven by accumulated unresolved hurt.",
+          "caution": "Keep the word only when it names the exact thing you mean."
+        }
+      ],
+      "contexts": [
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "The note sounds like resentment, not confusion.",
+      "family": "context:relationships",
+      "pinned": false
+    },
+    {
+      "id": "target:good_family:compelling",
+      "type": "target",
+      "term": "compelling",
+      "replacementOptions": [
+        {
+          "word": "compelling",
+          "useWhen": "An argument, story, or feature grabs attention or makes a strong case.",
+          "caution": "Reserve for things that clearly persuade or attract; avoid for neutral facts."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from good / interesting / crazy",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "target:good_family:damaging",
+      "type": "target",
+      "term": "damaging",
+      "replacementOptions": [
+        {
+          "word": "damaging",
+          "useWhen": "A flaw or outcome causes real harm, cost, or risk.",
+          "caution": "Don’t use for minor annoyances or stylistic dislikes."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from good / interesting / crazy",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "target:good_family:revealing",
+      "type": "target",
+      "term": "revealing",
+      "replacementOptions": [
+        {
+          "word": "revealing",
+          "useWhen": "Something exposed a pattern, gap, or new insight you hadn’t seen.",
+          "caution": "Use only when the main value is increased understanding."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from good / interesting / crazy",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "target:good_family:unexpected",
+      "type": "target",
+      "term": "unexpected",
+      "replacementOptions": [
+        {
+          "word": "unexpected",
+          "useWhen": "The main reaction is surprise or departure from norms.",
+          "caution": "Avoid when the surprise is predictable or irrelevant to the point."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from good / interesting / crazy",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "target:good_family:useful",
+      "type": "target",
+      "term": "useful",
+      "replacementOptions": [
+        {
+          "word": "useful",
+          "useWhen": "The thing helps someone act, solve a problem, or move work forward.",
+          "caution": "Don’t use for reactions that are mainly emotional, aesthetic, or moral."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from good / interesting / crazy",
+      "family": "good_family",
+      "pinned": false
+    },
+    {
+      "id": "target:way_family:approach",
+      "type": "target",
+      "term": "approach",
+      "replacementOptions": [
+        {
+          "word": "approach",
+          "useWhen": "You mean a deliberate method, plan, or strategy someone chooses.",
+          "caution": "Don't use it for automatic processes or just to sound formal."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from way",
+      "family": "way_family",
+      "pinned": false
+    },
+    {
+      "id": "target:way_family:mechanism",
+      "type": "target",
+      "term": "mechanism",
+      "replacementOptions": [
+        {
+          "word": "mechanism",
+          "useWhen": "You mean the causal process or how something works to produce an outcome.",
+          "caution": "Avoid using it as a fancier synonym for 'method.'"
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from way",
+      "family": "way_family",
+      "pinned": false
+    },
+    {
+      "id": "target:way_family:sequence",
+      "type": "target",
+      "term": "sequence",
+      "replacementOptions": [
+        {
+          "word": "sequence",
+          "useWhen": "You are describing steps, order, or progression.",
+          "caution": "Only use it when the order of things matters."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from way",
+      "family": "way_family",
+      "pinned": false
+    },
+    {
+      "id": "target:way_family:signal",
+      "type": "target",
+      "term": "signal",
+      "replacementOptions": [
+        {
+          "word": "signal",
+          "useWhen": "You are pointing to an indicator, cue, or piece of evidence that implies something.",
+          "caution": "Only use it when the point functions diagnostically or as a sign."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "career",
+        "identity",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 2,
+      "notes": "Derived from way",
+      "family": "way_family",
+      "pinned": false
+    },
+    {
+      "id": "target:kind_of_sort_of:partly",
+      "type": "target",
+      "term": "partly",
+      "replacementOptions": [
+        {
+          "word": "partly",
+          "useWhen": "You mean one contributing factor rather than the whole cause.",
+          "caution": "Do not use it when the issue is uncertainty rather than partial contribution."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 1,
+      "notes": "Derived from kind of / sort of",
+      "family": "kind_of_sort_of",
+      "pinned": false
+    },
+    {
+      "id": "target:kind_of_sort_of:roughly",
+      "type": "target",
+      "term": "roughly",
+      "replacementOptions": [
+        {
+          "word": "roughly",
+          "useWhen": "You mean approximate magnitude or a loose estimate.",
+          "caution": "Use it only for quantity or degree."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 1,
+      "notes": "Derived from kind of / sort of",
+      "family": "kind_of_sort_of",
+      "pinned": false
+    },
+    {
+      "id": "target:problem_family:bottleneck",
+      "type": "target",
+      "term": "bottleneck",
+      "replacementOptions": [
+        {
+          "word": "bottleneck",
+          "useWhen": "The point is a constraint slowing progress.",
+          "caution": "Use it only when throughput or pace is affected."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 1,
+      "notes": "Derived from problem / issue / idea",
+      "family": "problem_family",
+      "pinned": false
+    },
+    {
+      "id": "target:problem_family:objection",
+      "type": "target",
+      "term": "objection",
+      "replacementOptions": [
+        {
+          "word": "objection",
+          "useWhen": "The point is resistance from another person.",
+          "caution": "Do not use it for technical problems."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 1,
+      "notes": "Derived from problem / issue / idea",
+      "family": "problem_family",
+      "pinned": false
+    },
+    {
+      "id": "target:problem_family:proposal",
+      "type": "target",
+      "term": "proposal",
+      "replacementOptions": [
+        {
+          "word": "proposal",
+          "useWhen": "You are describing a suggestion, plan, or recommendation.",
+          "caution": "Use it only when the idea is concrete enough to be presented."
+        }
+      ],
+      "contexts": [
+        "productivity",
+        "identity",
+        "career",
+        "relationships"
+      ],
+      "source": "corpus-derived",
+      "active": true,
+      "priority": 1,
+      "notes": "Derived from problem / issue / idea",
+      "family": "problem_family",
+      "pinned": false
+    }
+  ],
+  "focusTemplates": [
+    {
+      "family": "thing_family",
+      "targetWords": [
+        "constraint",
+        "pattern",
+        "decision",
+        "feature",
+        "request"
+      ],
+      "bannedTerms": [
+        "thing",
+        "things"
+      ],
+      "triggerQuestion": "Prompt: When you hear \"thing(s)/something/stuff,\" pause and ask: What exact object, action, decision, pattern, or constraint do I mean?",
+      "exampleRewrite": "I've done so many things, I've tried so many things, I've felt so many emotions and the biggest... -> I've tried many approaches and felt a wide range of emotions; the strongest was..."
+    },
+    {
+      "family": "people_family",
+      "targetWords": [
+        "customer",
+        "listener",
+        "teammate",
+        "founder",
+        "friend"
+      ],
+      "bannedTerms": [
+        "people",
+        "person"
+      ],
+      "triggerQuestion": "Before you say “people” or “someone,” pause and ask: Who exactly is affected? Name that role.",
+      "exampleRewrite": "Because I'm someone who's so purpose driven and I only wanna work on something that aligns... -> Because I'm a founder who's purpose driven and I only want to work on companies that align with my values..."
+    },
+    {
+      "family": "really_very",
+      "targetWords": [
+        "constraint",
+        "sequence",
+        "trigger",
+        "throughput",
+        "blocker"
+      ],
+      "bannedTerms": [
+        "really",
+        "very"
+      ],
+      "triggerQuestion": "Micro-practice: Record a 60–90 second response to a prompt; play back and highlight every use of “really” or “very.” Replace each with one of the replacement options and re-record.",
+      "exampleRewrite": "I have a very scary thought. -> I have a scary thought."
+    },
+    {
+      "family": "way_family",
+      "targetWords": [
+        "approach",
+        "sequence",
+        "mechanism",
+        "signal",
+        "constraint"
+      ],
+      "bannedTerms": [
+        "way"
+      ],
+      "triggerQuestion": "When you hear or plan to say 'way,' pause and ask: Do I mean method (approach), order (sequence), cause (mechanism), or indicator (signal)?",
+      "exampleRewrite": "...day and age sometimes is some people just are too afraid to embrace the way they think, and things they'd like to do. -> ...these days some people are too afraid to embrace how they think and what they'd like to do."
+    },
+    {
+      "family": "good_family",
+      "targetWords": [
+        "useful",
+        "compelling",
+        "revealing",
+        "damaging",
+        "unexpected"
+      ],
+      "bannedTerms": [
+        "good",
+        "interesting"
+      ],
+      "triggerQuestion": "Exercise: After a meeting, replace every “good/interesting/crazy” in your notes with one specific reason (impact, cause, or evidence).",
+      "exampleRewrite": "Pretty good day. -> Day was productive: I finished two reports and cleared my inbox, which let me focus on planning tomorrow."
+    },
+    {
+      "family": "i_think_feel_guess",
+      "targetWords": [
+        "constraint",
+        "sequence",
+        "trigger",
+        "throughput",
+        "blocker"
+      ],
+      "bannedTerms": [
+        "i think",
+        "i feel"
+      ],
+      "triggerQuestion": "Record a short spoken version of a note that begins with a hedge; time the first 5 seconds and count hedging phrases.",
+      "exampleRewrite": "And so, yeah, I think they love me basically. -> And so, yeah, my view is they love me basically."
+    },
+    {
+      "family": "problem_family",
+      "targetWords": [
+        "bottleneck",
+        "objection",
+        "proposal",
+        "constraint",
+        "sequence"
+      ],
+      "bannedTerms": [
+        "problem",
+        "issue"
+      ],
+      "triggerQuestion": "Every time you say 'problem', ask whether it is a bottleneck, objection, failure mode, or proposal gap.",
+      "exampleRewrite": "These abstract nouns stay one level above the actual failure mode, need, or proposal."
+    },
+    {
+      "family": "you_know",
+      "targetWords": [
+        "constraint",
+        "sequence",
+        "trigger",
+        "throughput",
+        "blocker"
+      ],
+      "bannedTerms": [
+        "you know"
+      ],
+      "triggerQuestion": "Use 'pause' as today's forced replacement whenever you hear 'you know'.",
+      "exampleRewrite": "Um, a small set of people were watching this line and saying, you know, \"Th- this is gonna, this is gonna change a lot of things.\" One of those was Elon, who organized the meeting in, um, Puerto Rico in 2014. -> Um, a small set of people were watching this line and saying, \"Th- this is gonna, this is gonna change a lot of things.\" One of those was Elon, who organized the meeting in, um, Puerto Rico in 2014."
+    },
+    {
+      "family": "kind_of_sort_of",
+      "targetWords": [
+        "roughly",
+        "partly",
+        "constraint",
+        "sequence",
+        "trigger"
+      ],
+      "bannedTerms": [
+        "kind of",
+        "sort of"
+      ],
+      "triggerQuestion": "Use 'roughly' as today's forced replacement whenever you hear 'kind of / sort of'.",
+      "exampleRewrite": "Essentially, a lot of the problems that I'm dealing with are kind of fleeting and very context based. -> Essentially, a lot of the problems that I'm dealing with are roughly fleeting and very context based."
+    }
+  ],
+  "contextWordBanks": [
+    {
+      "context": "productivity",
+      "noteCount": 129,
+      "words": [
+        {
+          "word": "constraint",
+          "useWhen": "A limit or condition shapes what is possible.",
+          "example": "Energy is the real constraint, not motivation."
+        },
+        {
+          "word": "sequence",
+          "useWhen": "Order matters and you need to name the order explicitly.",
+          "example": "The morning sequence matters more than the task list."
+        },
+        {
+          "word": "trigger",
+          "useWhen": "You need a word for the cue that starts a behavior.",
+          "example": "The trigger should happen before the phone comes out."
+        },
+        {
+          "word": "throughput",
+          "useWhen": "You are describing how much work moves through a system over time.",
+          "example": "The workflow has low throughput because context switching is constant."
+        },
+        {
+          "word": "blocker",
+          "useWhen": "A specific obstacle stops progress.",
+          "example": "Clarity is the blocker, not effort."
+        }
+      ]
+    },
+    {
+      "context": "identity",
+      "noteCount": 118,
+      "words": [
+        {
+          "word": "standard",
+          "useWhen": "You mean the bar you expect yourself to meet.",
+          "example": "The standard is clear; the execution is not."
+        },
+        {
+          "word": "avoidance",
+          "useWhen": "You are naming behavior that evades discomfort instead of solving it.",
+          "example": "The rambling is a form of avoidance under pressure."
+        },
+        {
+          "word": "baseline",
+          "useWhen": "You need a reference level for comparison.",
+          "example": "Your baseline energy changes the way the transcript reads."
+        },
+        {
+          "word": "conviction",
+          "useWhen": "You mean inner certainty or owned belief.",
+          "example": "The sentence needs more conviction and less hedging."
+        },
+        {
+          "word": "self-concept",
+          "useWhen": "You are talking about the identity model you carry around yourself.",
+          "example": "The self-concept behind the note sounds unstable."
+        }
+      ]
+    },
+    {
+      "context": "relationships",
+      "noteCount": 80,
+      "words": [
+        {
+          "word": "boundary",
+          "useWhen": "You mean a clear interpersonal limit.",
+          "example": "The conversation needs a boundary, not more explanation."
+        },
+        {
+          "word": "repair",
+          "useWhen": "You are talking about restoring trust after friction.",
+          "example": "The conflict needs repair before it needs analysis."
+        },
+        {
+          "word": "reciprocity",
+          "useWhen": "The issue is mutual give-and-take.",
+          "example": "The resentment comes from low reciprocity."
+        },
+        {
+          "word": "expectation",
+          "useWhen": "You want to name the standard one side assumed.",
+          "example": "The disappointment came from an unstated expectation."
+        },
+        {
+          "word": "resentment",
+          "useWhen": "A relationship problem is driven by accumulated unresolved hurt.",
+          "example": "The note sounds like resentment, not confusion."
+        }
+      ]
+    },
+    {
+      "context": "communication",
+      "noteCount": 75,
+      "words": [
+        {
+          "word": "framing",
+          "useWhen": "You mean the angle or interpretive lens that shapes how a point is received.",
+          "example": "The framing made the answer sound defensive instead of decisive."
+        },
+        {
+          "word": "throughline",
+          "useWhen": "You need a word for the main thread connecting your points.",
+          "example": "The throughline disappears when the answer opens too many loops."
+        },
+        {
+          "word": "qualifier",
+          "useWhen": "You want to name a hedge or narrowing phrase precisely.",
+          "example": "That qualifier weakens the opening sentence."
+        },
+        {
+          "word": "cadence",
+          "useWhen": "You are describing pace and sentence rhythm in speech.",
+          "example": "A steadier cadence would make the idea land harder."
+        },
+        {
+          "word": "precision",
+          "useWhen": "You want one word for verbal exactness and specificity.",
+          "example": "The explanation needs more precision in the middle."
+        }
+      ]
+    }
+  ]
+}

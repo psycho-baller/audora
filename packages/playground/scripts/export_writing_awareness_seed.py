@@ -257,19 +257,14 @@ def build_seed(run_id: str) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Export a writing-awareness seed for the macOS app.")
+    parser = argparse.ArgumentParser(
+        description="Export a writing-awareness seed for Audora writing-awareness clients."
+    )
     parser.add_argument("--run-id", help="Specific playground run to export. Defaults to the latest run.")
     parser.add_argument(
         "--output",
-        help="Destination JSON path.",
-        default=str(
-            Path(__file__).resolve().parents[3]
-            / "apps"
-            / "macos"
-            / "audora"
-            / "Resources"
-            / "WritingAwarenessSeed.json"
-        ),
+        action="append",
+        help="Destination JSON path. Can be provided multiple times.",
     )
     args = parser.parse_args()
 
@@ -278,10 +273,25 @@ def main() -> None:
         raise SystemExit("No runs available to export.")
 
     payload = build_seed(run_id)
-    output_path = Path(args.output).resolve()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Exported writing-awareness seed from {run_id} to {output_path}")
+    default_outputs = [
+        Path(__file__).resolve().parents[3]
+        / "apps"
+        / "macos"
+        / "audora"
+        / "Resources"
+        / "WritingAwarenessSeed.json",
+        Path(__file__).resolve().parents[3]
+        / "apps"
+        / "browser-extension"
+        / "public"
+        / "WritingAwarenessSeed.json",
+    ]
+    outputs = [Path(item).resolve() for item in args.output] if args.output else default_outputs
+
+    for output_path in outputs:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"Exported writing-awareness seed from {run_id} to {output_path}")
 
 
 if __name__ == "__main__":

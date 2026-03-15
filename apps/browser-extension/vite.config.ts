@@ -1,0 +1,107 @@
+import path from 'node:path';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig, type Plugin } from 'vite';
+
+const browserTarget = process.env.BROWSER_TARGET === 'firefox' ? 'firefox' : 'chrome';
+
+function buildManifest(target: 'chrome' | 'firefox') {
+  const manifest: Record<string, unknown> = {
+    manifest_version: 3,
+    name: 'Audora Writing Awareness',
+    version: '0.0.1',
+    description: 'Personalized vocabulary coaching with inline suggestions and quick replace.',
+    permissions: ['storage', 'tabs', 'nativeMessaging'],
+    host_permissions: ['<all_urls>'],
+    background:
+      target === 'firefox'
+        ? {
+            scripts: ['background.js'],
+            type: 'module',
+          }
+        : {
+            service_worker: 'background.js',
+            type: 'module',
+          },
+    action: {
+      default_title: 'Audora Writing Awareness',
+      default_popup: 'popup.html',
+    },
+    options_page: 'options.html',
+    commands: {
+      'toggle-writing-awareness': {
+        suggested_key: {
+          default: 'Alt+Shift+A',
+        },
+        description: 'Open the first active writing suggestion on the current page.',
+      },
+    },
+    content_scripts: [
+      {
+        matches: ['<all_urls>'],
+        js: ['content.js'],
+        run_at: 'document_idle',
+      },
+    ],
+    browser_specific_settings:
+      target === 'firefox'
+        ? {
+            gecko: {
+              id: 'writing-awareness@audora.local',
+            },
+          }
+        : undefined,
+  };
+
+  if (target !== 'firefox') {
+    delete manifest.browser_specific_settings;
+  }
+
+  return manifest;
+}
+
+function manifestPlugin(target: 'chrome' | 'firefox'): Plugin {
+  return {
+    name: 'audora-extension-manifest',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'manifest.json',
+        source: JSON.stringify(buildManifest(target), null, 2),
+      });
+    },
+  };
+}
+
+export default defineConfig({
+  plugins: [react(), manifestPlugin(browserTarget)],
+  publicDir: 'public',
+  build: {
+    outDir: path.resolve(__dirname, 'dist', browserTarget),
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        popup: path.resolve(__dirname, 'popup.html'),
+        options: path.resolve(__dirname, 'options.html'),
+        background: path.resolve(__dirname, 'src/background/index.ts'),
+        content: path.resolve(__dirname, 'src/content/index.ts'),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'background') {
+            return 'background.js';
+          }
+          if (chunkInfo.name === 'content') {
+            return 'content.js';
+          }
+          return 'assets/[name].js';
+        },
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
+  },
+  test: {
+    environment: 'jsdom',
+  },
+});

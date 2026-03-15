@@ -1,0 +1,30 @@
+{
+  "name": "@audora/browser-extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:chrome": "BROWSER_TARGET=chrome vite build",
+    "build:firefox": "BROWSER_TARGET=firefox vite build --mode firefox",
+    "dev": "BROWSER_TARGET=chrome vite build --watch",
+    "install:native-host": "node ./native-host/install-native-host.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@audora/writing-awareness-core": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "webextension-polyfill": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/webextension-polyfill": "^0.12.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.3",
+    "vitest": "^3.2.4"
+  }
+}
