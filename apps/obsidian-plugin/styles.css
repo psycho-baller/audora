@@ -2,49 +2,59 @@
 .theme-light {
   --audora-glass-bg: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.22),
-      rgba(255, 255, 255, 0.08)
+      rgba(250, 253, 255, 0.84),
+      rgba(230, 238, 247, 0.7)
     ),
     linear-gradient(
       135deg,
-      rgba(142, 194, 255, 0.14),
-      rgba(255, 214, 170, 0.08) 52%,
-      rgba(255, 255, 255, 0.08)
+      rgba(172, 205, 255, 0.18),
+      rgba(255, 219, 186, 0.1) 52%,
+      rgba(255, 255, 255, 0.12)
     );
-  --audora-glass-border: rgba(255, 255, 255, 0.28);
+  --audora-glass-highlight: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.38),
+    rgba(255, 255, 255, 0.08)
+  );
+  --audora-glass-border: rgba(132, 153, 182, 0.28);
   --audora-glass-shadow:
-    0 24px 48px rgba(15, 20, 28, 0.16),
-    0 6px 18px rgba(15, 20, 28, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-  --audora-glass-copy: rgba(36, 30, 24, 0.88);
-  --audora-glass-muted: rgba(71, 63, 54, 0.72);
-  --audora-glass-button-bg: rgba(255, 255, 255, 0.16);
-  --audora-glass-button-border: rgba(255, 255, 255, 0.26);
-  --audora-glass-button-hover: rgba(255, 255, 255, 0.22);
+    0 26px 56px rgba(55, 73, 98, 0.22),
+    0 8px 22px rgba(55, 73, 98, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  --audora-glass-copy: rgba(24, 34, 48, 0.96);
+  --audora-glass-muted: rgba(66, 80, 100, 0.82);
+  --audora-glass-button-bg: rgba(255, 255, 255, 0.34);
+  --audora-glass-button-border: rgba(142, 162, 190, 0.28);
+  --audora-glass-button-hover: rgba(255, 255, 255, 0.52);
   --audora-glass-primary-bg: linear-gradient(
     135deg,
-    rgba(72, 129, 210, 0.92),
-    rgba(31, 78, 150, 0.82)
+    rgba(79, 142, 226, 0.96),
+    rgba(39, 91, 165, 0.88)
   );
   --audora-glass-primary-shadow:
-    0 12px 28px rgba(28, 76, 142, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    0 12px 28px rgba(33, 82, 153, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .theme-dark {
   --audora-glass-bg: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.12),
-      rgba(255, 255, 255, 0.05)
+      rgba(36, 45, 57, 0.82),
+      rgba(24, 31, 41, 0.72)
     ),
     linear-gradient(
       135deg,
-      rgba(94, 130, 194, 0.2),
-      rgba(63, 84, 110, 0.18) 48%,
+      rgba(87, 127, 191, 0.26),
+      rgba(50, 69, 96, 0.22) 48%,
       rgba(255, 255, 255, 0.04)
     );
-  --audora-glass-border: rgba(255, 255, 255, 0.16);
+  --audora-glass-highlight: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.02)
+  );
+  --audora-glass-border: rgba(174, 196, 225, 0.14);
   --audora-glass-shadow:
     0 26px 54px rgba(0, 0, 0, 0.34),
     0 10px 24px rgba(0, 0, 0, 0.18),
@@ -73,7 +83,24 @@
   text-underline-offset: 0.18em;
 }
 
-.cm-tooltip.audora-writing-tooltip {
+.cm-tooltip.audora-writing-tooltip-shell {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.cm-tooltip.audora-writing-tooltip-shell .cm-tooltip-arrow {
+  display: none;
+}
+
+.audora-writing-tooltip {
+  position: relative;
+}
+
+.audora-writing-tooltip__panel {
+  position: relative;
   min-width: 260px;
   max-width: 320px;
   border: 1px solid var(--audora-glass-border);
@@ -85,6 +112,22 @@
   backdrop-filter: blur(26px) saturate(1.35);
   -webkit-backdrop-filter: blur(26px) saturate(1.35);
   overflow: hidden;
+  isolation: isolate;
+}
+
+.audora-writing-tooltip__panel::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 21px;
+  background: var(--audora-glass-highlight);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.audora-writing-tooltip__panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .audora-writing-tooltip__eyebrow {
@@ -94,6 +137,7 @@
   text-transform: uppercase;
   color: var(--audora-glass-muted);
   margin-bottom: 6px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .audora-writing-tooltip__title {
@@ -102,6 +146,7 @@
   line-height: 1.2;
   margin-bottom: 4px;
   text-wrap: balance;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .audora-writing-tooltip__copy {

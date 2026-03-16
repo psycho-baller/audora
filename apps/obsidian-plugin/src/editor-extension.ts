@@ -360,9 +360,14 @@ function tooltipForDiagnostic(diagnostic: ObsidianWritingDiagnostic): Tooltip {
     above: false,
     create(): TooltipView {
       const dom = document.createElement('div');
-      dom.className = 'cm-tooltip audora-writing-tooltip';
+      dom.className = 'audora-writing-tooltip';
       renderTooltipContent(dom, diagnostic, null);
-      return { dom };
+      return {
+        dom,
+        mount() {
+          styleTooltipShell(dom);
+        },
+      };
     },
   };
 }
@@ -373,7 +378,7 @@ function createTooltipView(
   plugin: AudoraObsidianPlugin
 ): TooltipView {
   const dom = document.createElement('div');
-  dom.className = 'cm-tooltip audora-writing-tooltip';
+  dom.className = 'audora-writing-tooltip';
   renderTooltipContent(dom, diagnostic, {
     onApply: async (replacement) => {
       plugin.applyReplacement(view, diagnostic, replacement);
@@ -382,7 +387,12 @@ function createTooltipView(
       await plugin.muteTerm(diagnostic.term);
     },
   });
-  return { dom };
+  return {
+    dom,
+    mount() {
+      styleTooltipShell(dom);
+    },
+  };
 }
 
 function renderTooltipContent(
@@ -393,20 +403,22 @@ function renderTooltipContent(
     onMute: () => Promise<void> | void;
   } | null
 ): void {
-  const eyebrow = dom.createDiv({ cls: 'audora-writing-tooltip__eyebrow' });
+  const panel = dom.createDiv({ cls: 'audora-writing-tooltip__panel' });
+
+  const eyebrow = panel.createDiv({ cls: 'audora-writing-tooltip__eyebrow' });
   eyebrow.textContent = diagnostic.kind === 'avoid' ? 'Sharpen wording' : 'Rewarded language';
 
-  const title = dom.createDiv({ cls: 'audora-writing-tooltip__title' });
+  const title = panel.createDiv({ cls: 'audora-writing-tooltip__title' });
   title.textContent =
     diagnostic.kind === 'avoid'
       ? `"${diagnostic.term}" can be sharper here`
       : `"${diagnostic.term}" lands well here`;
 
-  const copy = dom.createDiv({ cls: 'audora-writing-tooltip__copy' });
+  const copy = panel.createDiv({ cls: 'audora-writing-tooltip__copy' });
   copy.textContent = diagnostic.message;
 
   if (diagnostic.snippet) {
-    const snippet = dom.createDiv({ cls: 'audora-writing-tooltip__snippet' });
+    const snippet = panel.createDiv({ cls: 'audora-writing-tooltip__snippet' });
     snippet.textContent = diagnostic.snippet;
   }
 
@@ -414,7 +426,7 @@ function renderTooltipContent(
     return;
   }
 
-  const actionRow = dom.createDiv({ cls: 'audora-writing-tooltip__actions' });
+  const actionRow = panel.createDiv({ cls: 'audora-writing-tooltip__actions' });
 
   for (const replacement of diagnostic.replacements.slice(0, 3)) {
     const button = actionRow.createEl('button', {
@@ -452,4 +464,18 @@ function sameDiagnostic(
     return false;
   }
   return left.id === right.id && left.from === right.from && left.to === right.to;
+}
+
+function styleTooltipShell(dom: HTMLElement): void {
+  const shell = dom.closest('.cm-tooltip');
+  if (!shell) {
+    return;
+  }
+
+  shell.classList.add('audora-writing-tooltip-shell');
+  shell.style.background = 'transparent';
+  shell.style.border = '0';
+  shell.style.boxShadow = 'none';
+  shell.style.padding = '0';
+  shell.style.overflow = 'visible';
 }
