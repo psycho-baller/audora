@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@audora/writing-awareness-core": "workspace:*",
+    "@audora/writing-awareness-storage": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "webextension-polyfill": "^0.12.0"

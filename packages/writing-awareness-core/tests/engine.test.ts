@@ -99,4 +99,16 @@ describe('analyzeWriting', () => {
     const rewritten = rewriteText('This thing matters.', analysis.result, analysis.rules);
     expect(rewritten).toContain('constraint');
   });
+
+  it('preserves original offsets when input has leading whitespace', () => {
+    const analysis = analyzeWriting({
+      text: '  This thing matters.',
+      seed,
+      state: emptyWritingAwarenessState(),
+    });
+
+    expect(analysis.result.flaggedTerms[0]?.rangeLower).toBe(7);
+    expect(analysis.result.flaggedTerms[0]?.rangeUpper).toBe(12);
+    expect(analysis.result.inputText).toBe('  This thing matters.');
+  });
 });

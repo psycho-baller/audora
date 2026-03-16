@@ -109,7 +109,8 @@ export function analyzeWriting(input: AnalyzeWritingInput): AnalyzeWritingOutput
   };
   const focusPack = input.focusPack ?? resolveFocusPack(input.seed);
   const rules = mergeRules(input.seed, state);
-  const trimmed = input.text.trim();
+  const sourceText = input.text;
+  const trimmed = sourceText.trim();
 
   if (!trimmed.length) {
     return {
@@ -117,7 +118,7 @@ export function analyzeWriting(input: AnalyzeWritingInput): AnalyzeWritingOutput
       rules,
       result: {
         ...EMPTY_RESULT,
-        inputText: '',
+        inputText: sourceText,
       },
     };
   }
@@ -128,7 +129,7 @@ export function analyzeWriting(input: AnalyzeWritingInput): AnalyzeWritingOutput
       rules,
       result: {
         ...EMPTY_RESULT,
-        inputText: trimmed,
+        inputText: sourceText,
       },
     };
   }
@@ -151,18 +152,18 @@ export function analyzeWriting(input: AnalyzeWritingInput): AnalyzeWritingOutput
   );
 
   const mutedTerms = new Set(state.mutedTerms.map(normalizeTerm));
-  const wordCount = Math.max(1, countWords(trimmed));
+  const wordCount = Math.max(1, countWords(sourceText));
 
   const flaggedTerms = liveAvoidRules
     .filter((rule) => !mutedTerms.has(normalizeTerm(rule.term)))
-    .flatMap((rule) => matchesForRule(rule, trimmed))
+    .flatMap((rule) => matchesForRule(rule, sourceText))
     .sort((left, right) => left.rangeLower - right.rangeLower);
 
   const rewardedTerms = input.subtleRewards === false
     ? []
     : liveTargetRules
         .filter((rule) => !mutedTerms.has(normalizeTerm(rule.term)))
-        .flatMap((rule) => rewardableMatches(rule, matchesForRule(rule, trimmed), wordCount))
+        .flatMap((rule) => rewardableMatches(rule, matchesForRule(rule, sourceText), wordCount))
         .sort((left, right) => left.rangeLower - right.rangeLower);
 
   const flaggedRuleIds = new Set(flaggedTerms.map((match) => match.ruleId));
@@ -194,7 +195,7 @@ export function analyzeWriting(input: AnalyzeWritingInput): AnalyzeWritingOutput
     focusPack,
     rules,
     result: {
-      inputText: trimmed,
+      inputText: sourceText,
       flaggedTerms,
       suggestedReplacements,
       rewardedTerms,

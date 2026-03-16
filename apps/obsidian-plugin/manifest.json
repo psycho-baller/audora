@@ -1,0 +1,9 @@
+{
+  "id": "audora-writing-awareness",
+  "name": "Audora Writing Awareness",
+  "version": "0.0.1",
+  "minAppVersion": "1.8.0",
+  "description": "Audora inline vocabulary coaching for Obsidian notes.",
+  "author": "Audora",
+  "isDesktopOnly": true
+}

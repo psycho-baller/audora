@@ -1,0 +1,167 @@
+.theme-dark,
+.theme-light {
+  --audora-glass-bg: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.22),
+      rgba(255, 255, 255, 0.08)
+    ),
+    linear-gradient(
+      135deg,
+      rgba(142, 194, 255, 0.14),
+      rgba(255, 214, 170, 0.08) 52%,
+      rgba(255, 255, 255, 0.08)
+    );
+  --audora-glass-border: rgba(255, 255, 255, 0.28);
+  --audora-glass-shadow:
+    0 24px 48px rgba(15, 20, 28, 0.16),
+    0 6px 18px rgba(15, 20, 28, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  --audora-glass-copy: rgba(36, 30, 24, 0.88);
+  --audora-glass-muted: rgba(71, 63, 54, 0.72);
+  --audora-glass-button-bg: rgba(255, 255, 255, 0.16);
+  --audora-glass-button-border: rgba(255, 255, 255, 0.26);
+  --audora-glass-button-hover: rgba(255, 255, 255, 0.22);
+  --audora-glass-primary-bg: linear-gradient(
+    135deg,
+    rgba(72, 129, 210, 0.92),
+    rgba(31, 78, 150, 0.82)
+  );
+  --audora-glass-primary-shadow:
+    0 12px 28px rgba(28, 76, 142, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.theme-dark {
+  --audora-glass-bg: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0.05)
+    ),
+    linear-gradient(
+      135deg,
+      rgba(94, 130, 194, 0.2),
+      rgba(63, 84, 110, 0.18) 48%,
+      rgba(255, 255, 255, 0.04)
+    );
+  --audora-glass-border: rgba(255, 255, 255, 0.16);
+  --audora-glass-shadow:
+    0 26px 54px rgba(0, 0, 0, 0.34),
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  --audora-glass-copy: rgba(244, 241, 236, 0.92);
+  --audora-glass-muted: rgba(220, 214, 206, 0.66);
+  --audora-glass-button-bg: rgba(255, 255, 255, 0.08);
+  --audora-glass-button-border: rgba(255, 255, 255, 0.14);
+  --audora-glass-button-hover: rgba(255, 255, 255, 0.12);
+}
+
+.cm-audora-avoid {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: rgba(153, 56, 26, 0.95);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+.cm-audora-reward {
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-color: rgba(38, 124, 70, 0.92);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+.cm-tooltip.audora-writing-tooltip {
+  min-width: 260px;
+  max-width: 320px;
+  border: 1px solid var(--audora-glass-border);
+  border-radius: 22px;
+  background: var(--audora-glass-bg);
+  box-shadow: var(--audora-glass-shadow);
+  color: var(--audora-glass-copy);
+  padding: 14px;
+  backdrop-filter: blur(26px) saturate(1.35);
+  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  overflow: hidden;
+}
+
+.audora-writing-tooltip__eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--audora-glass-muted);
+  margin-bottom: 6px;
+}
+
+.audora-writing-tooltip__title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  text-wrap: balance;
+}
+
+.audora-writing-tooltip__copy {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--audora-glass-copy);
+}
+
+.audora-writing-tooltip__snippet {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--audora-glass-muted);
+}
+
+.audora-writing-tooltip__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.audora-writing-tooltip__button {
+  border: 1px solid var(--audora-glass-button-border);
+  border-radius: 999px;
+  padding: 7px 11px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--audora-glass-copy);
+  background: var(--audora-glass-button-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px rgba(15, 20, 28, 0.08);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  transition:
+    background 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.audora-writing-tooltip__button:hover {
+  background: var(--audora-glass-button-hover);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 12px 22px rgba(15, 20, 28, 0.12);
+  transform: translateY(-1px);
+}
+
+.audora-writing-tooltip__button--primary {
+  color: #fff;
+  border-color: rgba(181, 213, 255, 0.18);
+  background: var(--audora-glass-primary-bg);
+  box-shadow: var(--audora-glass-primary-shadow);
+}
+
+.audora-writing-tooltip__button--primary:hover {
+  border-color: rgba(214, 232, 255, 0.3);
+}

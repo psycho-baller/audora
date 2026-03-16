@@ -1,0 +1,25 @@
+{
+  "name": "@audora/obsidian-plugin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ./build.mjs",
+    "dev": "node ./build.mjs --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@audora/writing-awareness-core": "workspace:*",
+    "@audora/writing-awareness-storage": "workspace:*",
+    "@codemirror/language": "^6.12.2",
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "esbuild": "^0.25.10",
+    "obsidian": "^1.12.3",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
