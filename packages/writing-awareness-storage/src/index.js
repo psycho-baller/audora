@@ -12,6 +12,24 @@ export const WRITING_AWARENESS_STORAGE_ROOT = path.join(
   'WritingAwareness'
 );
 
+export const ELOQ_STORAGE_ROOT = path.join(
+  os.homedir(),
+  'Library',
+  'Application Support',
+  'Eloq'
+);
+
+export const ELOQ_SANDBOX_STORAGE_ROOT = path.join(
+  os.homedir(),
+  'Library',
+  'Containers',
+  'studio.orbitlabs.Eloq',
+  'Data',
+  'Library',
+  'Application Support',
+  'Eloq'
+);
+
 export const EMPTY_WRITING_AWARENESS_STATE = Object.freeze({
   ruleOverrides: {},
   manualRules: [],
@@ -31,6 +49,14 @@ export function getWritingAwarenessStoragePaths(options = {}) {
   };
 }
 
+export function getEloqStoragePaths(options = {}) {
+  const rootDirectory = resolveEloqStorageRoot(options);
+  return {
+    rootDirectory,
+    snapshotPath: path.join(rootDirectory, 'snapshot.json'),
+  };
+}
+
 export async function loadWritingAwarenessBootstrapFromDisk(options = {}) {
   const currentSite = options.currentSite ?? '';
   const [seed, state] = await Promise.all([
@@ -45,6 +71,23 @@ export async function loadWritingAwarenessBootstrapFromDisk(options = {}) {
     currentSite,
     summary: summarizeWritingAwarenessEvents(state),
     storageRoot: getWritingAwarenessStoragePaths(options).rootDirectory,
+  };
+}
+
+export async function loadEloqBootstrapFromDisk(options = {}) {
+  const currentSite = options.currentSite ?? '';
+  const snapshot = await loadEloqSnapshotFromDisk(options);
+  const seed = deriveWritingAwarenessSeedFromEloqSnapshot(snapshot);
+  const state = mergeWritingAwarenessState(options.localState ?? {});
+
+  return {
+    seed,
+    state,
+    focusPack: resolveFocusPack(seed),
+    currentSite,
+    summary: summarizeWritingAwarenessEvents(state),
+    storageRoot: getEloqStoragePaths(options).rootDirectory,
+    snapshot,
   };
 }
 
@@ -74,6 +117,172 @@ export async function loadWritingAwarenessSeedFromDisk(options = {}) {
   }
 
   throw new Error(`Missing writing-awareness seed at ${seedPath}`);
+}
+
+export async function loadEloqSnapshotFromDisk(options = {}) {
+  const { snapshotPath } = getEloqStoragePaths(options);
+  await ensureEloqRoot(options);
+  const fallbackSnapshotPath = options.fallbackSnapshotPath ?? null;
+
+  if (
+    options.forceFallbackSnapshot &&
+    fallbackSnapshotPath &&
+    (await fileExists(fallbackSnapshotPath))
+  ) {
+    const snapshot = JSON.parse(await fsp.readFile(fallbackSnapshotPath, 'utf8'));
+    if (options.preferFallbackSnapshot) {
+      await writeJSONAtomic(snapshotPath, snapshot);
+    }
+    return snapshot;
+  }
+
+  if (await fileExists(snapshotPath)) {
+    return JSON.parse(await fsp.readFile(snapshotPath, 'utf8'));
+  }
+
+  if (fallbackSnapshotPath && (await fileExists(fallbackSnapshotPath))) {
+    const snapshot = JSON.parse(await fsp.readFile(fallbackSnapshotPath, 'utf8'));
+    if (options.preferFallbackSnapshot) {
+      await writeJSONAtomic(snapshotPath, snapshot);
+    }
+    return snapshot;
+  }
+
+  throw new Error(`Missing Eloq snapshot at ${snapshotPath}`);
+}
+
+export function deriveWritingAwarenessSeedFromEloqSnapshot(snapshot) {
+  const words = Array.isArray(snapshot?.words) ? snapshot.words : [];
+  const connections = Array.isArray(snapshot?.connections) ? snapshot.connections : [];
+  const wordsById = new Map(words.map((word) => [String(word.id), word]));
+  const acceptedConnections = connections.filter((connection) => connection.status === 'accepted');
+
+  const avoidGroups = new Map();
+  const targetTerms = new Map();
+
+  for (const connection of acceptedConnections) {
+    const overusedWord = wordsById.get(String(connection.overusedWordID));
+    const underusedWord = wordsById.get(String(connection.underusedWordID));
+    const overusedTerm = String(connection.overusedTerm ?? overusedWord?.displayTerm ?? '').trim();
+    const underusedTerm = String(connection.underusedTerm ?? underusedWord?.displayTerm ?? '').trim();
+
+    if (!overusedTerm || !underusedTerm) {
+      continue;
+    }
+
+    const overusedKey = normalizeComparableTerm(overusedTerm);
+    const underusedKey = normalizeComparableTerm(underusedTerm);
+    if (!overusedKey || !underusedKey) {
+      continue;
+    }
+
+    const existingGroup = avoidGroups.get(overusedKey) ?? {
+      term: overusedTerm,
+      replacements: [],
+      notes: String(connection.rationale ?? '').trim(),
+    };
+
+    if (!existingGroup.replacements.some((entry) => normalizeComparableTerm(entry.word) === underusedKey)) {
+      existingGroup.replacements.push({
+        word: underusedTerm,
+        useWhen:
+          String(connection.useWhen ?? '').trim() ||
+          `Use "${underusedTerm}" when it sharpens the meaning naturally.`,
+        caution:
+          String(connection.caution ?? '').trim() ||
+          'Skip it if the replacement becomes forced.',
+      });
+    }
+
+    avoidGroups.set(overusedKey, existingGroup);
+    targetTerms.set(underusedKey, underusedTerm);
+  }
+
+  for (const word of words) {
+    const roles = Array.isArray(word.roles) ? word.roles : [];
+    const term = String(word.displayTerm ?? '').trim();
+    const key = normalizeComparableTerm(term);
+    if (!term || !key) {
+      continue;
+    }
+
+    if (roles.includes('underused') && !targetTerms.has(key)) {
+      targetTerms.set(key, term);
+    }
+
+    if (roles.includes('overused') && !avoidGroups.has(key)) {
+      avoidGroups.set(key, {
+        term,
+        replacements: [],
+        notes: String(word.notes ?? '').trim(),
+      });
+    }
+  }
+
+  const rules = [];
+  const bannedTerms = [];
+  const focusWords = [];
+
+  for (const [key, group] of avoidGroups.entries()) {
+    bannedTerms.push(group.term);
+    rules.push({
+      id: `eloq:avoid:${key}`,
+      type: 'avoid',
+      term: group.term,
+      replacementOptions: group.replacements,
+      contexts: [],
+      source: 'manual',
+      active: true,
+      priority: 5,
+      notes: group.notes || 'Imported from Eloq.',
+      family: 'eloq',
+      pinned: true,
+    });
+  }
+
+  for (const [key, term] of targetTerms.entries()) {
+    focusWords.push(term);
+    rules.push({
+      id: `eloq:target:${key}`,
+      type: 'target',
+      term,
+      replacementOptions: [
+        {
+          word: term,
+          useWhen: `Reward "${term}" when it is the sharper, more precise choice.`,
+          caution: 'Do not force the stronger word into a sentence that wants something simpler.',
+        },
+      ],
+      contexts: [],
+      source: 'manual',
+      active: true,
+      priority: 4,
+      notes: 'Imported from Eloq.',
+      family: 'eloq',
+      pinned: true,
+    });
+  }
+
+  const exampleConnection = acceptedConnections[0];
+  const exampleRewrite = exampleConnection
+    ? `${exampleConnection.overusedTerm} -> ${exampleConnection.underusedTerm}`
+    : '';
+
+  return {
+    sourceRunId: `eloq-v${snapshot?.version ?? 1}`,
+    generatedAt: snapshot?.generatedAt ?? new Date().toISOString(),
+    rules,
+    focusTemplates: [
+      {
+        family: 'eloq',
+        targetWords: focusWords.slice(0, 12),
+        bannedTerms: bannedTerms.slice(0, 12),
+        triggerQuestion: 'What sharper word would make this sentence more exact?',
+        exampleRewrite,
+      },
+    ],
+    contextWordBanks: [],
+  };
 }
 
 export async function loadWritingAwarenessStateFromDisk(options = {}) {
@@ -370,9 +579,44 @@ async function ensureStorageRoot(options) {
   await fsp.mkdir(memoDirectory, { recursive: true });
 }
 
+async function ensureEloqRoot(options) {
+  const { rootDirectory } = getEloqStoragePaths(options);
+  await fsp.mkdir(rootDirectory, { recursive: true });
+}
+
+function resolveEloqStorageRoot(options = {}) {
+  if (options.storageRoot) {
+    return options.storageRoot;
+  }
+
+  const candidates = Array.isArray(options.storageRootCandidates) && options.storageRootCandidates.length
+    ? options.storageRootCandidates
+    : [
+        options.sandboxStorageRoot ?? ELOQ_SANDBOX_STORAGE_ROOT,
+        ELOQ_STORAGE_ROOT,
+      ];
+
+  for (const rootDirectory of candidates) {
+    if (fileExistsSync(path.join(rootDirectory, 'snapshot.json'))) {
+      return rootDirectory;
+    }
+  }
+
+  return candidates[0] ?? ELOQ_STORAGE_ROOT;
+}
+
 async function fileExists(targetPath) {
   try {
     await fsp.access(targetPath, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function fileExistsSync(targetPath) {
+  try {
+    fs.accessSync(targetPath, fs.constants.F_OK);
     return true;
   } catch {
     return false;
@@ -423,4 +667,10 @@ function randomId() {
     return globalThis.crypto.randomUUID().toLowerCase();
   }
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizeComparableTerm(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase();
 }

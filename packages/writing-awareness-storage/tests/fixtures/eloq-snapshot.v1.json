@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "generatedAt": "2026-03-20T00:00:00.000Z",
+  "summary": {
+    "totalWords": 5,
+    "overusedWords": 3,
+    "underusedWords": 2,
+    "acceptedConnections": 2,
+    "suggestedConnections": 1,
+    "dismissedConnections": 0
+  },
+  "words": [
+    {
+      "id": "word-thing",
+      "displayTerm": "thing",
+      "normalizedTerm": "thing",
+      "roles": ["overused"],
+      "notes": "A vague placeholder noun.",
+      "contexts": ["general"],
+      "provenance": "fixture"
+    },
+    {
+      "id": "word-constraint",
+      "displayTerm": "constraint",
+      "normalizedTerm": "constraint",
+      "roles": ["underused"],
+      "notes": "Use when a limit shapes what is possible.",
+      "contexts": ["general"],
+      "provenance": "fixture"
+    },
+    {
+      "id": "word-good",
+      "displayTerm": "good",
+      "normalizedTerm": "good",
+      "roles": ["overused"],
+      "notes": "An over-relied-on positive adjective.",
+      "contexts": ["general"],
+      "provenance": "fixture"
+    },
+    {
+      "id": "word-interesting",
+      "displayTerm": "interesting",
+      "normalizedTerm": "interesting",
+      "roles": ["overused"],
+      "notes": "Often too generic when the reaction is stronger or more specific.",
+      "contexts": ["general"],
+      "provenance": "fixture"
+    },
+    {
+      "id": "word-compelling",
+      "displayTerm": "compelling",
+      "normalizedTerm": "compelling",
+      "roles": ["underused"],
+      "notes": "A stronger replacement when the claim deserves intensity.",
+      "contexts": ["general"],
+      "provenance": "fixture"
+    }
+  ],
+  "connections": [
+    {
+      "id": "connection-thing-constraint",
+      "overusedWordID": "word-thing",
+      "overusedTerm": "thing",
+      "underusedWordID": "word-constraint",
+      "underusedTerm": "constraint",
+      "origin": "imported",
+      "status": "accepted",
+      "rationale": "Move from a placeholder noun to a precise limiting condition.",
+      "useWhen": "Use when you mean a real blocker or shaping limit.",
+      "caution": "Do not use when you literally mean an object.",
+      "confidence": 0.96
+    },
+    {
+      "id": "connection-good-compelling",
+      "overusedWordID": "word-good",
+      "overusedTerm": "good",
+      "underusedWordID": "word-compelling",
+      "underusedTerm": "compelling",
+      "origin": "imported",
+      "status": "accepted",
+      "rationale": "Escalate generic praise into a sharper evaluation when justified.",
+      "useWhen": "Use when the argument or artifact genuinely earns strong praise.",
+      "caution": "Skip it if the sentence should stay modest or neutral.",
+      "confidence": 0.91
+    },
+    {
+      "id": "connection-interesting-compelling",
+      "overusedWordID": "word-interesting",
+      "overusedTerm": "interesting",
+      "underusedWordID": "word-compelling",
+      "underusedTerm": "compelling",
+      "origin": "ai",
+      "status": "suggested",
+      "rationale": "Interesting is often too noncommittal when the point is truly forceful.",
+      "useWhen": "Use when the reaction goes beyond mild interest into real persuasive pull.",
+      "caution": "Avoid overstatement if the claim is still tentative.",
+      "confidence": 0.7
+    }
+  ]
+}

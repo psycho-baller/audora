@@ -9,9 +9,15 @@ import type {
 
 export interface WritingAwarenessStorageOptions {
   storageRoot?: string;
+  sandboxStorageRoot?: string;
+  storageRootCandidates?: string[];
   fallbackSeedPath?: string | null;
   preferFallbackSeed?: boolean;
   forceFallbackSeed?: boolean;
+  fallbackSnapshotPath?: string | null;
+  preferFallbackSnapshot?: boolean;
+  forceFallbackSnapshot?: boolean;
+  localState?: Partial<WritingAwarenessDiskState>;
 }
 
 export interface WritingAwarenessDiskState {
@@ -38,6 +44,52 @@ export interface DiskBootstrapPayload {
   currentSite: string;
   summary: WritingSummary;
   storageRoot: string;
+  snapshot?: EloqSnapshotReadModel;
+}
+
+export interface EloqSnapshotSummary {
+  totalWords: number;
+  overusedWords: number;
+  underusedWords: number;
+  acceptedConnections: number;
+  suggestedConnections: number;
+  dismissedConnections: number;
+}
+
+export interface EloqSnapshotWord {
+  id: string;
+  displayTerm: string;
+  normalizedTerm: string;
+  roles: string[];
+  notes: string;
+  sourceExcerpt: string;
+  exampleUsage: string;
+  contexts: string[];
+  provenance: string;
+}
+
+export interface EloqSnapshotConnection {
+  id: string;
+  overusedWordID: string;
+  overusedTerm: string;
+  underusedWordID: string;
+  underusedTerm: string;
+  origin: string;
+  status: string;
+  rationale: string;
+  useWhen: string;
+  caution: string;
+  sourceExcerpt: string;
+  exampleUsage: string;
+  confidence: number;
+}
+
+export interface EloqSnapshotReadModel {
+  version: number;
+  generatedAt: string | Date;
+  summary: EloqSnapshotSummary;
+  words: EloqSnapshotWord[];
+  connections: EloqSnapshotConnection[];
 }
 
 export interface LearningTargetSaveResult {
@@ -71,18 +123,37 @@ export interface WritingAwarenessStoragePaths {
   memoDirectory: string;
 }
 
+export interface EloqStoragePaths {
+  rootDirectory: string;
+  snapshotPath: string;
+}
+
 export const WRITING_AWARENESS_STORAGE_ROOT: string;
+export const ELOQ_STORAGE_ROOT: string;
+export const ELOQ_SANDBOX_STORAGE_ROOT: string;
 export const EMPTY_WRITING_AWARENESS_STATE: Readonly<WritingAwarenessDiskState>;
 
 export function getWritingAwarenessStoragePaths(
   options?: WritingAwarenessStorageOptions
 ): WritingAwarenessStoragePaths;
+export function getEloqStoragePaths(
+  options?: WritingAwarenessStorageOptions
+): EloqStoragePaths;
 export function loadWritingAwarenessBootstrapFromDisk(
+  options?: WritingAwarenessStorageOptions & { currentSite?: string }
+): Promise<DiskBootstrapPayload>;
+export function loadEloqBootstrapFromDisk(
   options?: WritingAwarenessStorageOptions & { currentSite?: string }
 ): Promise<DiskBootstrapPayload>;
 export function loadWritingAwarenessSeedFromDisk(
   options?: WritingAwarenessStorageOptions
 ): Promise<WritingAwarenessSeed>;
+export function loadEloqSnapshotFromDisk(
+  options?: WritingAwarenessStorageOptions
+): Promise<EloqSnapshotReadModel>;
+export function deriveWritingAwarenessSeedFromEloqSnapshot(
+  snapshot: EloqSnapshotReadModel
+): WritingAwarenessSeed;
 export function loadWritingAwarenessStateFromDisk(
   options?: WritingAwarenessStorageOptions
 ): Promise<WritingAwarenessDiskState>;
