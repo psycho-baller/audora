@@ -1,9 +1,7 @@
-import { resolveFocusPack, type VocabularyRule } from '@audora/writing-awareness-core';
-
 import { browser } from '../shared/browser';
 import { sendNativeHostMessage } from '../shared/native-host';
-import { bootstrapPayload, getExtensionState, getStoredSeed, loadBundledSeed, setExtensionState, setStoredSeed } from '../shared/storage';
-import type { BackgroundMessage, BrowserExtensionState } from '../shared/types';
+import { bootstrapPayload, getExtensionState, getStoredSnapshot, loadBundledSnapshot, setExtensionState, setStoredSnapshot, summarizeEvents } from '../shared/storage';
+import type { BackgroundMessage, BootstrapPayload, BrowserExtensionState } from '../shared/types';
 
 browser.runtime.onInstalled.addListener(async () => {
   await ensureSeedLoaded();
@@ -29,40 +27,30 @@ browser.commands.onCommand.addListener(async (command) => {
 });
 
 async function handleMessage(message: BackgroundMessage) {
-    switch (message.type) {
+  switch (message.type) {
     case 'awareness:get-bootstrap':
-      return (
-        (await sendNativeHostMessage(message)) ??
-        bootstrapPayload(message.site ?? (await currentSite()))
-      );
+      return loadMergedBootstrap(message.site ?? (await currentSite()));
 
     case 'awareness:reload-seed': {
-      const nativePayload = await sendNativeHostMessage(message);
+      const nativePayload = await sendNativeHostMessage<BootstrapPayload>(message);
       if (nativePayload) {
+        if (nativePayload.snapshot) {
+          await setStoredSnapshot(nativePayload.snapshot);
+        }
         await broadcastRefresh();
-        return nativePayload;
+        return mergeNativeBootstrap(nativePayload);
       }
-      const seed = await loadBundledSeed();
-      await setStoredSeed(seed);
+      const snapshot = await loadBundledSnapshot();
+      await setStoredSnapshot(snapshot);
       const state = await getExtensionState();
       const nextState: BrowserExtensionState = {
         ...state,
-        lastSeedRunId: seed.sourceRunId,
+        lastSeedRunId: `eloq-v${snapshot.version}`,
         lastSeedSyncedAt: new Date().toISOString(),
       };
       await setExtensionState(nextState);
       await broadcastRefresh();
-      return {
-        seed,
-        state: nextState,
-        focusPack: resolveFocusPack(seed),
-        currentSite: await currentSite(),
-        summary: {
-          avoidCaught: 0,
-          targetWins: 0,
-          repairsCompleted: 0,
-        },
-      };
+      return bootstrapPayload(await currentSite());
     }
 
     case 'awareness:open-options':
@@ -70,44 +58,14 @@ async function handleMessage(message: BackgroundMessage) {
       return { ok: true };
 
     case 'awareness:save-manual-rule': {
-      const nativePayload = await sendNativeHostMessage(message);
-      if (nativePayload) {
-        await broadcastRefresh();
-        return nativePayload;
-      }
-      const state = await getExtensionState();
-      const nextRules = upsertRule(state.manualRules, message.rule);
-      const nextState: BrowserExtensionState = {
-        ...state,
-        manualRules: nextRules,
-      };
-      await setExtensionState(nextState);
-      await broadcastRefresh();
-      return bootstrapPayload(await currentSite());
+      return { ok: true };
     }
 
     case 'awareness:delete-manual-rule': {
-      const nativePayload = await sendNativeHostMessage(message);
-      if (nativePayload) {
-        await broadcastRefresh();
-        return nativePayload;
-      }
-      const state = await getExtensionState();
-      const nextState: BrowserExtensionState = {
-        ...state,
-        manualRules: state.manualRules.filter((rule) => rule.id !== message.ruleId),
-      };
-      await setExtensionState(nextState);
-      await broadcastRefresh();
-      return bootstrapPayload(await currentSite());
+      return { ok: true };
     }
 
     case 'awareness:update-rule-override': {
-      const nativePayload = await sendNativeHostMessage(message);
-      if (nativePayload) {
-        await broadcastRefresh();
-        return nativePayload;
-      }
       const state = await getExtensionState();
       const nextState: BrowserExtensionState = {
         ...state,
@@ -125,11 +83,6 @@ async function handleMessage(message: BackgroundMessage) {
     }
 
     case 'awareness:toggle-site-mute': {
-      const nativePayload = await sendNativeHostMessage(message);
-      if (nativePayload) {
-        await broadcastRefresh();
-        return nativePayload;
-      }
       const state = await getExtensionState();
       const mutedSites = state.mutedSites.includes(message.site)
         ? state.mutedSites.filter((site) => site !== message.site)
@@ -144,11 +97,6 @@ async function handleMessage(message: BackgroundMessage) {
     }
 
     case 'awareness:toggle-term-mute': {
-      const nativePayload = await sendNativeHostMessage(message);
-      if (nativePayload) {
-        await broadcastRefresh();
-        return nativePayload;
-      }
       const state = await getExtensionState();
       const mutedTerms = state.mutedTerms.includes(message.term)
         ? state.mutedTerms.filter((term) => term !== message.term)
@@ -163,10 +111,6 @@ async function handleMessage(message: BackgroundMessage) {
     }
 
     case 'awareness:record-events': {
-      const nativeResponse = await sendNativeHostMessage(message);
-      if (nativeResponse) {
-        return nativeResponse;
-      }
       if (!message.events.length) {
         return { ok: true };
       }
@@ -187,14 +131,15 @@ async function handleMessage(message: BackgroundMessage) {
 }
 
 async function ensureSeedLoaded(): Promise<void> {
-  const seed = await getStoredSeed();
+  const snapshot = await getStoredSnapshot();
   const state = await getExtensionState();
-  if (state.lastSeedRunId === seed.sourceRunId) {
+  const nextRunId = `eloq-v${snapshot.version}`;
+  if (state.lastSeedRunId === nextRunId) {
     return;
   }
   await setExtensionState({
     ...state,
-    lastSeedRunId: seed.sourceRunId,
+    lastSeedRunId: nextRunId,
     lastSeedSyncedAt: new Date().toISOString(),
   });
 }
@@ -222,10 +167,32 @@ async function broadcastRefresh(): Promise<void> {
   );
 }
 
-function upsertRule(rules: VocabularyRule[], rule: VocabularyRule): VocabularyRule[] {
-  const index = rules.findIndex((entry) => entry.id === rule.id);
-  if (index === -1) {
-    return [...rules, rule];
+async function loadMergedBootstrap(site: string) {
+  const nativePayload = await sendNativeHostMessage<BootstrapPayload>({
+    type: 'awareness:get-bootstrap',
+    site,
+  });
+  if (nativePayload) {
+    if (nativePayload.snapshot) {
+      await setStoredSnapshot(nativePayload.snapshot);
+    }
+    return mergeNativeBootstrap(nativePayload);
   }
-  return rules.map((entry, entryIndex) => (entryIndex === index ? rule : entry));
+  return bootstrapPayload(site);
+}
+
+async function mergeNativeBootstrap(nativePayload: BootstrapPayload) {
+  const state = await getExtensionState();
+  return {
+    ...nativePayload,
+    state: {
+      ...state,
+      manualRules: [],
+      ruleOverrides: state.ruleOverrides ?? {},
+      mutedSites: state.mutedSites ?? [],
+      mutedTerms: state.mutedTerms ?? [],
+      reinforcementEvents: state.reinforcementEvents ?? [],
+    },
+    summary: summarizeEvents(state),
+  };
 }

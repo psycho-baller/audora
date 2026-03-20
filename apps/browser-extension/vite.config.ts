@@ -8,9 +8,9 @@ const browserTarget = process.env.BROWSER_TARGET === 'firefox' ? 'firefox' : 'ch
 function buildManifest(target: 'chrome' | 'firefox') {
   const manifest: Record<string, unknown> = {
     manifest_version: 3,
-    name: 'Audora Writing Awareness',
+    name: 'Eloq Writing',
     version: '0.0.1',
-    description: 'Personalized vocabulary coaching with inline suggestions and quick replace.',
+    description: 'Read the Eloq vocabulary graph in your browser and surface accepted inline suggestions.',
     permissions: ['storage', 'tabs', 'nativeMessaging'],
     host_permissions: ['<all_urls>'],
     background:
@@ -24,7 +24,7 @@ function buildManifest(target: 'chrome' | 'firefox') {
             type: 'module',
           },
     action: {
-      default_title: 'Audora Writing Awareness',
+      default_title: 'Eloq Writing',
       default_popup: 'popup.html',
     },
     options_page: 'options.html',

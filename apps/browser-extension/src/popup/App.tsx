@@ -56,11 +56,11 @@ export function PopupApp() {
     <div className="shell" style={{ width: 380 }}>
       <div className="app-shell">
         <section className="panel hero">
-          <div className="eyebrow">Audora Writing</div>
-          <h1 className="hero-title">Inline awareness for the words you want to outgrow.</h1>
+          <div className="eyebrow">Eloq Writing</div>
+          <h1 className="hero-title">Inline awareness for the vocabulary graph you curate in Eloq.</h1>
           <p className="hero-copy">
-            Personalized vocabulary coaching from your transcript corpus, tuned to the current
-            week&apos;s focus family.
+            This extension reads Eloq&apos;s exported snapshot and highlights accepted connections in
+            live text fields.
           </p>
           <div className="metric-row">
             <div className="metric">
@@ -79,9 +79,9 @@ export function PopupApp() {
         </section>
 
         <section className="panel section">
-          <h2 className="section-title">Today&apos;s preload</h2>
+          <h2 className="section-title">Current focus pack</h2>
           {loading || !bootstrap ? (
-            <p className="section-copy">Loading your focus pack…</p>
+            <p className="section-copy">Loading your Eloq snapshot…</p>
           ) : (
             <>
               <p className="section-copy">{bootstrap.focusPack.triggerQuestion}</p>
@@ -118,12 +118,12 @@ export function PopupApp() {
                 </div>
               </div>
               <div className="button-row" style={{ marginTop: 12 }}>
-                <button className="button secondary" onClick={toggleCurrentSiteMute}>
-                  {currentSiteMuted ? 'Unmute site' : 'Mute site'}
-                </button>
-                <button className="button secondary" onClick={reloadSeed}>
-                  Refresh seed
-                </button>
+                  <button className="button secondary" onClick={toggleCurrentSiteMute}>
+                    {currentSiteMuted ? 'Unmute site' : 'Mute site'}
+                  </button>
+                  <button className="button secondary" onClick={reloadSeed}>
+                  Refresh snapshot
+                  </button>
                 <button className="button" onClick={openOptions}>
                   Open settings
                 </button>

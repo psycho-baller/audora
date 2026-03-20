@@ -6,6 +6,7 @@ import type {
   WritingAwarenessSeed,
   WritingAwarenessState,
 } from '@audora/writing-awareness-core';
+import type { EloqSnapshotReadModel } from '@audora/writing-awareness-storage';
 
 export interface BrowserExtensionState extends WritingAwarenessState {
   lastSeedRunId?: string;
@@ -24,6 +25,7 @@ export interface BootstrapPayload {
   focusPack: FocusPack;
   currentSite: string;
   summary: WritingSummary;
+  snapshot?: EloqSnapshotReadModel;
 }
 
 export type BackgroundMessage =

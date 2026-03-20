@@ -42,14 +42,14 @@ for (const directory of MANIFEST_TARGETS) {
   const manifest = directory.includes('Mozilla')
     ? {
         name: HOST_NAME,
-        description: 'Audora Writing Awareness native host',
+        description: 'Eloq Writing native host',
         path: HOST_SCRIPT,
         type: 'stdio',
         allowed_extensions: FIREFOX_ALLOWED_EXTENSIONS,
       }
     : {
         name: HOST_NAME,
-        description: 'Audora Writing Awareness native host',
+        description: 'Eloq Writing native host',
         path: HOST_SCRIPT,
         type: 'stdio',
         allowed_origins: chromiumIds.map((id) => `chrome-extension://${id}/`),

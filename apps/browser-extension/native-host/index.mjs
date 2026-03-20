@@ -5,18 +5,13 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import {
-  loadWritingAwarenessBootstrapFromDisk,
-  loadWritingAwarenessSeedFromDisk,
-  loadWritingAwarenessStateFromDisk,
-  saveWritingAwarenessStateToDisk,
-  toggleListValue,
-  upsertManualRule,
+  loadEloqBootstrapFromDisk,
 } from '@audora/writing-awareness-storage';
 
 const hostDirectory = path.dirname(fileURLToPath(import.meta.url));
 const STORAGE_OPTIONS = {
-  fallbackSeedPath: path.resolve(hostDirectory, '..', 'public', 'WritingAwarenessSeed.json'),
-  preferFallbackSeed: true,
+  fallbackSnapshotPath: path.resolve(hostDirectory, '..', 'public', 'EloqSnapshot.json'),
+  preferFallbackSnapshot: true,
 };
 
 let stdinBuffer = Buffer.alloc(0);
@@ -68,128 +63,27 @@ function writeMessage(value) {
 async function handleMessage(message) {
   switch (message.type) {
     case 'awareness:get-bootstrap':
-      return loadWritingAwarenessBootstrapFromDisk({
+      return loadEloqBootstrapFromDisk({
         ...STORAGE_OPTIONS,
         currentSite: message.site ?? '',
       });
 
-    case 'awareness:reload-seed': {
-      const seed = await loadWritingAwarenessSeedFromDisk({
+    case 'awareness:reload-seed':
+      return loadEloqBootstrapFromDisk({
         ...STORAGE_OPTIONS,
-        forceFallbackSeed: true,
-      });
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          lastSeedRunId: seed.sourceRunId,
-          lastSeedSyncedAt: new Date().toISOString(),
-        },
-        STORAGE_OPTIONS
-      );
-      return loadWritingAwarenessBootstrapFromDisk({
-        ...STORAGE_OPTIONS,
+        forceFallbackSnapshot: true,
         currentSite: message.site ?? '',
       });
-    }
-
-    case 'awareness:save-manual-rule': {
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          manualRules: upsertManualRule(state.manualRules, message.rule),
-        },
-        STORAGE_OPTIONS
-      );
-      return loadWritingAwarenessBootstrapFromDisk({
-        ...STORAGE_OPTIONS,
-        currentSite: message.site ?? '',
-      });
-    }
-
-    case 'awareness:delete-manual-rule': {
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          manualRules: state.manualRules.filter((rule) => rule.id !== message.ruleId),
-        },
-        STORAGE_OPTIONS
-      );
-      return loadWritingAwarenessBootstrapFromDisk({
-        ...STORAGE_OPTIONS,
-        currentSite: message.site ?? '',
-      });
-    }
-
-    case 'awareness:update-rule-override': {
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          ruleOverrides: {
-            ...state.ruleOverrides,
-            [message.ruleId]: {
-              ...(state.ruleOverrides[message.ruleId] ?? {}),
-              ...message.patch,
-            },
-          },
-        },
-        STORAGE_OPTIONS
-      );
-      return loadWritingAwarenessBootstrapFromDisk({
-        ...STORAGE_OPTIONS,
-        currentSite: message.site ?? '',
-      });
-    }
-
-    case 'awareness:toggle-site-mute': {
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          mutedSites: toggleListValue(state.mutedSites, message.site),
-        },
-        STORAGE_OPTIONS
-      );
-      return loadWritingAwarenessBootstrapFromDisk({
-        ...STORAGE_OPTIONS,
-        currentSite: message.site ?? '',
-      });
-    }
-
-    case 'awareness:toggle-term-mute': {
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          mutedTerms: toggleListValue(state.mutedTerms, message.term),
-        },
-        STORAGE_OPTIONS
-      );
-      return loadWritingAwarenessBootstrapFromDisk({
-        ...STORAGE_OPTIONS,
-        currentSite: message.site ?? '',
-      });
-    }
-
-    case 'awareness:record-events': {
-      if (!message.events?.length) {
-        return { ok: true };
-      }
-      const state = await loadWritingAwarenessStateFromDisk(STORAGE_OPTIONS);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...state,
-          reinforcementEvents: [...state.reinforcementEvents, ...message.events],
-        },
-        STORAGE_OPTIONS
-      );
-      return { ok: true };
-    }
 
     case 'awareness:request-refresh':
+      return { ok: true };
+
+    case 'awareness:save-manual-rule':
+    case 'awareness:delete-manual-rule':
+    case 'awareness:update-rule-override':
+    case 'awareness:toggle-site-mute':
+    case 'awareness:toggle-term-mute':
+    case 'awareness:record-events':
       return { ok: true };
 
     default:
