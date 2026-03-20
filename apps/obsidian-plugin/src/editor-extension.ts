@@ -1,4 +1,5 @@
 import { analyzeWriting, type WritingCheckResult } from '@audora/writing-awareness-core';
+import type { EloqSnapshotReadModel } from '@audora/writing-awareness-storage';
 import { StateEffect, StateField, type EditorState, type Extension, RangeSetBuilder } from '@codemirror/state';
 import {
   Decoration,
@@ -13,7 +14,7 @@ import {
 
 import { buildProjectedDocument } from './projection';
 import type AudoraObsidianPlugin from './main';
-import type { ObsidianWritingDiagnostic } from './types';
+import type { ObsidianReplacementDetail, ObsidianWritingDiagnostic } from './types';
 
 const setDiagnosticsEffect = StateEffect.define<readonly ObsidianWritingDiagnostic[]>();
 const clearDiagnosticsEffect = StateEffect.define<void>();
@@ -175,7 +176,11 @@ export function createAudoraEditorExtension(plugin: AudoraObsidianPlugin): Exten
             currentSite: 'obsidian',
           });
 
-          const diagnostics = diagnosticsFromResult(projected.sourceText, analysis.result);
+          const diagnostics = diagnosticsFromResult(
+            projected.sourceText,
+            analysis.result,
+            bootstrap.snapshot
+          );
           const fingerprint = diagnosticsFingerprint(diagnostics);
           if (fingerprint !== this.lastFingerprint) {
             this.view.dispatch({
@@ -271,7 +276,8 @@ export function nextDiagnostic(
 
 export function diagnosticsFromResult(
   sourceText: string,
-  result: WritingCheckResult
+  result: WritingCheckResult,
+  snapshot?: EloqSnapshotReadModel
 ): ObsidianWritingDiagnostic[] {
   const suggestions = new Map(result.suggestedReplacements.map((entry) => [entry.ruleId, entry]));
 
@@ -302,7 +308,10 @@ export function diagnosticsFromResult(
     replacements: [],
   }));
 
-  return dedupeDiagnostics([...avoid, ...rewards]).sort((left, right) => left.from - right.from);
+  return hydrateDiagnosticsFromSnapshot(
+    dedupeDiagnostics([...avoid, ...rewards]),
+    snapshot
+  ).sort((left, right) => left.from - right.from);
 }
 
 function buildDecorations(
@@ -388,6 +397,16 @@ function renderTooltipContent(
   const title = panel.createDiv({ cls: 'audora-writing-tooltip__title' });
   title.textContent = `Replace "${diagnostic.term}"`;
 
+  if (diagnostic.message) {
+    const message = panel.createDiv({ cls: 'audora-writing-tooltip__meta audora-writing-tooltip__meta--lead' });
+    message.textContent = diagnostic.message;
+  }
+
+  if (diagnostic.sourceExcerpt) {
+    const excerpt = panel.createDiv({ cls: 'audora-writing-tooltip__excerpt' });
+    excerpt.textContent = diagnostic.sourceExcerpt;
+  }
+
   if (!diagnostic.replacements.length) {
     const emptyState = panel.createDiv({ cls: 'audora-writing-tooltip__meta' });
     emptyState.textContent = 'No saved alternatives yet.';
@@ -404,6 +423,24 @@ function renderTooltipContent(
     button.addEventListener('click', () => {
       void actions.onApply(replacement);
     });
+  }
+
+  if (diagnostic.replacementDetails?.length) {
+    const detailList = panel.createDiv({ cls: 'audora-writing-tooltip__detail-list' });
+
+    for (const detail of diagnostic.replacementDetails.slice(0, 3)) {
+      const detailRow = detailList.createDiv({ cls: 'audora-writing-tooltip__detail-row' });
+      const heading = detailRow.createDiv({ cls: 'audora-writing-tooltip__detail-title' });
+      heading.textContent = detail.term;
+
+      if (detail.exampleUsage) {
+        const example = detailRow.createDiv({ cls: 'audora-writing-tooltip__meta' });
+        example.textContent = detail.exampleUsage;
+      } else if (detail.useWhen) {
+        const useWhen = detailRow.createDiv({ cls: 'audora-writing-tooltip__meta' });
+        useWhen.textContent = detail.useWhen;
+      }
+    }
   }
 }
 
@@ -484,4 +521,131 @@ function styleTooltipShell(dom: HTMLElement): void {
   shell.style.boxShadow = 'none';
   shell.style.padding = '0';
   shell.style.overflow = 'visible';
+}
+
+function hydrateDiagnosticsFromSnapshot(
+  diagnostics: readonly ObsidianWritingDiagnostic[],
+  snapshot?: EloqSnapshotReadModel
+): ObsidianWritingDiagnostic[] {
+  if (!snapshot) {
+    return [...diagnostics];
+  }
+
+  const acceptedConnections = Array.isArray(snapshot.connections)
+    ? snapshot.connections.filter((connection) => connection.status === 'accepted')
+    : [];
+  if (!acceptedConnections.length) {
+    return [...diagnostics];
+  }
+
+  const wordsById = new Map(
+    (Array.isArray(snapshot.words) ? snapshot.words : []).map((word) => [String(word.id), word])
+  );
+  const connectionIndex = new Map<
+    string,
+    {
+      sourceExcerpt: string;
+      replacements: Map<string, ObsidianReplacementDetail>;
+    }
+  >();
+
+  for (const connection of acceptedConnections) {
+    const overusedWord = wordsById.get(String(connection.overusedWordID));
+    const underusedWord = wordsById.get(String(connection.underusedWordID));
+    const overusedTerm = normalizeComparableTerm(connection.overusedTerm ?? overusedWord?.displayTerm ?? '');
+    const underusedTerm = String(connection.underusedTerm ?? underusedWord?.displayTerm ?? '').trim();
+    const underusedKey = normalizeComparableTerm(underusedTerm);
+    if (!overusedTerm || !underusedTerm || !underusedKey) {
+      continue;
+    }
+
+    const group = connectionIndex.get(overusedTerm) ?? {
+      sourceExcerpt: '',
+      replacements: new Map<string, ObsidianReplacementDetail>(),
+    };
+
+    const sourceExcerpt = normalizedTooltipText(
+      connection.sourceExcerpt ??
+        overusedWord?.sourceExcerpt ??
+        ''
+    );
+    if (sourceExcerpt && !group.sourceExcerpt) {
+      group.sourceExcerpt = sourceExcerpt;
+    }
+
+    if (!group.replacements.has(underusedKey)) {
+      group.replacements.set(underusedKey, {
+        term: underusedTerm,
+        rationale: normalizedTooltipText(connection.rationale),
+        useWhen: normalizedTooltipText(connection.useWhen),
+        caution: normalizedTooltipText(connection.caution),
+        sourceExcerpt,
+        exampleUsage: normalizedTooltipText(
+          connection.exampleUsage ??
+            underusedWord?.exampleUsage ??
+            ''
+        ),
+      });
+    }
+
+    connectionIndex.set(overusedTerm, group);
+  }
+
+  return diagnostics.map((diagnostic) => {
+    if (diagnostic.kind !== 'avoid') {
+      return diagnostic;
+    }
+
+    const group = connectionIndex.get(normalizeComparableTerm(diagnostic.term));
+    if (!group) {
+      return diagnostic;
+    }
+
+    const orderedDetails = uniqueReplacementDetails([
+      ...diagnostic.replacements.map((replacement) =>
+        group.replacements.get(normalizeComparableTerm(replacement))
+      ),
+      ...group.replacements.values(),
+    ]);
+
+    return {
+      ...diagnostic,
+      replacements: orderedDetails.length
+        ? orderedDetails.map((detail) => detail.term)
+        : diagnostic.replacements,
+      sourceExcerpt: group.sourceExcerpt || diagnostic.sourceExcerpt,
+      replacementDetails: orderedDetails,
+    };
+  });
+}
+
+function uniqueReplacementDetails(
+  details: readonly (ObsidianReplacementDetail | undefined)[]
+): ObsidianReplacementDetail[] {
+  const seen = new Set<string>();
+  const output: ObsidianReplacementDetail[] = [];
+
+  for (const detail of details) {
+    if (!detail) {
+      continue;
+    }
+    const key = normalizeComparableTerm(detail.term);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    output.push(detail);
+  }
+
+  return output;
+}
+
+function normalizedTooltipText(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+function normalizeComparableTerm(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase();
 }

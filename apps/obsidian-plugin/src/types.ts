@@ -28,4 +28,15 @@ export interface ObsidianWritingDiagnostic {
   message: string;
   snippet: string;
   replacements: string[];
+  sourceExcerpt?: string;
+  replacementDetails?: ObsidianReplacementDetail[];
+}
+
+export interface ObsidianReplacementDetail {
+  term: string;
+  rationale: string;
+  useWhen: string;
+  caution: string;
+  sourceExcerpt: string;
+  exampleUsage: string;
 }
