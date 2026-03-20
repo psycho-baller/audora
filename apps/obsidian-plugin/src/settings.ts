@@ -11,7 +11,7 @@ export class AudoraWritingSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Audora Writing Awareness' });
+    containerEl.createEl('h2', { text: 'Eloq Writing Awareness' });
 
     new Setting(containerEl)
       .setName('Automatic checking')
@@ -24,7 +24,7 @@ export class AudoraWritingSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Reward underlines')
-      .setDesc('Show subtle underlines for target words that Audora wants to reinforce.')
+      .setDesc('Show subtle underlines for target words that Eloq wants to reinforce.')
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.showRewardUnderlines).onChange(async (value) => {
           await this.plugin.updateSettings({ showRewardUnderlines: value });
@@ -33,7 +33,7 @@ export class AudoraWritingSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Debounce interval')
-      .setDesc('Wait time before Audora rechecks the note after an edit.')
+      .setDesc('Wait time before Eloq rechecks the note after an edit.')
       .addText((text) =>
         text
           .setPlaceholder('220')
@@ -50,7 +50,7 @@ export class AudoraWritingSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Audora storage path')
+      .setName('Eloq storage path')
       .setDesc(this.plugin.storageRootPath);
 
     new Setting(containerEl)
@@ -63,8 +63,8 @@ export class AudoraWritingSettingTab extends PluginSettingTab {
         })
       )
       .addButton((button) =>
-        button.setButtonText('Reload bundled seed').onClick(async () => {
-          await this.plugin.reloadBundledSeed({ showNotice: true });
+        button.setButtonText('Reload bundled snapshot').onClick(async () => {
+          await this.plugin.reloadBundledSnapshot({ showNotice: true });
           this.display();
         })
       );
@@ -72,9 +72,9 @@ export class AudoraWritingSettingTab extends PluginSettingTab {
     const bootstrap = this.plugin.bootstrap;
     if (bootstrap) {
       new Setting(containerEl)
-        .setName('Rule summary')
+        .setName('Snapshot summary')
         .setDesc(
-          `${bootstrap.seed.rules.length} base rules, ${bootstrap.state.manualRules.length} manual rules, ${bootstrap.state.mutedTerms.length} muted terms.`
+          `${bootstrap.snapshot?.summary.totalWords ?? 0} words, ${bootstrap.snapshot?.summary.acceptedConnections ?? 0} accepted links, ${bootstrap.state.mutedTerms.length} muted terms.`
         );
     }
   }

@@ -2,13 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
-  getWritingAwarenessStoragePaths,
-  loadWritingAwarenessBootstrapFromDisk,
-  loadWritingAwarenessSeedFromDisk,
-  loadWritingAwarenessStateFromDisk,
-  saveLearningTargetToState,
-  saveWritingAwarenessStateToDisk,
-  summarizeWritingAwarenessEvents,
+  emptyWritingAwarenessDiskState,
+  getEloqStoragePaths,
+  loadEloqBootstrapFromDisk,
 } from '@audora/writing-awareness-storage';
 import type { DiskBootstrapPayload, WritingAwarenessDiskState } from '@audora/writing-awareness-storage';
 import type { EditorView } from '@codemirror/view';
@@ -35,6 +31,11 @@ const DEFAULT_SETTINGS: ObsidianAudoraPluginSettings = {
   debounceMs: 220,
 };
 
+interface PersistedPluginData {
+  settings?: Partial<ObsidianAudoraPluginSettings>;
+  localState?: Partial<WritingAwarenessDiskState>;
+}
+
 export default class AudoraObsidianPlugin extends Plugin {
   settings: ObsidianAudoraPluginSettings = DEFAULT_SETTINGS;
   bootstrap: DiskBootstrapPayload | null = null;
@@ -43,10 +44,11 @@ export default class AudoraObsidianPlugin extends Plugin {
   private settingsTab: AudoraWritingSettingTab | null = null;
   private storageWatcher: fs.FSWatcher | null = null;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
-  private syncStatus = 'Waiting for Audora storage.';
+  private syncStatus = 'Waiting for Eloq snapshot.';
+  private localState: WritingAwarenessDiskState = emptyWritingAwarenessDiskState();
 
   get storageRootPath(): string {
-    return getWritingAwarenessStoragePaths(this.storageOptions).rootDirectory;
+    return getEloqStoragePaths(this.storageOptions).rootDirectory;
   }
 
   get syncStatusMessage(): string {
@@ -55,13 +57,25 @@ export default class AudoraObsidianPlugin extends Plugin {
 
   get storageOptions() {
     return {
-      fallbackSeedPath: this.bundledSeedPath(),
-      preferFallbackSeed: true,
+      fallbackSnapshotPath: this.bundledSnapshotPath(),
+      preferFallbackSnapshot: true,
+      localState: this.localState,
     };
   }
 
   async onload(): Promise<void> {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
+    const persisted = ((await this.loadData()) ?? {}) as PersistedPluginData | Partial<ObsidianAudoraPluginSettings>;
+    if ('automaticChecking' in persisted || 'showRewardUnderlines' in persisted || 'debounceMs' in persisted) {
+      this.settings = { ...DEFAULT_SETTINGS, ...(persisted as Partial<ObsidianAudoraPluginSettings>) };
+      this.localState = emptyWritingAwarenessDiskState();
+    } else {
+      const structured = persisted as PersistedPluginData;
+      this.settings = { ...DEFAULT_SETTINGS, ...(structured.settings ?? {}) };
+      this.localState = {
+        ...emptyWritingAwarenessDiskState(),
+        ...(structured.localState ?? {}),
+      };
+    }
 
     await this.reloadBootstrapFromDisk();
     this.startStorageWatch();
@@ -71,7 +85,7 @@ export default class AudoraObsidianPlugin extends Plugin {
 
     this.addCommand({
       id: 'refresh-writing-awareness',
-      name: 'Refresh Audora rules from disk',
+      name: 'Refresh Eloq snapshot from disk',
       callback: async () => {
         await this.reloadBootstrapFromDisk({ showNotice: true });
       },
@@ -79,15 +93,15 @@ export default class AudoraObsidianPlugin extends Plugin {
 
     this.addCommand({
       id: 'reload-bundled-seed',
-      name: 'Reload bundled Audora seed',
+      name: 'Reload bundled Eloq snapshot',
       callback: async () => {
-        await this.reloadBundledSeed({ showNotice: true });
+        await this.reloadBundledSnapshot({ showNotice: true });
       },
     });
 
     this.addCommand({
       id: 'next-writing-issue',
-      name: 'Jump to next Audora issue',
+      name: 'Jump to next Eloq issue',
       checkCallback: (checking) => {
         const view = this.activeEditorView();
         const diagnostic = view ? nextDiagnostic(view.state, 'forward') : null;
@@ -103,7 +117,7 @@ export default class AudoraObsidianPlugin extends Plugin {
 
     this.addCommand({
       id: 'previous-writing-issue',
-      name: 'Jump to previous Audora issue',
+      name: 'Jump to previous Eloq issue',
       checkCallback: (checking) => {
         const view = this.activeEditorView();
         const diagnostic = view ? nextDiagnostic(view.state, 'backward') : null;
@@ -120,7 +134,7 @@ export default class AudoraObsidianPlugin extends Plugin {
     for (const [index, label] of ['first', 'second', 'third'].entries()) {
       this.addCommand({
         id: `apply-${label}-suggestion`,
-        name: `Apply ${label} Audora suggestion`,
+        name: `Apply ${label} Eloq suggestion`,
         checkCallback: (checking) => {
           const view = this.activeEditorView();
           const diagnostic = view ? diagnosticNearSelection(view.state) : null;
@@ -138,7 +152,7 @@ export default class AudoraObsidianPlugin extends Plugin {
 
     this.addCommand({
       id: 'add-selection-to-learning-words',
-      name: 'Add selection to Audora learning words',
+      name: 'Open Eloq to add the current selection',
       checkCallback: (checking) => {
         const view = this.activeEditorView();
         if (!view) {
@@ -152,7 +166,7 @@ export default class AudoraObsidianPlugin extends Plugin {
           return false;
         }
         if (!checking) {
-          void this.addSelectionToLearningWords(view);
+          new Notice('Add new words in Eloq on macOS. Obsidian is now read-only for vocabulary data.');
         }
         return true;
       },
@@ -183,25 +197,26 @@ export default class AudoraObsidianPlugin extends Plugin {
       ...this.settings,
       ...patch,
     };
-    await this.saveData(this.settings);
+    await this.persistPluginData();
     this.refreshAllEditors();
     this.settingsTab?.display();
   }
 
   async reloadBootstrapFromDisk(options: { showNotice?: boolean } = {}): Promise<void> {
     try {
-      this.bootstrap = await loadWritingAwarenessBootstrapFromDisk({
+      this.bootstrap = await loadEloqBootstrapFromDisk({
         ...this.storageOptions,
         currentSite: 'obsidian',
       });
-      this.syncStatus = `Loaded ${this.bootstrap.seed.rules.length} base rules from ${this.bootstrap.storageRoot}.`;
+      const acceptedConnections = this.bootstrap.snapshot?.summary.acceptedConnections ?? 0;
+      this.syncStatus = `Loaded ${acceptedConnections} accepted Eloq links from ${this.bootstrap.storageRoot}.`;
       this.refreshAllEditors();
       this.settingsTab?.display();
       if (options.showNotice) {
-        new Notice('Audora rules refreshed from disk.');
+        new Notice('Eloq snapshot refreshed from disk.');
       }
     } catch (error) {
-      this.syncStatus = error instanceof Error ? error.message : 'Failed to load Audora rules.';
+      this.syncStatus = error instanceof Error ? error.message : 'Failed to load Eloq snapshot.';
       this.settingsTab?.display();
       if (options.showNotice) {
         new Notice(this.syncStatus);
@@ -209,27 +224,21 @@ export default class AudoraObsidianPlugin extends Plugin {
     }
   }
 
-  async reloadBundledSeed(options: { showNotice?: boolean } = {}): Promise<void> {
+  async reloadBundledSnapshot(options: { showNotice?: boolean } = {}): Promise<void> {
     try {
-      const seed = await loadWritingAwarenessSeedFromDisk({
+      this.bootstrap = await loadEloqBootstrapFromDisk({
         ...this.storageOptions,
-        forceFallbackSeed: true,
+        currentSite: 'obsidian',
+        forceFallbackSnapshot: true,
       });
-      const currentState = await loadWritingAwarenessStateFromDisk(this.storageOptions);
-      await saveWritingAwarenessStateToDisk(
-        {
-          ...currentState,
-          lastSeedRunId: seed.sourceRunId,
-          lastSeedSyncedAt: new Date().toISOString(),
-        },
-        this.storageOptions
-      );
-      await this.reloadBootstrapFromDisk();
+      this.syncStatus = 'Loaded bundled Eloq snapshot.';
+      this.refreshAllEditors();
+      this.settingsTab?.display();
       if (options.showNotice) {
-        new Notice('Bundled Audora seed reloaded.');
+        new Notice('Bundled Eloq snapshot reloaded.');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to reload bundled seed.';
+      const message = error instanceof Error ? error.message : 'Failed to reload bundled Eloq snapshot.';
       this.syncStatus = message;
       this.settingsTab?.display();
       if (options.showNotice) {
@@ -256,61 +265,38 @@ export default class AudoraObsidianPlugin extends Plugin {
       return;
     }
 
-    const currentState = await this.currentState();
-    if (currentState.mutedTerms.includes(normalized)) {
+    if (this.localState.mutedTerms.includes(normalized)) {
       return;
     }
 
     await this.persistState({
-      ...currentState,
-      mutedTerms: [...currentState.mutedTerms, normalized],
+      ...this.localState,
+      mutedTerms: [...this.localState.mutedTerms, normalized],
     });
-    new Notice(`Muted "${normalized}" in Audora.`);
-  }
-
-  private async addSelectionToLearningWords(view: EditorView): Promise<void> {
-    const selection = view.state.sliceDoc(
-      view.state.selection.main.from,
-      view.state.selection.main.to
-    );
-    const currentState = await this.currentState();
-    const activeFile = this.app.workspace.getActiveFile();
-    const saved = saveLearningTargetToState({
-      state: currentState,
-      text: selection,
-      sourceApp: 'Obsidian',
-      contextLabel: activeFile?.basename ?? 'Obsidian note',
-      origin: 'selection',
-    });
-
-    if (saved.result.status !== 'invalid') {
-      await this.persistState(saved.state);
-    }
-
-    new Notice(saved.result.message);
+    new Notice(`Muted "${normalized}" in Eloq.`);
   }
 
   private async persistState(nextState: Partial<WritingAwarenessDiskState>): Promise<void> {
-    const savedState = await saveWritingAwarenessStateToDisk(nextState, this.storageOptions);
-    if (this.bootstrap) {
-      this.bootstrap = {
-        ...this.bootstrap,
-        state: savedState,
-        summary: summarizeWritingAwarenessEvents(savedState),
-      };
-    } else {
-      this.bootstrap = await loadWritingAwarenessBootstrapFromDisk({
-        ...this.storageOptions,
-        currentSite: 'obsidian',
-      });
-    }
-    this.syncStatus = `Loaded ${this.bootstrap.seed.rules.length} base rules from ${this.bootstrap.storageRoot}.`;
-    this.refreshAllEditors();
-    this.settingsTab?.display();
+    this.localState = {
+      ...emptyWritingAwarenessDiskState(),
+      ...this.localState,
+      ...nextState,
+      ruleOverrides: nextState.ruleOverrides ?? this.localState.ruleOverrides ?? {},
+      manualRules: [],
+      repairs: nextState.repairs ?? this.localState.repairs ?? [],
+      reinforcementEvents: nextState.reinforcementEvents ?? this.localState.reinforcementEvents ?? [],
+      mutedSites: nextState.mutedSites ?? this.localState.mutedSites ?? [],
+      mutedTerms: nextState.mutedTerms ?? this.localState.mutedTerms ?? [],
+    };
+    await this.persistPluginData();
+    await this.reloadBootstrapFromDisk();
   }
 
-  private async currentState(): Promise<WritingAwarenessDiskState> {
-    return this.bootstrap?.state ?? loadWritingAwarenessStateFromDisk(this.storageOptions);
+  private async persistPluginData(): Promise<void> {
+    await this.saveData({
+      settings: this.settings,
+      localState: this.localState,
+    } satisfies PersistedPluginData);
   }
 
   private startStorageWatch(): void {
@@ -318,7 +304,7 @@ export default class AudoraObsidianPlugin extends Plugin {
       fs.mkdirSync(this.storageRootPath, { recursive: true });
       this.storageWatcher = fs.watch(this.storageRootPath, { persistent: false }, (_event, fileName) => {
         const changed = fileName ? String(fileName) : null;
-        if (changed !== 'seed.json' && changed !== 'state.json') {
+        if (changed !== 'snapshot.json') {
           return;
         }
         if (this.refreshTimer) {
@@ -331,7 +317,7 @@ export default class AudoraObsidianPlugin extends Plugin {
       this.register(() => this.storageWatcher?.close());
     } catch (error) {
       this.syncStatus =
-        error instanceof Error ? error.message : 'Failed to watch Audora storage directory.';
+        error instanceof Error ? error.message : 'Failed to watch Eloq storage directory.';
       this.settingsTab?.display();
     }
   }
@@ -362,7 +348,7 @@ export default class AudoraObsidianPlugin extends Plugin {
     });
   }
 
-  private bundledSeedPath(): string | null {
+  private bundledSnapshotPath(): string | null {
     const adapter = this.app.vault.adapter;
     if (!(adapter instanceof FileSystemAdapter)) {
       return null;
@@ -373,7 +359,7 @@ export default class AudoraObsidianPlugin extends Plugin {
       this.app.vault.configDir,
       'plugins',
       this.manifest.id,
-      'WritingAwarenessSeed.json'
+      'EloqSnapshot.json'
     );
   }
 }

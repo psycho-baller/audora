@@ -7,12 +7,12 @@ import esbuild from 'esbuild';
 
 const rootDirectory = path.dirname(fileURLToPath(import.meta.url));
 const distDirectory = path.join(rootDirectory, 'dist');
-const bundledSeedSource = path.resolve(
+const bundledSnapshotSource = path.resolve(
   rootDirectory,
   '..',
   'browser-extension',
   'public',
-  'WritingAwarenessSeed.json'
+  'EloqSnapshot.json'
 );
 
 const watchMode = process.argv.includes('--watch');
@@ -22,7 +22,7 @@ async function copyStaticAssets() {
   await Promise.all([
     fs.copyFile(path.join(rootDirectory, 'manifest.json'), path.join(distDirectory, 'manifest.json')),
     fs.copyFile(path.join(rootDirectory, 'styles.css'), path.join(distDirectory, 'styles.css')),
-    fs.copyFile(bundledSeedSource, path.join(distDirectory, 'WritingAwarenessSeed.json')),
+    fs.copyFile(bundledSnapshotSource, path.join(distDirectory, 'EloqSnapshot.json')),
   ]);
 }
 
@@ -48,7 +48,7 @@ await copyStaticAssets();
 
 if (watchMode) {
   await context.watch();
-  console.log('[audora-obsidian-plugin] watching');
+  console.log('[eloq-obsidian-plugin] watching');
 } else {
   await context.rebuild();
   await context.dispose();

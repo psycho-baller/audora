@@ -101,18 +101,24 @@
 
 .audora-writing-tooltip__panel {
   position: relative;
-  min-width: 260px;
-  max-width: 320px;
+  min-width: 188px;
+  max-width: 280px;
   border: 1px solid var(--audora-glass-border);
   border-radius: 22px;
   background: var(--audora-glass-bg);
   box-shadow: var(--audora-glass-shadow);
   color: var(--audora-glass-copy);
-  padding: 14px;
+  padding: 12px;
   backdrop-filter: blur(26px) saturate(1.35);
   -webkit-backdrop-filter: blur(26px) saturate(1.35);
   overflow: hidden;
   isolation: isolate;
+}
+
+.audora-writing-tooltip__panel--reward {
+  min-width: 150px;
+  max-width: 210px;
+  padding: 10px 12px;
 }
 
 .audora-writing-tooltip__panel::before {
@@ -130,49 +136,34 @@
   z-index: 1;
 }
 
-.audora-writing-tooltip__eyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--audora-glass-muted);
-  margin-bottom: 6px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-
 .audora-writing-tooltip__title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  text-wrap: balance;
+  line-height: 1.25;
+  margin-bottom: 10px;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
-.audora-writing-tooltip__copy {
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--audora-glass-copy);
+.audora-writing-tooltip__title--reward {
+  margin-bottom: 0;
 }
 
-.audora-writing-tooltip__snippet {
-  margin-top: 8px;
+.audora-writing-tooltip__meta {
   font-size: 11px;
-  line-height: 1.45;
+  line-height: 1.35;
   color: var(--audora-glass-muted);
 }
 
 .audora-writing-tooltip__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
 }
 
 .audora-writing-tooltip__button {
   border: 1px solid var(--audora-glass-button-border);
   border-radius: 999px;
-  padding: 7px 11px;
+  padding: 6px 11px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 700;

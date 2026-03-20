@@ -1,9 +1,9 @@
 {
   "id": "audora-writing-awareness",
-  "name": "Audora Writing Awareness",
-  "version": "0.0.1",
+  "name": "Eloq Writing",
+  "version": "0.0.2",
   "minAppVersion": "1.8.0",
-  "description": "Audora inline vocabulary coaching for Obsidian notes.",
-  "author": "Audora",
+  "description": "Read Eloq's exported vocabulary graph inside Obsidian notes.",
+  "author": "Eloq",
   "isDesktopOnly": true
 }

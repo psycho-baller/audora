@@ -5,7 +5,6 @@ import {
   EditorView,
   ViewPlugin,
   hoverTooltip,
-  showTooltip,
   type DecorationSet,
   type Tooltip,
   type TooltipView,
@@ -72,12 +71,6 @@ const cursorDiagnosticField = StateField.define<ObsidianWritingDiagnostic | null
     }
     return value;
   },
-  provide(field) {
-    return showTooltip.computeN([field], (state) => {
-      const diagnostic = state.field(field);
-      return diagnostic ? [tooltipForDiagnostic(diagnostic)] : [];
-    });
-  },
 });
 
 export interface AudoraEditorControllerHandle {
@@ -91,7 +84,7 @@ export function createAudoraEditorExtension(plugin: AudoraObsidianPlugin): Exten
     cursorDiagnosticField,
     hoverTooltip((view, position) => {
       const diagnostic = diagnosticAtPosition(audoraDiagnosticsForState(view.state), position);
-      return diagnostic ? interactiveTooltipForDiagnostic(view, diagnostic, plugin) : null;
+      return diagnostic ? interactiveTooltipForDiagnostic(diagnostic, plugin) : null;
     }),
     ViewPlugin.fromClass(
       class AudoraEditorController implements AudoraEditorControllerHandle {
@@ -276,7 +269,7 @@ export function nextDiagnostic(
   return diagnostics[diagnostics.length - 1] ?? null;
 }
 
-function diagnosticsFromResult(
+export function diagnosticsFromResult(
   sourceText: string,
   result: WritingCheckResult
 ): ObsidianWritingDiagnostic[] {
@@ -309,7 +302,7 @@ function diagnosticsFromResult(
     replacements: [],
   }));
 
-  return [...avoid, ...rewards].sort((left, right) => left.from - right.from);
+  return dedupeDiagnostics([...avoid, ...rewards]).sort((left, right) => left.from - right.from);
 }
 
 function buildDecorations(
@@ -339,7 +332,6 @@ function diagnosticAtPosition(
 }
 
 function interactiveTooltipForDiagnostic(
-  view: EditorView,
   diagnostic: ObsidianWritingDiagnostic,
   plugin: AudoraObsidianPlugin
 ): Tooltip {
@@ -347,27 +339,8 @@ function interactiveTooltipForDiagnostic(
     pos: diagnostic.from,
     end: diagnostic.to,
     above: false,
-    create(): TooltipView {
+    create(view): TooltipView {
       return createTooltipView(view, diagnostic, plugin);
-    },
-  };
-}
-
-function tooltipForDiagnostic(diagnostic: ObsidianWritingDiagnostic): Tooltip {
-  return {
-    pos: diagnostic.from,
-    end: diagnostic.to,
-    above: false,
-    create(): TooltipView {
-      const dom = document.createElement('div');
-      dom.className = 'audora-writing-tooltip';
-      renderTooltipContent(dom, diagnostic, null);
-      return {
-        dom,
-        mount() {
-          styleTooltipShell(dom);
-        },
-      };
     },
   };
 }
@@ -383,9 +356,6 @@ function createTooltipView(
     onApply: async (replacement) => {
       plugin.applyReplacement(view, diagnostic, replacement);
     },
-    onMute: async () => {
-      await plugin.muteTerm(diagnostic.term);
-    },
   });
   return {
     dom,
@@ -400,29 +370,27 @@ function renderTooltipContent(
   diagnostic: ObsidianWritingDiagnostic,
   actions: {
     onApply: (replacement: string) => Promise<void> | void;
-    onMute: () => Promise<void> | void;
-  } | null
+  }
 ): void {
-  const panel = dom.createDiv({ cls: 'audora-writing-tooltip__panel' });
+  const panel = dom.createDiv({
+    cls:
+      diagnostic.kind === 'avoid'
+        ? 'audora-writing-tooltip__panel'
+        : 'audora-writing-tooltip__panel audora-writing-tooltip__panel--reward',
+  });
 
-  const eyebrow = panel.createDiv({ cls: 'audora-writing-tooltip__eyebrow' });
-  eyebrow.textContent = diagnostic.kind === 'avoid' ? 'Sharpen wording' : 'Rewarded language';
-
-  const title = panel.createDiv({ cls: 'audora-writing-tooltip__title' });
-  title.textContent =
-    diagnostic.kind === 'avoid'
-      ? `"${diagnostic.term}" can be sharper here`
-      : `"${diagnostic.term}" lands well here`;
-
-  const copy = panel.createDiv({ cls: 'audora-writing-tooltip__copy' });
-  copy.textContent = diagnostic.message;
-
-  if (diagnostic.snippet) {
-    const snippet = panel.createDiv({ cls: 'audora-writing-tooltip__snippet' });
-    snippet.textContent = diagnostic.snippet;
+  if (diagnostic.kind === 'reward') {
+    const title = panel.createDiv({ cls: 'audora-writing-tooltip__title audora-writing-tooltip__title--reward' });
+    title.textContent = 'Strong choice.';
+    return;
   }
 
-  if (!actions) {
+  const title = panel.createDiv({ cls: 'audora-writing-tooltip__title' });
+  title.textContent = `Replace "${diagnostic.term}"`;
+
+  if (!diagnostic.replacements.length) {
+    const emptyState = panel.createDiv({ cls: 'audora-writing-tooltip__meta' });
+    emptyState.textContent = 'No saved alternatives yet.';
     return;
   }
 
@@ -437,14 +405,6 @@ function renderTooltipContent(
       void actions.onApply(replacement);
     });
   }
-
-  const muteButton = actionRow.createEl('button', {
-    cls: 'audora-writing-tooltip__button',
-    text: 'Ignore term',
-  });
-  muteButton.addEventListener('click', () => {
-    void actions.onMute();
-  });
 }
 
 function diagnosticsFingerprint(diagnostics: readonly ObsidianWritingDiagnostic[]): string {
@@ -466,8 +426,54 @@ function sameDiagnostic(
   return left.id === right.id && left.from === right.from && left.to === right.to;
 }
 
+function dedupeDiagnostics(
+  diagnostics: readonly ObsidianWritingDiagnostic[]
+): ObsidianWritingDiagnostic[] {
+  const merged = new Map<string, ObsidianWritingDiagnostic>();
+
+  for (const diagnostic of diagnostics) {
+    const key = `${diagnostic.kind}:${diagnostic.from}:${diagnostic.to}:${diagnostic.term.toLowerCase()}`;
+    const existing = merged.get(key);
+    if (!existing) {
+      merged.set(key, {
+        ...diagnostic,
+        replacements: [...diagnostic.replacements],
+      });
+      continue;
+    }
+
+    merged.set(key, {
+      ...existing,
+      id: existing.id,
+      ruleId: existing.ruleId,
+      message: existing.message || diagnostic.message,
+      snippet: existing.snippet || diagnostic.snippet,
+      replacements: uniqueReplacements([...existing.replacements, ...diagnostic.replacements]),
+    });
+  }
+
+  return [...merged.values()];
+}
+
+function uniqueReplacements(replacements: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+
+  for (const replacement of replacements) {
+    const trimmed = replacement.trim();
+    const key = trimmed.toLowerCase();
+    if (!trimmed || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    output.push(trimmed);
+  }
+
+  return output;
+}
+
 function styleTooltipShell(dom: HTMLElement): void {
-  const shell = dom.closest('.cm-tooltip');
+  const shell = dom.closest('.cm-tooltip') as HTMLElement | null;
   if (!shell) {
     return;
   }
