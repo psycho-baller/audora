@@ -1,76 +1,39 @@
 .theme-dark,
 .theme-light {
-  --audora-glass-bg: linear-gradient(
-      180deg,
-      rgba(250, 253, 255, 0.84),
-      rgba(230, 238, 247, 0.7)
-    ),
-    linear-gradient(
-      135deg,
-      rgba(172, 205, 255, 0.18),
-      rgba(255, 219, 186, 0.1) 52%,
-      rgba(255, 255, 255, 0.12)
-    );
-  --audora-glass-highlight: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.38),
-    rgba(255, 255, 255, 0.08)
-  );
-  --audora-glass-border: rgba(132, 153, 182, 0.28);
-  --audora-glass-shadow:
-    0 26px 56px rgba(55, 73, 98, 0.22),
-    0 8px 22px rgba(55, 73, 98, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.52),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
-  --audora-glass-copy: rgba(24, 34, 48, 0.96);
-  --audora-glass-muted: rgba(66, 80, 100, 0.82);
-  --audora-glass-button-bg: rgba(255, 255, 255, 0.34);
-  --audora-glass-button-border: rgba(142, 162, 190, 0.28);
-  --audora-glass-button-hover: rgba(255, 255, 255, 0.52);
-  --audora-glass-primary-bg: linear-gradient(
-    135deg,
-    rgba(79, 142, 226, 0.96),
-    rgba(39, 91, 165, 0.88)
-  );
-  --audora-glass-primary-shadow:
-    0 12px 28px rgba(33, 82, 153, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --eloq-accent: #79afa3;
+  --eloq-accent-strong: #5d8f84;
+  --eloq-accent-soft: rgba(121, 175, 163, 0.18);
+  --eloq-warning: #c69662;
+  --eloq-danger: #b46e69;
+  --eloq-panel-bg: rgba(247, 245, 240, 0.98);
+  --eloq-panel-border: rgba(121, 175, 163, 0.2);
+  --eloq-panel-shadow: 0 18px 42px rgba(20, 28, 36, 0.14);
+  --eloq-copy: rgba(27, 33, 39, 0.96);
+  --eloq-muted: rgba(86, 96, 104, 0.78);
+  --eloq-button-bg: rgba(27, 33, 39, 0.04);
+  --eloq-button-border: rgba(27, 33, 39, 0.1);
+  --eloq-button-hover: rgba(121, 175, 163, 0.1);
+  --eloq-primary-copy: rgba(17, 22, 26, 0.96);
+  --eloq-primary-shadow: 0 10px 24px rgba(93, 143, 132, 0.18);
 }
 
 .theme-dark {
-  --audora-glass-bg: linear-gradient(
-      180deg,
-      rgba(36, 45, 57, 0.82),
-      rgba(24, 31, 41, 0.72)
-    ),
-    linear-gradient(
-      135deg,
-      rgba(87, 127, 191, 0.26),
-      rgba(50, 69, 96, 0.22) 48%,
-      rgba(255, 255, 255, 0.04)
-    );
-  --audora-glass-highlight: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.16),
-    rgba(255, 255, 255, 0.02)
-  );
-  --audora-glass-border: rgba(174, 196, 225, 0.14);
-  --audora-glass-shadow:
-    0 26px 54px rgba(0, 0, 0, 0.34),
-    0 10px 24px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
-  --audora-glass-copy: rgba(244, 241, 236, 0.92);
-  --audora-glass-muted: rgba(220, 214, 206, 0.66);
-  --audora-glass-button-bg: rgba(255, 255, 255, 0.08);
-  --audora-glass-button-border: rgba(255, 255, 255, 0.14);
-  --audora-glass-button-hover: rgba(255, 255, 255, 0.12);
+  --eloq-panel-bg: rgba(27, 33, 39, 0.98);
+  --eloq-panel-border: rgba(121, 175, 163, 0.16);
+  --eloq-panel-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
+  --eloq-copy: rgba(242, 238, 231, 0.95);
+  --eloq-muted: rgba(166, 176, 182, 0.78);
+  --eloq-button-bg: rgba(255, 255, 255, 0.03);
+  --eloq-button-border: rgba(255, 255, 255, 0.08);
+  --eloq-button-hover: rgba(121, 175, 163, 0.12);
+  --eloq-primary-copy: rgba(17, 22, 26, 0.98);
+  --eloq-primary-shadow: 0 12px 26px rgba(93, 143, 132, 0.2);
 }
 
 .cm-audora-avoid {
   text-decoration-line: underline;
   text-decoration-style: wavy;
-  text-decoration-color: rgba(153, 56, 26, 0.95);
+  text-decoration-color: rgba(180, 110, 105, 0.95);
   text-decoration-thickness: 2px;
   text-underline-offset: 0.18em;
 }
@@ -78,7 +41,7 @@
 .cm-audora-reward {
   text-decoration-line: underline;
   text-decoration-style: solid;
-  text-decoration-color: rgba(38, 124, 70, 0.92);
+  text-decoration-color: rgba(121, 175, 163, 0.92);
   text-decoration-thickness: 2px;
   text-underline-offset: 0.18em;
 }
@@ -102,46 +65,27 @@
 .audora-writing-tooltip__panel {
   position: relative;
   min-width: 188px;
-  max-width: 280px;
-  border: 1px solid var(--audora-glass-border);
-  border-radius: 22px;
-  background: var(--audora-glass-bg);
-  box-shadow: var(--audora-glass-shadow);
-  color: var(--audora-glass-copy);
-  padding: 12px;
-  backdrop-filter: blur(26px) saturate(1.35);
-  -webkit-backdrop-filter: blur(26px) saturate(1.35);
-  overflow: hidden;
-  isolation: isolate;
+  max-width: 292px;
+  border: 1px solid var(--eloq-panel-border);
+  border-radius: 18px;
+  background: var(--eloq-panel-bg);
+  box-shadow: var(--eloq-panel-shadow);
+  color: var(--eloq-copy);
+  padding: 14px;
 }
 
 .audora-writing-tooltip__panel--reward {
   min-width: 150px;
   max-width: 210px;
-  padding: 10px 12px;
-}
-
-.audora-writing-tooltip__panel::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  border-radius: 21px;
-  background: var(--audora-glass-highlight);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.audora-writing-tooltip__panel > * {
-  position: relative;
-  z-index: 1;
+  padding: 12px 14px;
 }
 
 .audora-writing-tooltip__title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.25;
   margin-bottom: 10px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
+  letter-spacing: 0.01em;
 }
 
 .audora-writing-tooltip__title--reward {
@@ -151,53 +95,65 @@
 .audora-writing-tooltip__meta {
   font-size: 11px;
   line-height: 1.35;
-  color: var(--audora-glass-muted);
+  color: var(--eloq-muted);
 }
 
 .audora-writing-tooltip__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .audora-writing-tooltip__button {
-  border: 1px solid var(--audora-glass-button-border);
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--eloq-button-border);
   border-radius: 999px;
-  padding: 6px 11px;
+  min-height: 34px;
+  padding: 8px 13px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
-  color: var(--audora-glass-copy);
-  background: var(--audora-glass-button-bg);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 8px 18px rgba(15, 20, 28, 0.08);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  color: var(--eloq-copy);
+  background: var(--eloq-button-bg);
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
   transition:
     background 140ms ease,
-    transform 140ms ease,
     box-shadow 140ms ease,
-    border-color 140ms ease;
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .audora-writing-tooltip__button:hover {
-  background: var(--audora-glass-button-hover);
-  border-color: rgba(255, 255, 255, 0.34);
+  background: var(--eloq-button-hover);
+  border-color: rgba(121, 175, 163, 0.22);
+  color: var(--eloq-copy);
+}
+
+.audora-writing-tooltip__actions .audora-writing-tooltip__button.audora-writing-tooltip__button--primary {
+  color: var(--eloq-primary-copy) !important;
+  border-color: rgba(121, 175, 163, 0.24) !important;
+  background: var(--eloq-accent) !important;
+  box-shadow: var(--eloq-primary-shadow) !important;
+}
+
+.audora-writing-tooltip__actions .audora-writing-tooltip__button.audora-writing-tooltip__button--primary:hover,
+.audora-writing-tooltip__actions .audora-writing-tooltip__button.audora-writing-tooltip__button--primary:focus-visible,
+.audora-writing-tooltip__actions .audora-writing-tooltip__button.audora-writing-tooltip__button--primary:active {
+  color: rgba(13, 18, 22, 0.98) !important;
+  background: var(--eloq-accent-strong) !important;
+  border-color: rgba(121, 175, 163, 0.34) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 12px 22px rgba(15, 20, 28, 0.12);
-  transform: translateY(-1px);
+    0 0 0 1px rgba(121, 175, 163, 0.16),
+    0 10px 24px rgba(93, 143, 132, 0.24) !important;
+  outline: none;
 }
 
-.audora-writing-tooltip__button--primary {
-  color: #fff;
-  border-color: rgba(181, 213, 255, 0.18);
-  background: var(--audora-glass-primary-bg);
-  box-shadow: var(--audora-glass-primary-shadow);
-}
-
-.audora-writing-tooltip__button--primary:hover {
-  border-color: rgba(214, 232, 255, 0.3);
+.audora-writing-tooltip__actions .audora-writing-tooltip__button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(121, 175, 163, 0.16),
+    0 8px 18px rgba(0, 0, 0, 0.16);
 }
