@@ -802,13 +802,16 @@ def _rewrite_sentence_for_dimension(text: str, dimension: str, source: dict[str,
             rewritten = f"The core point is {rewritten[0].lower() + rewritten[1:]}" if rewritten else rewritten
             changes.append("Moved the stance to the front of the sentence.")
     elif dimension == "lexical_precision":
+        _precision_ids = {"thing_family", "people_family", "way_family", "good_family", "problem_family"}
         for target in vocabulary_targets:
-            if not target.get("sampleRewrites"):
+            if target.get("id") not in _precision_ids or not target.get("sampleRewrites"):
                 continue
             for rewrite in target["sampleRewrites"]:
                 if rewrite["original"].lower() == _cleanup_rewrite(text).lower():
                     return rewrite["rewritten"], [f"Replaced vague wording with '{rewrite['replacement']}'."]  # type: ignore[list-item]
         for target in vocabulary_targets:
+            if target.get("id") not in _precision_ids:
+                continue
             match = next((item for item in target.get("sampleRewrites", []) if item["original"].lower() in _cleanup_rewrite(text).lower()), None)
             if match:
                 return match["rewritten"], [f"Replaced vague wording with '{match['replacement']}'."]

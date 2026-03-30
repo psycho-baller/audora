@@ -139,9 +139,13 @@ def build_summary(root: Path) -> dict[str, Any]:
 
     weekly_priorities = []
     for finding in recurring_findings[:2]:
-        weekly_priorities.append(f"Address {finding['label'].lower()} across {finding['affected_files']} files before chasing lower-frequency patterns.")
+        weekly_priorities.append(
+            f"{finding['label']} ({finding['affected_files']} {'file' if finding['affected_files'] == 1 else 'files'}): {finding['why_it_matters']}"
+        )
     for vocab in recurring_vocabulary[:1]:
-        weekly_priorities.append(f"Force replacements for {vocab['label'].lower()} because it recurs across {vocab['affected_files']} files.")
+        weekly_priorities.append(
+            f"Replace {vocab['label'].lower()} ({vocab['affected_files']} {'file' if vocab['affected_files'] == 1 else 'files'}): {vocab['why_it_limits_you']}"
+        )
 
     output_dir = root / "analysis"
     summary = {

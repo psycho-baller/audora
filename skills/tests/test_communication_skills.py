@@ -7,6 +7,7 @@ import subprocess
 import sys
 import textwrap
 import unittest
+import unittest.mock
 from pathlib import Path
 
 
@@ -189,6 +190,61 @@ class CommunicationSkillTests(unittest.TestCase):
         kinds = [(item["kind"], item["text"].lower()) for item in artifacts]
         self.assertNotIn(("filler", "like"), kinds)
         self.assertFalse(any(kind == "dash_fragment" for kind, _ in kinds))
+
+
+    def test_short_text_does_not_crash(self) -> None:
+        workspace = self._workspace("short-text")
+        source = workspace / "short.md"
+        source.write_text("The problem needs a fix.", encoding="utf-8")
+
+        payload = self._run(ANALYZE_SCRIPT, source)
+        report_json = Path(payload["analysis_json_path"])
+        report_md = Path(payload["analysis_markdown_path"])
+
+        self.assertTrue(report_md.exists())
+        self.assertTrue(report_json.exists())
+        report = json.loads(report_json.read_text(encoding="utf-8"))
+        self.assertIn("findings", report)
+        self.assertIn("vocabulary", report)
+        self.assertIn("sentence_upgrades", report)
+
+    def test_llm_path_does_not_break_output_contract(self) -> None:
+        scripts_root = REPO_ROOT / "skills" / "communication-analysis" / "scripts"
+        sys.path.insert(0, str(scripts_root))
+        try:
+            import communication_runtime.engine as engine_module
+
+            workspace = self._workspace("llm-path")
+            source_path = workspace / "investor-practice.md"
+            source_path.write_text(TRANSCRIPT_FIXTURE, encoding="utf-8")
+
+            llm_config = {"enabled": True, "model": "mock", "reasoningEffort": "low"}
+            # Patch at the engine module level — engine imports these names directly
+            with (
+                unittest.mock.patch.object(engine_module, "resolve_llm_config", return_value=llm_config),
+                unittest.mock.patch.object(
+                    engine_module,
+                    "synthesize_finding",
+                    return_value={"summary": "Mock summary.", "hypothesis": "Mock hypothesis."},
+                ),
+                unittest.mock.patch.object(
+                    engine_module,
+                    "synthesize_report_summary",
+                    return_value={"executiveDiagnosis": "Mock diagnosis.", "weeklyTheme": "Mock theme."},
+                ),
+                unittest.mock.patch.object(engine_module, "synthesize_vocabulary_target", return_value=None),
+            ):
+                report = engine_module.build_analysis_report(source_path)
+
+            self.assertIn("findings", report)
+            self.assertIn("sentence_upgrades", report)
+            self.assertTrue(report["findings"])
+            self.assertEqual(report["summary"]["executive_diagnosis"], "Mock diagnosis.")
+            self.assertEqual(report["summary"]["weekly_theme"], "Mock theme.")
+            top_finding = next(f for f in report["findings"] if f["severity"] >= 35)
+            self.assertEqual(top_finding["explanation"], "Mock summary.")
+        finally:
+            sys.path.pop(0)
 
 
 if __name__ == "__main__":
