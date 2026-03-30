@@ -16,6 +16,8 @@
       "normalizedTerm": "thing",
       "roles": ["overused"],
       "notes": "A vague placeholder noun.",
+      "sourceExcerpt": "This thing became the main blocker in the rollout.",
+      "exampleUsage": "",
       "contexts": ["general"],
       "provenance": "fixture"
     },
@@ -25,6 +27,8 @@
       "normalizedTerm": "constraint",
       "roles": ["underused"],
       "notes": "Use when a limit shapes what is possible.",
+      "sourceExcerpt": "",
+      "exampleUsage": "The staffing constraint slowed the launch.",
       "contexts": ["general"],
       "provenance": "fixture"
     },
@@ -34,6 +38,8 @@
       "normalizedTerm": "good",
       "roles": ["overused"],
       "notes": "An over-relied-on positive adjective.",
+      "sourceExcerpt": "The pitch was good, but the argument deserved a stronger word.",
+      "exampleUsage": "",
       "contexts": ["general"],
       "provenance": "fixture"
     },
@@ -43,6 +49,8 @@
       "normalizedTerm": "interesting",
       "roles": ["overused"],
       "notes": "Often too generic when the reaction is stronger or more specific.",
+      "sourceExcerpt": "That result was interesting, but still too vague as feedback.",
+      "exampleUsage": "",
       "contexts": ["general"],
       "provenance": "fixture"
     },
@@ -52,6 +60,8 @@
       "normalizedTerm": "compelling",
       "roles": ["underused"],
       "notes": "A stronger replacement when the claim deserves intensity.",
+      "sourceExcerpt": "",
+      "exampleUsage": "The central argument was compelling from the first paragraph.",
       "contexts": ["general"],
       "provenance": "fixture"
     }
@@ -68,6 +78,8 @@
       "rationale": "Move from a placeholder noun to a precise limiting condition.",
       "useWhen": "Use when you mean a real blocker or shaping limit.",
       "caution": "Do not use when you literally mean an object.",
+      "sourceExcerpt": "This thing became the main blocker in the rollout.",
+      "exampleUsage": "The staffing constraint slowed the launch.",
       "confidence": 0.96
     },
     {
@@ -81,6 +93,8 @@
       "rationale": "Escalate generic praise into a sharper evaluation when justified.",
       "useWhen": "Use when the argument or artifact genuinely earns strong praise.",
       "caution": "Skip it if the sentence should stay modest or neutral.",
+      "sourceExcerpt": "The pitch was good, but the argument deserved a stronger word.",
+      "exampleUsage": "The central argument was compelling from the first paragraph.",
       "confidence": 0.91
     },
     {
@@ -94,6 +108,8 @@
       "rationale": "Interesting is often too noncommittal when the point is truly forceful.",
       "useWhen": "Use when the reaction goes beyond mild interest into real persuasive pull.",
       "caution": "Avoid overstatement if the claim is still tentative.",
+      "sourceExcerpt": "That result was interesting, but still too vague as feedback.",
+      "exampleUsage": "The central argument was compelling from the first paragraph.",
       "confidence": 0.7
     }
   ]

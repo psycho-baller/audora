@@ -11,7 +11,7 @@ import {
 const hostDirectory = path.dirname(fileURLToPath(import.meta.url));
 const STORAGE_OPTIONS = {
   fallbackSnapshotPath: path.resolve(hostDirectory, '..', 'public', 'EloqSnapshot.json'),
-  preferFallbackSnapshot: true,
+  preferFallbackSnapshot: false,
 };
 
 let stdinBuffer = Buffer.alloc(0);
@@ -71,7 +71,6 @@ async function handleMessage(message) {
     case 'awareness:reload-seed':
       return loadEloqBootstrapFromDisk({
         ...STORAGE_OPTIONS,
-        forceFallbackSnapshot: true,
         currentSite: message.site ?? '',
       });
 

@@ -122,7 +122,7 @@ export function PopupApp() {
                     {currentSiteMuted ? 'Unmute site' : 'Mute site'}
                   </button>
                   <button className="button secondary" onClick={reloadSeed}>
-                  Refresh snapshot
+                  Sync now
                   </button>
                 <button className="button" onClick={openOptions}>
                   Open settings

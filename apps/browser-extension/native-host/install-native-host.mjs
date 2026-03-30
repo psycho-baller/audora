@@ -24,6 +24,7 @@ const MANIFEST_TARGETS = [
   path.join(HOME, 'Library', 'Application Support', 'BraveSoftware', 'Brave-Browser', 'NativeMessagingHosts'),
   path.join(HOME, 'Library', 'Application Support', 'Microsoft Edge', 'NativeMessagingHosts'),
   path.join(HOME, 'Library', 'Application Support', 'Mozilla', 'NativeMessagingHosts'),
+  path.join(HOME, 'Library', 'Application Support', 'zen', 'NativeMessagingHosts'),
 ];
 
 const FIREFOX_ALLOWED_EXTENSIONS = firefoxIds.length
@@ -33,13 +34,14 @@ const FIREFOX_ALLOWED_EXTENSIONS = firefoxIds.length
 fs.chmodSync(HOST_SCRIPT, 0o755);
 
 for (const directory of MANIFEST_TARGETS) {
-  if (!directory.includes('Mozilla') && !chromiumIds.length) {
+  const isFirefoxFamily = directory.includes('Mozilla') || directory.includes(`${path.sep}zen${path.sep}`);
+  if (!isFirefoxFamily && !chromiumIds.length) {
     continue;
   }
 
   fs.mkdirSync(directory, { recursive: true });
   const manifestPath = path.join(directory, `${HOST_NAME}.json`);
-  const manifest = directory.includes('Mozilla')
+  const manifest = isFirefoxFamily
     ? {
         name: HOST_NAME,
         description: 'Eloq Writing native host',

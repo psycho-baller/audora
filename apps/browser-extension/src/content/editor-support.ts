@@ -1,7 +1,8 @@
 import type { WritingMatch } from '@audora/writing-awareness-core';
 
-export type EditorKind = 'textarea' | 'contenteditable';
-export type SupportedEditorElement = HTMLTextAreaElement | HTMLElement;
+export type EditorKind = 'input' | 'textarea' | 'contenteditable';
+export type SupportedEditorElement = HTMLTextAreaElement | HTMLInputElement | HTMLElement;
+type FocusRoot = Document | ShadowRoot;
 
 export interface OverlayRect {
   left: number;
@@ -27,6 +28,11 @@ interface BaseEditorSurface {
   supportsQuickReplace: boolean;
 }
 
+export interface InputSurface extends BaseEditorSurface {
+  kind: 'input';
+  element: HTMLInputElement;
+}
+
 export interface TextareaSurface extends BaseEditorSurface {
   kind: 'textarea';
   element: HTMLTextAreaElement;
@@ -38,16 +44,43 @@ export interface ContentEditableSurface extends BaseEditorSurface {
   segments: TextNodeSegment[];
 }
 
-export type EditorSurface = TextareaSurface | ContentEditableSurface;
+export type EditorSurface = InputSurface | TextareaSurface | ContentEditableSurface;
 
 export function isSupportedEditor(target: EventTarget | null): target is SupportedEditorElement {
-  if (!(target instanceof HTMLElement)) {
-    return false;
+  return resolveSupportedEditor(target) !== null;
+}
+
+export function resolveSupportedEditor(target: EventTarget | null): SupportedEditorElement | null {
+  const element = htmlElementForTarget(target);
+  if (!element) {
+    return null;
   }
-  if (target instanceof HTMLTextAreaElement) {
-    return !target.readOnly && !target.disabled;
+
+  if (element.closest('[data-audora-writing-root="true"]')) {
+    return null;
   }
-  return isContentEditableRoot(target);
+
+  if (element instanceof HTMLTextAreaElement) {
+    return !element.readOnly && !element.disabled ? element : null;
+  }
+
+  if (element instanceof HTMLInputElement) {
+    return isSupportedInput(element) ? element : null;
+  }
+
+  const controlAncestor = element.closest('textarea, input');
+  if (controlAncestor instanceof HTMLTextAreaElement) {
+    return !controlAncestor.readOnly && !controlAncestor.disabled ? controlAncestor : null;
+  }
+  if (controlAncestor instanceof HTMLInputElement) {
+    return isSupportedInput(controlAncestor) ? controlAncestor : null;
+  }
+
+  return contentEditableRootForElement(element);
+}
+
+export function resolveDeepActiveEditor(root: FocusRoot = document): SupportedEditorElement | null {
+  return resolveSupportedEditor(deepActiveElement(root));
 }
 
 export function buildEditorSurface(
@@ -64,6 +97,19 @@ export function buildEditorSurface(
       selectionStart: element.selectionStart ?? 0,
       selectionEnd: element.selectionEnd ?? element.selectionStart ?? 0,
       supportsQuickReplace: !element.readOnly && !element.disabled,
+    };
+  }
+
+  if (element instanceof HTMLInputElement) {
+    return {
+      id: editorIdForElement(element),
+      site,
+      kind: 'input',
+      element,
+      text: element.value,
+      selectionStart: element.selectionStart ?? 0,
+      selectionEnd: element.selectionEnd ?? element.selectionStart ?? 0,
+      supportsQuickReplace: isSupportedInput(element),
     };
   }
 
@@ -89,8 +135,11 @@ export function buildEditorSurface(
 }
 
 export function measureDecorationRects(surface: EditorSurface, match: WritingMatch): OverlayRect[] {
+  if (surface.kind === 'input') {
+    return textControlRectsForRange(surface.element, match.rangeLower, match.rangeUpper);
+  }
   if (surface.kind === 'textarea') {
-    return textareaRectsForRange(surface.element, match.rangeLower, match.rangeUpper);
+    return textControlRectsForRange(surface.element, match.rangeLower, match.rangeUpper);
   }
   return contentEditableRectsForRange(surface, match.rangeLower, match.rangeUpper);
 }
@@ -102,6 +151,14 @@ export function applyQuickReplace(
 ): boolean {
   if (!surface.supportsQuickReplace) {
     return false;
+  }
+
+  if (surface.kind === 'input') {
+    surface.element.focus();
+    surface.element.setSelectionRange(match.rangeLower, match.rangeUpper);
+    surface.element.setRangeText(replacement, match.rangeLower, match.rangeUpper, 'end');
+    dispatchInput(surface.element);
+    return true;
   }
 
   if (surface.kind === 'textarea') {
@@ -135,24 +192,97 @@ export function applyQuickReplace(
 }
 
 function isContentEditableRoot(element: HTMLElement): boolean {
+  return contentEditableRootForElement(element) === element;
+}
+
+function isSupportedInput(element: HTMLInputElement): boolean {
+  if (element.readOnly || element.disabled) {
+    return false;
+  }
+
+  const inputType = (element.type || 'text').toLowerCase();
+  return ['text', 'search', 'email', 'url', 'tel'].includes(inputType);
+}
+
+function htmlElementForTarget(target: EventTarget | null): HTMLElement | null {
+  if (!target) {
+    return null;
+  }
+  if (target instanceof HTMLElement) {
+    return target;
+  }
+  if (target instanceof Text) {
+    return target.parentElement;
+  }
+  return null;
+}
+
+function contentEditableRootForElement(element: HTMLElement): HTMLElement | null {
   let current: HTMLElement | null = element;
+
   while (current) {
     if (current.getAttribute('contenteditable') === 'false') {
-      return false;
+      return null;
     }
-    if (
-      current.isContentEditable ||
-      current.contentEditable === 'true' ||
-      current.contentEditable === 'plaintext-only' ||
-      current.getAttribute('contenteditable') === 'true' ||
-      current.getAttribute('contenteditable') === 'plaintext-only'
-    ) {
-      return !current.closest('[data-audora-writing-root="true"]');
+    if (isEditingHost(current)) {
+      return current.closest('[data-audora-writing-root="true"]') ? null : current;
     }
     current = current.parentElement;
   }
 
-  return false;
+  return null;
+}
+
+function isEditingHost(element: HTMLElement): boolean {
+  const designMode = (element.ownerDocument.designMode ?? 'off').toLowerCase();
+  if (designMode === 'on' && element === element.ownerDocument.body) {
+    return true;
+  }
+
+  if (!isEditableElement(element)) {
+    return false;
+  }
+
+  const parent = element.parentElement;
+  return !parent || !isEditableElement(parent);
+}
+
+function isEditableElement(element: HTMLElement): boolean {
+  const attribute = element.getAttribute('contenteditable');
+  return (
+    element.isContentEditable ||
+    element.contentEditable === 'true' ||
+    element.contentEditable === 'plaintext-only' ||
+    attribute === 'true' ||
+    attribute === 'plaintext-only'
+  );
+}
+
+function deepActiveElement(root: FocusRoot): Element | null {
+  let active = root.activeElement;
+
+  while (active) {
+    if (active.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+      continue;
+    }
+
+    if (active instanceof HTMLIFrameElement) {
+      try {
+        const childDocument = active.contentDocument;
+        if (childDocument?.activeElement) {
+          active = deepActiveElement(childDocument);
+          continue;
+        }
+      } catch {
+        return active;
+      }
+    }
+
+    return active;
+  }
+
+  return null;
 }
 
 function editorIdForElement(element: SupportedEditorElement): string {
@@ -272,25 +402,28 @@ function rangeForOffsets(
   return range;
 }
 
-function textareaRectsForRange(
-  textarea: HTMLTextAreaElement,
+function textControlRectsForRange(
+  control: HTMLTextAreaElement | HTMLInputElement,
   start: number,
   end: number
 ): OverlayRect[] {
   const measureRoot = document.createElement('div');
-  const style = window.getComputedStyle(textarea);
-  const textareaRect = textarea.getBoundingClientRect();
+  const style = window.getComputedStyle(control);
+  const controlRect = control.getBoundingClientRect();
   const marker = document.createElement('span');
+  const isTextarea = control instanceof HTMLTextAreaElement;
 
   measureRoot.style.position = 'fixed';
   measureRoot.style.left = '-99999px';
   measureRoot.style.top = '0';
-  measureRoot.style.whiteSpace = 'pre-wrap';
-  measureRoot.style.wordBreak = 'break-word';
-  measureRoot.style.overflowWrap = 'break-word';
+  measureRoot.style.whiteSpace = isTextarea ? 'pre-wrap' : 'pre';
+  measureRoot.style.wordBreak = isTextarea ? 'break-word' : 'normal';
+  measureRoot.style.overflowWrap = isTextarea ? 'break-word' : 'normal';
   measureRoot.style.visibility = 'hidden';
   measureRoot.style.pointerEvents = 'none';
-  measureRoot.style.width = `${textarea.clientWidth}px`;
+  if (isTextarea) {
+    measureRoot.style.width = `${control.clientWidth}px`;
+  }
   measureRoot.style.font = style.font;
   measureRoot.style.lineHeight = style.lineHeight;
   measureRoot.style.letterSpacing = style.letterSpacing;
@@ -301,15 +434,15 @@ function textareaRectsForRange(
   measureRoot.style.textIndent = style.textIndent;
   measureRoot.style.tabSize = style.tabSize;
 
-  measureRoot.append(document.createTextNode(textarea.value.slice(0, start)));
-  marker.textContent = textarea.value.slice(start, end) || ' ';
+  measureRoot.append(document.createTextNode(control.value.slice(0, start)));
+  marker.textContent = control.value.slice(start, end) || ' ';
   measureRoot.append(marker);
-  measureRoot.append(document.createTextNode(textarea.value.slice(end)));
+  measureRoot.append(document.createTextNode(control.value.slice(end)));
   document.body.append(measureRoot);
 
   const overlayRects = Array.from(marker.getClientRects()).map((rect) => ({
-    left: textareaRect.left + (rect.left - measureRoot.getBoundingClientRect().left) - textarea.scrollLeft,
-    top: textareaRect.top + (rect.top - measureRoot.getBoundingClientRect().top) - textarea.scrollTop,
+    left: controlRect.left + (rect.left - measureRoot.getBoundingClientRect().left) - control.scrollLeft,
+    top: controlRect.top + (rect.top - measureRoot.getBoundingClientRect().top) - (isTextarea ? control.scrollTop : 0),
     width: rect.width,
     height: rect.height,
   }));

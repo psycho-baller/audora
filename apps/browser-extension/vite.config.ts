@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import react from '@vitejs/plugin-react';
+import { build as esbuild } from 'esbuild';
 import { defineConfig, type Plugin } from 'vite';
 
 const browserTarget = process.env.BROWSER_TARGET === 'firefox' ? 'firefox' : 'chrome';
@@ -40,6 +41,9 @@ function buildManifest(target: 'chrome' | 'firefox') {
       {
         matches: ['<all_urls>'],
         js: ['content.js'],
+        all_frames: true,
+        match_about_blank: true,
+        match_origin_as_fallback: true,
         run_at: 'document_idle',
       },
     ],
@@ -73,8 +77,31 @@ function manifestPlugin(target: 'chrome' | 'firefox'): Plugin {
   };
 }
 
+function bundledContentScriptPlugin(target: 'chrome' | 'firefox'): Plugin {
+  return {
+    name: 'audora-bundled-content-script',
+    apply: 'build',
+    async closeBundle() {
+      const outdir = path.resolve(__dirname, 'dist', target);
+      await esbuild({
+        entryPoints: [path.resolve(__dirname, 'src/content/index.ts')],
+        outfile: path.join(outdir, 'content.js'),
+        bundle: true,
+        format: 'iife',
+        platform: 'browser',
+        target: 'es2022',
+        sourcemap: false,
+        jsx: 'automatic',
+        loader: {
+          '.css': 'text',
+        },
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), manifestPlugin(browserTarget)],
+  plugins: [react(), manifestPlugin(browserTarget), bundledContentScriptPlugin(browserTarget)],
   publicDir: 'public',
   build: {
     outDir: path.resolve(__dirname, 'dist', browserTarget),

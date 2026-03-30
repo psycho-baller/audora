@@ -1,21 +1,22 @@
 import {
   analyzeWriting,
-  type VocabularyRule,
   type WritingCheckResult,
   type WritingMatch,
-  type WritingSuggestion,
 } from '@audora/writing-awareness-core';
 
 import { browser } from '../shared/browser';
 import { loadBootstrap, sendBackgroundMessage } from '../shared/messages';
 import type { BootstrapPayload, ContentMessage } from '../shared/types';
+import { eventTargetsExtensionLayer } from './extension-events';
+import { buildInlineSuggestion, type InlineSuggestion } from './eloq-tooltip';
 import {
   applyQuickReplace,
   buildEditorSurface,
-  isSupportedEditor,
   measureDecorationRects,
   type EditorSurface,
   type OverlayRect,
+  resolveDeepActiveEditor,
+  resolveSupportedEditor,
   type SupportedEditorElement,
 } from './editor-support';
 
@@ -24,8 +25,10 @@ interface RenderedDecoration {
   kind: 'avoid' | 'reward';
   match: WritingMatch;
   rects: OverlayRect[];
-  suggestion?: WritingSuggestion;
+  suggestion?: InlineSuggestion;
 }
+
+const SNAPSHOT_REFRESH_INTERVAL_MS = 5_000;
 
 const OVERLAY_STYLE = `
   :host {
@@ -37,7 +40,18 @@ const OVERLAY_STYLE = `
     inset: 0;
     z-index: 2147483646;
     pointer-events: none;
-    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-family: "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
+    color: #f2eee7;
+    --eloq-accent: #79afa3;
+    --eloq-accent-strong: #5d8f84;
+    --eloq-accent-soft: rgba(121, 175, 163, 0.14);
+    --eloq-danger: rgba(180, 110, 105, 0.95);
+    --eloq-surface: rgba(27, 33, 39, 0.98);
+    --eloq-surface-raised: rgba(35, 43, 50, 0.98);
+    --eloq-border: rgba(121, 175, 163, 0.16);
+    --eloq-muted: rgba(166, 176, 182, 0.8);
+    --eloq-copy: rgba(242, 238, 231, 0.95);
+    --eloq-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
   }
 
   .line {
@@ -64,17 +78,17 @@ const OVERLAY_STYLE = `
     background:
       repeating-linear-gradient(
         90deg,
-        rgba(163, 57, 28, 0.95) 0,
-        rgba(163, 57, 28, 0.95) 8px,
-        rgba(163, 57, 28, 0) 8px,
-        rgba(163, 57, 28, 0) 12px
+        var(--eloq-danger) 0,
+        var(--eloq-danger) 8px,
+        rgba(180, 110, 105, 0) 8px,
+        rgba(180, 110, 105, 0) 12px
       );
   }
 
   .line.reward::after {
     background:
-      linear-gradient(90deg, rgba(33, 117, 67, 0.95), rgba(52, 154, 90, 0.95));
-    box-shadow: 0 0 0 1px rgba(33, 117, 67, 0.12);
+      linear-gradient(90deg, rgba(121, 175, 163, 0.95), rgba(93, 143, 132, 0.95));
+    box-shadow: 0 0 0 1px rgba(121, 175, 163, 0.12);
   }
 
   .line:hover::after {
@@ -83,13 +97,15 @@ const OVERLAY_STYLE = `
 
   .popover {
     position: fixed;
-    width: 280px;
+    width: 320px;
+    max-height: min(420px, calc(100vh - 32px));
+    overflow-y: auto;
     padding: 14px;
     border-radius: 18px;
-    background: rgba(252, 248, 241, 0.96);
-    border: 1px solid rgba(33, 21, 10, 0.12);
-    box-shadow: 0 22px 48px rgba(39, 25, 12, 0.2);
-    color: #201710;
+    background: var(--eloq-surface);
+    border: 1px solid var(--eloq-border);
+    box-shadow: var(--eloq-shadow);
+    color: var(--eloq-copy);
     backdrop-filter: blur(18px);
     pointer-events: auto;
   }
@@ -98,19 +114,29 @@ const OVERLAY_STYLE = `
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: rgba(83, 70, 58, 0.86);
+    color: var(--eloq-muted);
     margin-bottom: 8px;
   }
 
   .title {
-    font: 700 16px/1.2 "Avenir Next", "Segoe UI", sans-serif;
+    font: 700 16px/1.2 "SF Pro Display", "Segoe UI", sans-serif;
     margin: 0 0 6px;
   }
 
   .copy {
-    font: 500 12px/1.5 "Avenir Next", "Segoe UI", sans-serif;
-    color: rgba(83, 70, 58, 0.92);
+    font: 500 12px/1.5 "SF Pro Text", "Segoe UI", sans-serif;
+    color: var(--eloq-muted);
     margin: 0;
+  }
+
+  .excerpt {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--eloq-surface-raised);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--eloq-copy);
+    font: 500 11px/1.45 "SF Pro Text", "Segoe UI", sans-serif;
   }
 
   .buttons {
@@ -125,30 +151,37 @@ const OVERLAY_STYLE = `
     border-radius: 999px;
     padding: 8px 11px;
     cursor: pointer;
-    font: 700 12px/1 "Avenir Next", "Segoe UI", sans-serif;
-    color: #1f1711;
-    background: rgba(255, 255, 255, 0.88);
-    box-shadow: inset 0 0 0 1px rgba(33, 21, 10, 0.1);
+    font: 700 12px/1 "SF Pro Text", "Segoe UI", sans-serif;
+    color: var(--eloq-copy);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .action.primary {
-    color: white;
-    background: linear-gradient(135deg, #1c4f8a, #153966);
-    box-shadow: 0 12px 30px rgba(28, 79, 138, 0.28);
+    color: rgba(17, 22, 26, 0.98);
+    background: var(--eloq-accent);
+    box-shadow: 0 12px 30px rgba(93, 143, 132, 0.24);
   }
 
-  .status {
-    position: fixed;
-    right: 18px;
-    bottom: 18px;
-    padding: 10px 12px;
-    border-radius: 999px;
-    background: rgba(31, 23, 17, 0.9);
-    color: white;
-    font: 700 11px/1 "Avenir Next", "Segoe UI", sans-serif;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    pointer-events: none;
+  .action.primary:hover {
+    background: var(--eloq-accent-strong);
+  }
+
+  .details {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .detail {
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .detail-title {
+    margin: 0 0 4px;
+    color: var(--eloq-copy);
+    font: 700 11px/1.35 "SF Pro Text", "Segoe UI", sans-serif;
   }
 `;
 
@@ -162,8 +195,14 @@ export class InlineWritingController {
   private shadowRootRef: ShadowRoot;
   private overlayRoot: HTMLDivElement;
   private popoverElement: HTMLDivElement;
-  private statusElement: HTMLDivElement;
   private fingerprints = new Set<string>();
+  private surfaceObserver: MutationObserver | null = null;
+  private observedElement: SupportedEditorElement | null = null;
+  private refreshTimer: number | null = null;
+  private popoverCloseTimer: number | null = null;
+  private snapshotRefreshTimer: number | null = null;
+  private readonly runtimeMessageListener = (message: unknown) =>
+    this.handleMessage(message as ContentMessage);
 
   constructor() {
     this.rootHost = document.createElement('div');
@@ -176,11 +215,7 @@ export class InlineWritingController {
     this.popoverElement = document.createElement('div');
     this.popoverElement.className = 'popover';
     this.popoverElement.hidden = true;
-    this.statusElement = document.createElement('div');
-    this.statusElement.className = 'status';
-    this.statusElement.hidden = true;
-    this.statusElement.textContent = 'Overlay only';
-    this.overlayRoot.append(this.popoverElement, this.statusElement);
+    this.overlayRoot.append(this.popoverElement);
     this.shadowRootRef.append(style, this.overlayRoot);
   }
 
@@ -192,44 +227,98 @@ export class InlineWritingController {
     document.documentElement.append(this.rootHost);
     this.bootstrap = await loadBootstrap(window.location.hostname);
     this.bind();
+    this.startSnapshotAutoRefresh();
     this.refreshActiveEditor();
   }
 
   private bind(): void {
     document.addEventListener('focusin', this.handleFocusIn, true);
+    document.addEventListener('beforeinput', this.handleInput, true);
     document.addEventListener('input', this.handleInput, true);
     document.addEventListener('keyup', this.handleInput, true);
+    document.addEventListener('compositionend', this.handleInput, true);
     document.addEventListener('mouseup', this.handleInput, true);
+    document.addEventListener('pointerdown', this.handlePointerDown, true);
     document.addEventListener('selectionchange', this.handleSelectionChange, true);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange, true);
     window.addEventListener('scroll', this.handleViewportChange, true);
     window.addEventListener('resize', this.handleViewportChange, true);
-    browser.runtime.onMessage.addListener((message: unknown) => this.handleMessage(message as ContentMessage));
+    window.addEventListener('focus', this.handleWindowFocus, true);
+    browser.runtime.onMessage.addListener(this.runtimeMessageListener);
+  }
+
+  dispose(): void {
+    document.removeEventListener('focusin', this.handleFocusIn, true);
+    document.removeEventListener('beforeinput', this.handleInput, true);
+    document.removeEventListener('input', this.handleInput, true);
+    document.removeEventListener('keyup', this.handleInput, true);
+    document.removeEventListener('compositionend', this.handleInput, true);
+    document.removeEventListener('mouseup', this.handleInput, true);
+    document.removeEventListener('pointerdown', this.handlePointerDown, true);
+    document.removeEventListener('selectionchange', this.handleSelectionChange, true);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange, true);
+    window.removeEventListener('scroll', this.handleViewportChange, true);
+    window.removeEventListener('resize', this.handleViewportChange, true);
+    window.removeEventListener('focus', this.handleWindowFocus, true);
+    browser.runtime.onMessage.removeListener(this.runtimeMessageListener);
+    this.stopObservingSurface();
+    this.cancelPopoverClose();
+    if (this.refreshTimer !== null) {
+      window.clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+    if (this.snapshotRefreshTimer !== null) {
+      window.clearInterval(this.snapshotRefreshTimer);
+      this.snapshotRefreshTimer = null;
+    }
+    document.documentElement?.removeAttribute('data-eloq-inline-writing-active');
+    this.rootHost.remove();
   }
 
   private handleFocusIn = (event: FocusEvent): void => {
-    if (!isSupportedEditor(event.target)) {
-      return;
+    const editor = editorFromEvent(event) ?? currentActiveEditor();
+    if (editor) {
+      this.activeElement = editor;
     }
-    this.activeElement = event.target;
     this.refreshActiveEditor();
   };
 
-  private handleInput = (): void => {
-    this.refreshActiveEditor();
+  private handleInput = (event: Event): void => {
+    const editor = editorFromEvent(event);
+    if (editor) {
+      this.activeElement = editor;
+    }
+    this.scheduleRefresh();
   };
 
   private handleSelectionChange = (): void => {
-    if (!this.activeElement) {
-      return;
-    }
-    this.refreshActiveEditor();
+    this.activeElement = currentActiveEditor();
+    this.scheduleRefresh(true);
   };
 
   private handleViewportChange = (): void => {
-    if (!this.activeElement) {
+    if (!this.activeElement && !this.renderedDecorations.length) {
       return;
     }
     this.refreshActiveEditor({ preservePopover: true });
+  };
+
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState === 'visible') {
+      void this.requestSnapshotRefresh();
+    }
+  };
+
+  private handleWindowFocus = (): void => {
+    void this.requestSnapshotRefresh();
+  };
+
+  private handlePointerDown = (event: PointerEvent): void => {
+    if (eventTargetsExtensionLayer(event, this.rootHost, this.overlayRoot, this.popoverElement)) {
+      return;
+    }
+
+    this.closePopover();
   };
 
   private handleMessage = async (message: ContentMessage): Promise<void> => {
@@ -248,11 +337,15 @@ export class InlineWritingController {
       return;
     }
 
-    const active = this.activeElement && isSupportedEditor(this.activeElement) ? this.activeElement : currentActiveEditor();
+    const active =
+      (this.activeElement && resolveSupportedEditor(this.activeElement)) ||
+      currentActiveEditor();
+
     if (!active) {
       this.activeElement = null;
       this.activeSurface = null;
       this.activeResult = null;
+      this.stopObservingSurface();
       this.clearDecorations();
       return;
     }
@@ -262,12 +355,14 @@ export class InlineWritingController {
       this.activeElement = active;
       this.activeSurface = surface;
       this.activeResult = null;
+      this.stopObservingSurface();
       this.clearDecorations();
       return;
     }
 
     this.activeElement = active;
     this.activeSurface = surface;
+    this.observeSurface(surface);
 
     const analysis = analyzeWriting({
       text: surface.text,
@@ -294,6 +389,7 @@ export class InlineWritingController {
     Array.from(this.overlayRoot.querySelectorAll('.line')).forEach((element) => element.remove());
 
     const suggestionsByRule = new Map(result.suggestedReplacements.map((entry) => [entry.ruleId, entry]));
+    const snapshot = this.bootstrap?.snapshot;
     const decorations: RenderedDecoration[] = [];
 
     for (const match of result.flaggedTerms.slice(0, 12)) {
@@ -306,7 +402,11 @@ export class InlineWritingController {
         kind: 'avoid',
         match,
         rects,
-        suggestion: suggestionsByRule.get(match.ruleId),
+        suggestion: buildInlineSuggestion(
+          match.term,
+          suggestionsByRule.get(match.ruleId),
+          snapshot
+        ),
       });
     }
 
@@ -335,14 +435,13 @@ export class InlineWritingController {
         button.style.width = `${rect.width}px`;
         button.style.height = `${Math.max(18, rect.height)}px`;
         button.dataset.decorationId = decoration.id;
+        button.addEventListener('mouseenter', () => this.handleDecorationHover(decoration));
+        button.addEventListener('mouseleave', () => this.schedulePopoverClose(decoration.id));
+        button.addEventListener('focus', () => this.handleDecorationHover(decoration));
+        button.addEventListener('blur', () => this.schedulePopoverClose(decoration.id));
         button.addEventListener('click', () => this.openPopover(decoration));
         this.overlayRoot.append(button);
       }
-    }
-
-    this.statusElement.hidden = surface.supportsQuickReplace;
-    if (!surface.supportsQuickReplace) {
-      this.statusElement.textContent = 'Overlay only';
     }
 
     if (previousOpenId) {
@@ -356,7 +455,28 @@ export class InlineWritingController {
     this.closePopover();
   }
 
+  private startSnapshotAutoRefresh(): void {
+    if (this.snapshotRefreshTimer !== null) {
+      window.clearInterval(this.snapshotRefreshTimer);
+    }
+
+    this.snapshotRefreshTimer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+      void this.requestSnapshotRefresh();
+    }, SNAPSHOT_REFRESH_INTERVAL_MS);
+  }
+
+  private async requestSnapshotRefresh(): Promise<void> {
+    await sendBackgroundMessage<{ ok: true }>({
+      type: 'awareness:request-refresh',
+    }).catch(() => undefined);
+  }
+
   private openPopover(decoration: RenderedDecoration): void {
+    this.cancelPopoverClose();
+
     const anchor = decoration.rects[0];
     if (!anchor) {
       return;
@@ -364,8 +484,6 @@ export class InlineWritingController {
 
     this.popoverElement.dataset.decorationId = decoration.id;
     this.popoverElement.hidden = false;
-    this.popoverElement.style.left = `${Math.min(window.innerWidth - 296, anchor.left)}px`;
-    this.popoverElement.style.top = `${Math.max(16, anchor.top - 12 - 140)}px`;
     this.popoverElement.innerHTML = '';
 
     const eyebrow = document.createElement('div');
@@ -386,6 +504,11 @@ export class InlineWritingController {
         ? decoration.suggestion?.message || decoration.match.snippet
         : decoration.match.snippet;
 
+    const excerpt = document.createElement('div');
+    excerpt.className = 'excerpt';
+    excerpt.textContent = decoration.suggestion?.sourceExcerpt ?? '';
+    excerpt.hidden = !decoration.suggestion?.sourceExcerpt;
+
     const buttons = document.createElement('div');
     buttons.className = 'buttons';
 
@@ -400,6 +523,26 @@ export class InlineWritingController {
       });
     }
 
+    const details = document.createElement('div');
+    details.className = 'details';
+    details.hidden = !decoration.suggestion?.replacementDetails.length;
+
+    decoration.suggestion?.replacementDetails.slice(0, 3).forEach((detail) => {
+      const row = document.createElement('div');
+      row.className = 'detail';
+
+      const rowTitle = document.createElement('div');
+      rowTitle.className = 'detail-title';
+      rowTitle.textContent = detail.term;
+
+      const rowCopy = document.createElement('p');
+      rowCopy.className = 'copy';
+      rowCopy.textContent = detail.exampleUsage || detail.useWhen || detail.rationale || detail.caution;
+
+      row.append(rowTitle, rowCopy);
+      details.append(row);
+    });
+
     const mute = document.createElement('button');
     mute.type = 'button';
     mute.className = 'action';
@@ -407,12 +550,23 @@ export class InlineWritingController {
     mute.addEventListener('click', () => void this.muteTerm(decoration.match.term));
     buttons.append(mute);
 
-    this.popoverElement.append(eyebrow, title, copy, buttons);
+    this.popoverElement.append(eyebrow, title, copy, excerpt, buttons, details);
+    this.popoverElement.onmouseenter = () => this.cancelPopoverClose();
+    this.popoverElement.onmouseleave = () => this.schedulePopoverClose(decoration.id);
+
+    const rect = this.popoverElement.getBoundingClientRect();
+    const maxLeft = Math.max(16, window.innerWidth - rect.width - 16);
+    const maxTop = Math.max(16, window.innerHeight - rect.height - 16);
+    this.popoverElement.style.left = `${clamp(anchor.left, 16, maxLeft)}px`;
+    this.popoverElement.style.top = `${clamp(anchor.top - 12 - rect.height, 16, maxTop)}px`;
   }
 
   private closePopover(): void {
+    this.cancelPopoverClose();
     this.popoverElement.hidden = true;
     this.popoverElement.dataset.decorationId = '';
+    this.popoverElement.onmouseenter = null;
+    this.popoverElement.onmouseleave = null;
     this.popoverElement.innerHTML = '';
   }
 
@@ -436,6 +590,48 @@ export class InlineWritingController {
     window.setTimeout(() => this.refreshActiveEditor(), 30);
   }
 
+  private scheduleRefresh(preservePopover = false): void {
+    if (this.refreshTimer !== null) {
+      window.clearTimeout(this.refreshTimer);
+    }
+
+    this.refreshTimer = window.setTimeout(() => {
+      this.refreshTimer = null;
+      this.refreshActiveEditor({ preservePopover });
+    }, 24);
+  }
+
+  private observeSurface(surface: EditorSurface): void {
+    if (
+      this.observedElement === surface.element &&
+      this.surfaceObserver
+    ) {
+      return;
+    }
+
+    this.stopObservingSurface();
+
+    if (surface.kind !== 'contenteditable') {
+      return;
+    }
+
+    this.observedElement = surface.element;
+    this.surfaceObserver = new MutationObserver(() => {
+      this.scheduleRefresh(true);
+    });
+    this.surfaceObserver.observe(surface.element, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
+
+  private stopObservingSurface(): void {
+    this.surfaceObserver?.disconnect();
+    this.surfaceObserver = null;
+    this.observedElement = null;
+  }
+
   private toggleFirstPopover(): void {
     if (this.popoverElement.hidden) {
       const firstDecoration = this.renderedDecorations.find((entry) => entry.kind === 'avoid') ?? this.renderedDecorations[0];
@@ -450,8 +646,30 @@ export class InlineWritingController {
   private clearDecorations(): void {
     Array.from(this.overlayRoot.querySelectorAll('.line')).forEach((element) => element.remove());
     this.renderedDecorations = [];
-    this.statusElement.hidden = true;
     this.closePopover();
+  }
+
+  private handleDecorationHover(decoration: RenderedDecoration): void {
+    this.cancelPopoverClose();
+    this.openPopover(decoration);
+  }
+
+  private schedulePopoverClose(decorationId: string): void {
+    this.cancelPopoverClose();
+
+    this.popoverCloseTimer = window.setTimeout(() => {
+      this.popoverCloseTimer = null;
+      if (this.popoverElement.dataset.decorationId === decorationId) {
+        this.closePopover();
+      }
+    }, 120);
+  }
+
+  private cancelPopoverClose(): void {
+    if (this.popoverCloseTimer !== null) {
+      window.clearTimeout(this.popoverCloseTimer);
+      this.popoverCloseTimer = null;
+    }
   }
 
   private async recordEvents(result: WritingCheckResult): Promise<void> {
@@ -501,6 +719,22 @@ export class InlineWritingController {
 }
 
 function currentActiveEditor(): SupportedEditorElement | null {
-  const active = document.activeElement;
-  return isSupportedEditor(active) ? active : null;
+  return resolveDeepActiveEditor(document);
+}
+
+function editorFromEvent(event: Event): SupportedEditorElement | null {
+  if (typeof event.composedPath === 'function') {
+    for (const target of event.composedPath()) {
+      const editor = resolveSupportedEditor(target as EventTarget | null);
+      if (editor) {
+        return editor;
+      }
+    }
+  }
+
+  return resolveSupportedEditor(event.target);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }

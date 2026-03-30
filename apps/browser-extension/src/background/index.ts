@@ -1,7 +1,12 @@
 import { browser } from '../shared/browser';
 import { sendNativeHostMessage } from '../shared/native-host';
-import { bootstrapPayload, getExtensionState, getStoredSnapshot, loadBundledSnapshot, setExtensionState, setStoredSnapshot, summarizeEvents } from '../shared/storage';
+import { bootstrapPayload, getExtensionState, getStoredSnapshot, peekStoredSnapshot, setExtensionState, setStoredSnapshot, summarizeEvents } from '../shared/storage';
 import type { BackgroundMessage, BootstrapPayload, BrowserExtensionState } from '../shared/types';
+
+const NATIVE_SYNC_THROTTLE_MS = 5_000;
+
+let lastNativeSyncAt = 0;
+let nativeSyncInFlight: Promise<BootstrapPayload | null> | null = null;
 
 browser.runtime.onInstalled.addListener(async () => {
   await ensureSeedLoaded();
@@ -26,30 +31,20 @@ browser.commands.onCommand.addListener(async (command) => {
   await browser.tabs.sendMessage(tab.id, { type: 'awareness:toggle-popover' }).catch(() => undefined);
 });
 
-async function handleMessage(message: BackgroundMessage) {
+export async function handleMessage(message: BackgroundMessage) {
   switch (message.type) {
     case 'awareness:get-bootstrap':
       return loadMergedBootstrap(message.site ?? (await currentSite()));
 
     case 'awareness:reload-seed': {
-      const nativePayload = await sendNativeHostMessage<BootstrapPayload>(message);
+      const nativePayload = await syncSnapshotFromNative({
+        force: true,
+        broadcast: true,
+        site: await currentSite(),
+      });
       if (nativePayload) {
-        if (nativePayload.snapshot) {
-          await setStoredSnapshot(nativePayload.snapshot);
-        }
-        await broadcastRefresh();
         return mergeNativeBootstrap(nativePayload);
       }
-      const snapshot = await loadBundledSnapshot();
-      await setStoredSnapshot(snapshot);
-      const state = await getExtensionState();
-      const nextState: BrowserExtensionState = {
-        ...state,
-        lastSeedRunId: `eloq-v${snapshot.version}`,
-        lastSeedSyncedAt: new Date().toISOString(),
-      };
-      await setExtensionState(nextState);
-      await broadcastRefresh();
       return bootstrapPayload(await currentSite());
     }
 
@@ -124,16 +119,20 @@ async function handleMessage(message: BackgroundMessage) {
     }
 
     case 'awareness:request-refresh':
-      await sendNativeHostMessage(message);
-      await broadcastRefresh();
+      await syncSnapshotFromNative({
+        broadcast: true,
+        site: await currentSite(),
+      });
       return { ok: true };
   }
 }
 
 async function ensureSeedLoaded(): Promise<void> {
+  await syncSnapshotFromNative({ force: true });
+
   const snapshot = await getStoredSnapshot();
   const state = await getExtensionState();
-  const nextRunId = `eloq-v${snapshot.version}`;
+  const nextRunId = snapshotFingerprint(snapshot);
   if (state.lastSeedRunId === nextRunId) {
     return;
   }
@@ -168,14 +167,8 @@ async function broadcastRefresh(): Promise<void> {
 }
 
 async function loadMergedBootstrap(site: string) {
-  const nativePayload = await sendNativeHostMessage<BootstrapPayload>({
-    type: 'awareness:get-bootstrap',
-    site,
-  });
+  const nativePayload = await syncSnapshotFromNative({ site });
   if (nativePayload) {
-    if (nativePayload.snapshot) {
-      await setStoredSnapshot(nativePayload.snapshot);
-    }
     return mergeNativeBootstrap(nativePayload);
   }
   return bootstrapPayload(site);
@@ -195,4 +188,87 @@ async function mergeNativeBootstrap(nativePayload: BootstrapPayload) {
     },
     summary: summarizeEvents(state),
   };
+}
+
+async function syncSnapshotFromNative(
+  options: {
+    force?: boolean;
+    broadcast?: boolean;
+    site?: string;
+  } = {}
+): Promise<BootstrapPayload | null> {
+  if (nativeSyncInFlight) {
+    return nativeSyncInFlight;
+  }
+
+  const force = options.force === true;
+  if (!force && Date.now() - lastNativeSyncAt < NATIVE_SYNC_THROTTLE_MS) {
+    return null;
+  }
+
+  const run = (async () => {
+    lastNativeSyncAt = Date.now();
+
+    const nativePayload = await sendNativeHostMessage<BootstrapPayload>({
+      type: 'awareness:get-bootstrap',
+      site: options.site ?? '',
+    });
+
+    if (!nativePayload?.snapshot) {
+      return null;
+    }
+
+    const existingSnapshot = await peekStoredSnapshot();
+    const changed = snapshotFingerprint(existingSnapshot) !== snapshotFingerprint(nativePayload.snapshot);
+
+    await setStoredSnapshot(nativePayload.snapshot);
+    await markSnapshotSynced(nativePayload.snapshot);
+
+    if (options.broadcast && changed) {
+      await broadcastRefresh();
+    }
+
+    return nativePayload;
+  })();
+
+  nativeSyncInFlight = run;
+
+  try {
+    return await run;
+  } finally {
+    if (nativeSyncInFlight === run) {
+      nativeSyncInFlight = null;
+    }
+  }
+}
+
+async function markSnapshotSynced(snapshot: NonNullable<BootstrapPayload['snapshot']>): Promise<void> {
+  const state = await getExtensionState();
+  await setExtensionState({
+    ...state,
+    lastSeedRunId: snapshotFingerprint(snapshot),
+    lastSeedSyncedAt: new Date().toISOString(),
+  });
+}
+
+function snapshotFingerprint(snapshot: BootstrapPayload['snapshot'] | null | undefined): string {
+  if (!snapshot) {
+    return 'missing';
+  }
+
+  return [
+    snapshot.version,
+    snapshot.generatedAt ?? '',
+    snapshot.summary?.totalWords ?? 0,
+    snapshot.summary?.acceptedConnections ?? 0,
+    snapshot.summary?.suggestedConnections ?? 0,
+    snapshot.summary?.dismissedConnections ?? 0,
+    snapshot.words?.length ?? 0,
+    snapshot.connections?.length ?? 0,
+  ].join('|');
+}
+
+export function __resetBackgroundSyncStateForTests(): void {
+  lastNativeSyncAt = 0;
+  nativeSyncInFlight = null;
 }

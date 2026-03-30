@@ -3,44 +3,10 @@ import {
   resolveFocusPack,
   type WritingAwarenessSeed,
 } from '@audora/writing-awareness-core';
+import type { EloqSnapshotReadModel } from '@audora/writing-awareness-storage';
 
 import { browser } from './browser';
 import type { BootstrapPayload, BrowserExtensionState, WritingSummary } from './types';
-
-interface EloqSnapshotReadModel {
-  version: number;
-  generatedAt: string | Date;
-  summary: {
-    totalWords: number;
-    overusedWords: number;
-    underusedWords: number;
-    acceptedConnections: number;
-    suggestedConnections: number;
-    dismissedConnections: number;
-  };
-  words: Array<{
-    id: string;
-    displayTerm: string;
-    normalizedTerm: string;
-    roles: string[];
-    notes: string;
-    contexts: string[];
-    provenance: string;
-  }>;
-  connections: Array<{
-    id: string;
-    overusedWordID: string;
-    overusedTerm: string;
-    underusedWordID: string;
-    underusedTerm: string;
-    origin: string;
-    status: string;
-    rationale: string;
-    useWhen: string;
-    caution: string;
-    confidence: number;
-  }>;
-}
 
 const STATE_KEY = 'eloq-browser-state';
 const SNAPSHOT_KEY = 'eloq-snapshot';
@@ -62,6 +28,11 @@ export async function getStoredSnapshot(): Promise<EloqSnapshotReadModel> {
   const bundled = await loadBundledSnapshot();
   await browser.storage.local.set({ [SNAPSHOT_KEY]: bundled });
   return bundled;
+}
+
+export async function peekStoredSnapshot(): Promise<EloqSnapshotReadModel | null> {
+  const existing = await browser.storage.local.get(SNAPSHOT_KEY);
+  return (existing[SNAPSHOT_KEY] as EloqSnapshotReadModel | undefined) ?? null;
 }
 
 export async function setStoredSnapshot(snapshot: EloqSnapshotReadModel): Promise<void> {

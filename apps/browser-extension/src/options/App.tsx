@@ -49,7 +49,8 @@ export function OptionsApp() {
           <h1 className="hero-title">Read the live Eloq vocabulary graph, don&apos;t edit it here.</h1>
           <p className="hero-copy">
             The browser extension is now a read-only consumer of Eloq&apos;s exported snapshot. Add
-            words and accept suggestions in the Mac app, then refresh here.
+            words and accept suggestions in the Mac app, and this view will sync from Eloq
+            automatically.
           </p>
           {bootstrap?.snapshot && (
             <div className="metric-row">
@@ -104,7 +105,7 @@ export function OptionsApp() {
                 </p>
                 <div className="button-row" style={{ marginTop: 16 }}>
                   <button className="button" onClick={reloadSnapshot}>
-                    Refresh snapshot
+                    Sync now
                   </button>
                 </div>
               </>

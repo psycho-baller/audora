@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Eloq Browser Playground</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "SF Pro Text", "Inter", system-ui, sans-serif;
+        background: #11161a;
+        color: #f2eee7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top, rgba(121, 175, 163, 0.18), transparent 30%),
+          #11161a;
+      }
+
+      main {
+        width: min(920px, calc(100vw - 48px));
+        margin: 48px auto;
+        display: grid;
+        gap: 20px;
+      }
+
+      .panel {
+        padding: 20px;
+        border-radius: 20px;
+        background: rgba(27, 33, 39, 0.96);
+        border: 1px solid rgba(121, 175, 163, 0.16);
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      .intro {
+        display: grid;
+        gap: 10px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+        color: rgba(242, 238, 231, 0.9);
+      }
+
+      input,
+      textarea,
+      .editable {
+        width: 100%;
+        border: 1px solid rgba(121, 175, 163, 0.18);
+        border-radius: 16px;
+        background: rgba(35, 43, 50, 0.96);
+        color: #f2eee7;
+        padding: 14px 16px;
+        font: 500 16px/1.5 "SF Pro Text", system-ui, sans-serif;
+        outline: none;
+      }
+
+      textarea,
+      .editable {
+        min-height: 160px;
+      }
+
+      input:focus,
+      textarea:focus,
+      .editable:focus {
+        border-color: rgba(121, 175, 163, 0.54);
+        box-shadow: 0 0 0 4px rgba(121, 175, 163, 0.12);
+      }
+
+      .hint {
+        font-size: 13px;
+        color: rgba(166, 176, 182, 0.84);
+      }
+
+      .debug {
+        display: grid;
+        gap: 6px;
+        font-size: 18px;
+        color: rgba(242, 238, 231, 0.88);
+        line-height: 1.4;
+      }
+
+      .debug strong {
+        color: #79afa3;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel intro">
+        <h1>Eloq Browser Playground</h1>
+        <p>Click into any surface below and type overused words like <strong>interesting</strong>, <strong>big</strong>, <strong>endless</strong>, or <strong>limitless</strong>.</p>
+        <p class="hint">This page exists only to test the unpacked Brave extension against predictable DOM editors.</p>
+        <div class="debug" id="debug-panel">
+          <div><strong>Extension root:</strong> <span data-debug="root">waiting</span></div>
+          <div><strong>Underline count:</strong> <span data-debug="lines">0</span></div>
+          <div><strong>Popover:</strong> <span data-debug="popover">hidden</span></div>
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Text Input</h2>
+        <label>
+          Short field
+          <input id="test-input" type="text" value="This idea is interesting and big." />
+        </label>
+      </section>
+
+      <section class="panel stack">
+        <h2>Textarea</h2>
+        <label>
+          Long field
+          <textarea id="test-textarea" autofocus>This result is interesting because it opens up big and endless possibilities.</textarea>
+        </label>
+      </section>
+
+      <section class="panel stack">
+        <h2>Contenteditable</h2>
+        <div class="editable" contenteditable="true">The concept is interesting, the ambition feels limitless, and the scope seems unbounded.</div>
+      </section>
+    </main>
+    <script>
+      const rootLabel = document.querySelector('[data-debug="root"]');
+      const linesLabel = document.querySelector('[data-debug="lines"]');
+      const popoverLabel = document.querySelector('[data-debug="popover"]');
+
+      function refreshDebug() {
+        const host = document.querySelector('div[data-audora-writing-root="true"]');
+        const payload = {
+          extensionRoot: false,
+          underlineCount: 0,
+          popoverVisible: false,
+          timestamp: new Date().toISOString(),
+        };
+        if (!host || !host.shadowRoot) {
+          rootLabel.textContent = 'missing';
+          linesLabel.textContent = '0';
+          popoverLabel.textContent = 'hidden';
+          sendStatus(payload);
+          return;
+        }
+
+        rootLabel.textContent = 'present';
+        const lines = host.shadowRoot.querySelectorAll('.line').length;
+        const popover = host.shadowRoot.querySelector('.popover');
+        linesLabel.textContent = String(lines);
+        popoverLabel.textContent = popover && !popover.hidden ? 'visible' : 'hidden';
+        payload.extensionRoot = true;
+        payload.underlineCount = lines;
+        payload.popoverVisible = Boolean(popover && !popover.hidden);
+        sendStatus(payload);
+
+        if (lines > 0 && !window.__eloqPopoverProbeTriggered) {
+          window.__eloqPopoverProbeTriggered = true;
+          const firstLine = host.shadowRoot.querySelector('.line');
+          if (firstLine instanceof HTMLElement) {
+            window.setTimeout(() => {
+              firstLine.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+              firstLine.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+            }, 300);
+          }
+        }
+      }
+
+      function sendStatus(payload) {
+        fetch('/__status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => undefined);
+      }
+
+      const textarea = document.getElementById('test-textarea');
+
+      window.setInterval(refreshDebug, 400);
+      refreshDebug();
+
+      window.addEventListener('load', () => {
+        window.setTimeout(() => {
+          if (textarea instanceof HTMLTextAreaElement) {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+          }
+          refreshDebug();
+        }, 300);
+      });
+    </script>
+  </body>
+</html>
