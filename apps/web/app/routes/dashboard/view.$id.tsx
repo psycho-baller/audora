@@ -12,6 +12,7 @@ import PendingView from "~/components/recording/PendingView";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
 import { AudioPlaybackProvider } from "~/hooks/use-audio-playback";
+import { getConversationDisplayTitle } from "~/lib/conversation-context";
 
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
@@ -89,6 +90,7 @@ export default function ConversationDetailPage() {
 
   // For pending and active conversations, show the recording UI
   if (conversation.status === "pending" || conversation.status === "active") {
+    const conversationTitle = getConversationDisplayTitle(conversation);
     const getStatusColor = () => {
       switch (conversation.status) {
         case "active":
@@ -114,10 +116,10 @@ export default function ConversationDetailPage() {
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <h1 className="text-sm font-semibold text-foreground">
-                  Conversation
+                  {conversationTitle}
                 </h1>
-                <p className="text-xs text-muted-foreground font-mono">
-                  #{id.slice(0, 8)}
+                <p className="text-xs text-muted-foreground">
+                  {conversation.status === "pending" ? "Waiting to begin" : "Recording in progress"}
                 </p>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
@@ -177,7 +179,7 @@ export default function ConversationDetailPage() {
   };
 
   const getConversationTitle = () => {
-    return conversation.location || `Conversation ${conversation._id.slice(0, 8)}`;
+    return getConversationDisplayTitle(conversation);
   };
 
   const participantCount = transcript

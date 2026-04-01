@@ -2,6 +2,7 @@ import { api } from "@audora/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { ChevronRight, Clock, Inbox, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router";
+import { getConversationDisplayTitle } from "~/lib/conversation-context";
 
 interface ConversationHistoryProps {
   className?: string;
@@ -41,7 +42,7 @@ export default function ConversationHistory({
   };
 
   const getConversationTitle = (conv: any) => {
-    return conv.location || `Conversation ${conv._id.slice(0, 8)}`;
+    return getConversationDisplayTitle(conv);
   };
 
   const getStatusColor = (status: string) => {

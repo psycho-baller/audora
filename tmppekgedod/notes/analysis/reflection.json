@@ -1,0 +1,492 @@
+{
+  "source": {
+    "path": "/Users/rami/Documents/code/react-native/audora/tmppekgedod/notes/reflection.md",
+    "title": "Written reflection",
+    "analysis_mode": "note",
+    "language": "en",
+    "date": null,
+    "tags": [
+      "journal",
+      "reflection"
+    ],
+    "contexts": [
+      "communication",
+      "learning"
+    ],
+    "word_count": 30,
+    "analysis_markdown_path": "/Users/rami/Documents/code/react-native/audora/tmppekgedod/notes/analysis/reflection.md",
+    "analysis_json_path": "/Users/rami/Documents/code/react-native/audora/tmppekgedod/notes/analysis/reflection.json"
+  },
+  "summary": {
+    "executive_diagnosis": "Your writing repeatedly obscures action and intent by using abstract nouns, softening claims with hedges, and letting topics drift\u2014combination produces low clarity and weak perceived authority (highest-risk: lexical precision, then hedging, then coherence).",
+    "weekly_theme": "Concrete, confident, focused: replace abstract nouns with specific actors/actions, remove prefatory hedges (\"I think/feel/guess\"), and use 1\u2011sentence signposts to stay on topic.",
+    "snapshot": {
+      "mode": "note",
+      "word_count": 30,
+      "segments": 2,
+      "contexts": [
+        "communication",
+        "learning"
+      ],
+      "ai_enabled": true
+    }
+  },
+  "findings": [
+    {
+      "id": "finding:lexical_precision",
+      "dimension": "lexical_precision",
+      "label": "Lexical precision drag",
+      "severity": 96.5,
+      "confidence": 0.86,
+      "explanation": "Writing relies on high-level, repeated abstractions and low-specificity nouns (e.g., \u201cidea,\u201d \u201cmechanism,\u201d \u201crequest\u201d), which broadens the claim and prevents a listener from picturing the actor, action, timing, or concrete stakes. Metrics: genericNouns=2, vagueWords=1, uniqueRatio=0.833, severity=96.5.",
+      "why_it_matters": "When key nouns stay abstract, the listener cannot picture the mechanism, stakes, or request.",
+      "hypothesis": "Tentative: The gap may reflect a habit of using abstract nouns and nominalizations instead of naming actors and concrete actions; addressing it could involve (tentatively) 1) replacing abstract nouns with specific actors or behaviors (e.g., \u201cthe team will review the spec on Tuesday\u201d instead of \u201cthe review will occur\u201d), 2) defining the mechanism and measurable outcome (who does what, when, how success is measured), and 3) adding one concrete example or next step. (Cause language is tentative.)",
+      "metrics": {
+        "genericNouns": 2,
+        "vagueWords": 1,
+        "uniqueRatio": 0.833,
+        "modeWeight": 1.0
+      },
+      "evidence_id": "finding:lexical_precision:reflection:segment:0"
+    },
+    {
+      "id": "finding:hedging_vagueness",
+      "dimension": "hedging_vagueness",
+      "label": "Hedging and vagueness",
+      "severity": 76.0,
+      "confidence": 0.9,
+      "explanation": "Language in the text is consistently softened by hedges (e.g., \u201cmight,\u201d \u201cseems\u201d), vague nouns, and other qualifiers. This reduces perceived authority and makes the speaker\u2019s positions harder for listeners to identify. To improve clarity and persuasiveness: replace hedges with direct statements when appropriate, swap vague nouns for concrete terms, favor active verbs over nominalizations, and reserve hedging for genuinely uncertain items.",
+      "why_it_matters": "Softened language reduces authority and makes it harder for the listener to know what you actually believe.",
+      "hypothesis": "Tentative: The high rate of hedging and vague wording (6.67 instances per 100 words) may be contributing to reduced perceived confidence and clarity; addressing these patterns could plausibly increase perceived authority and make the speaker\u2019s positions easier for listeners to register.",
+      "metrics": {
+        "hedges": 1,
+        "vagueWords": 1,
+        "modals": 0,
+        "ratePer100Words": 6.67,
+        "modeWeight": 0.95
+      },
+      "evidence_id": "finding:hedging_vagueness:reflection:segment:0"
+    },
+    {
+      "id": "finding:coherence_topic_drift",
+      "dimension": "coherence_topic_drift",
+      "label": "Coherence and topic drift",
+      "severity": 53.4,
+      "confidence": 0.84,
+      "explanation": "The note repeatedly shifts focus without resolving the current thread: it jumps to new topics mid-thread or revisits earlier points before finishing the immediate line of discussion. This produces an abrupt, rambling impression that reduces reader retention and undermines clarity in high\u2011stakes communication.",
+      "why_it_matters": "Topic drift weakens retention and makes high-stakes answers feel rambling instead of controlled.",
+      "hypothesis": "Tentative: This pattern might reflect one or more process issues: the writer may be juggling multiple agendas or notes (causing premature topic switches), may lack explicit signposts or transitions between threads, or may be returning to unresolved items because they lack a brief closing summary. To address this, consider: (1) prioritizing and completing one thread before introducing another; (2) adding concise transition sentences or headings; and (3) ending each thread with a short summary/next step before moving on. These suggestions are tentative and should be tested against the content workflow.",
+      "metrics": {
+        "abruptShifts": 1,
+        "avgSimilarity": 0.0,
+        "reopeners": 0,
+        "modeWeight": 0.92
+      },
+      "evidence_id": "finding:coherence_topic_drift:reflection:segment:1"
+    },
+    {
+      "id": "finding:argument_structure",
+      "dimension": "argument_structure",
+      "label": "Argument structure weakness",
+      "severity": 37.8,
+      "confidence": 0.65,
+      "explanation": "Argument structure is weak: claims are often stated without supporting evidence, concrete examples, clear anchors, or explicit requests. This leaves the audience with a sparse path from claim \u2192 support \u2192 desired outcome, reducing persuasive impact\u2014especially in founder-style, decision-oriented communication.",
+      "why_it_matters": "Persuasion depends on a visible path from claim to support to outcome, especially in founder-style communication.",
+      "hypothesis": "Tentative: The weakness may stem from a tendency to state conclusions without mapping the underlying evidence, examples, or actions; addressing this could increase clarity and persuasiveness by making the chain from claim to support to ask visible to the audience.",
+      "metrics": {
+        "claimDensity": 1,
+        "anchors": 0,
+        "structure": 0,
+        "audience": 1,
+        "modeWeight": 1.0
+      },
+      "evidence_id": "finding:argument_structure:reflection:segment:1"
+    }
+  ],
+  "vocabulary": [
+    {
+      "id": "i_think_feel_guess",
+      "label": "I think / I feel / I guess",
+      "kind": "phrase",
+      "category": "stance-softener",
+      "overuseScore": 68.6,
+      "confidence": 0.64,
+      "totalOccurrences": 1,
+      "occurrenceRatePerThousand": 33.33,
+      "why_it_limits_you": "Prefacing a claim with 'I think / I feel / I guess' weakens it by signaling doubt before you state your point, which trains listeners to discount what follows.",
+      "replacementOptions": [
+        {
+          "word": "My view is",
+          "useWhen": "You have a considered position and want to state it clearly and confidently.",
+          "caution": "Don't use this for off-the-cuff guesses or when you genuinely haven't formed an opinion."
+        },
+        {
+          "word": "The core point is",
+          "useWhen": "You need to compress your argument into one sharp sentence that guides the listener.",
+          "caution": "Only use it when you can state the point succinctly and accurately."
+        },
+        {
+          "word": "drop the opener",
+          "useWhen": "The sentence is strong on its own and doesn't need a preface.",
+          "caution": "If the claim is uncertain, express that uncertainty in a follow-up sentence rather than in the opener."
+        }
+      ],
+      "sampleRewrites": [
+        {
+          "original": "I think the main issue in my writing is that the thing stays too abstract.",
+          "rewritten": "My view is the main issue in my writing is that the thing stays too abstract.",
+          "replacement": "My view is"
+        }
+      ],
+      "learningSystem": [
+        "Today\u2019s practice: whenever you catch yourself starting with 'I think / I feel / I guess', replace it with 'My view is' and continue. Notice how the sentence lands.",
+        "If genuine uncertainty exists, make a clear, confident first sentence, then qualify it in a second. Example: 'The core point is X. I could be wrong about Y, so I'd like feedback.'",
+        "Treat 'I think / I feel / I guess' as a red flag while speaking: pause, decide the strength of your claim, then either own it or rephrase with explicit uncertainty later.",
+        "Use short role-play drills: state a position in one clean sentence, get feedback, then add uncertainty only where it matters."
+      ],
+      "evidenceSpanIds": [
+        "vocabulary:i_think_feel_guess:segment:0:0"
+      ],
+      "evidenceSamples": [
+        "I think the main issue in my writing is that the thing stays too abstract."
+      ]
+    }
+  ],
+  "strengths": [
+    {
+      "id": "strength:dimension:contradiction_reversal",
+      "kind": "relative-strength",
+      "label": "Relative strength: Contradiction and reversal load",
+      "score": 100.0,
+      "explanation": "This dimension looks comparatively stable in this document, so it is not the first bottleneck to attack.",
+      "evidence_text": "I think the main issue in my writing is that the thing stays too abstract."
+    },
+    {
+      "id": "strength:dimension:disfluency_restarts",
+      "kind": "relative-strength",
+      "label": "Relative strength: Disfluency and restarts",
+      "score": 100.0,
+      "explanation": "This dimension looks comparatively stable in this document, so it is not the first bottleneck to attack.",
+      "evidence_text": "I think the main issue in my writing is that the thing stays too abstract."
+    },
+    {
+      "id": "strength:dimension:stress_self_protection",
+      "kind": "relative-strength",
+      "label": "Relative strength: Stress and self-protection markers",
+      "score": 100.0,
+      "explanation": "This dimension looks comparatively stable in this document, so it is not the first bottleneck to attack.",
+      "evidence_text": "I think the main issue in my writing is that the thing stays too abstract."
+    },
+    {
+      "id": "strength:dimension:commitment_agency",
+      "kind": "relative-strength",
+      "label": "Relative strength: Commitment and agency leakage",
+      "score": 82.1,
+      "explanation": "This dimension looks comparatively stable in this document, so it is not the first bottleneck to attack.",
+      "evidence_text": "I think the main issue in my writing is that the thing stays too abstract."
+    }
+  ],
+  "practice_systems": [
+    {
+      "id": "practice:lexical_precision",
+      "finding_id": "finding:lexical_precision",
+      "title": "Concrete Noun Rewrite",
+      "scenario_prompt": "Take one vague passage from this source and rewrite it with specific nouns, examples, and constraints.",
+      "rubric": [
+        "Replace 'thing', 'stuff', and 'something' with the actual object.",
+        "Add one example or number.",
+        "Keep the rewrite shorter than the original."
+      ],
+      "success_criteria": [
+        "Every core noun is concrete.",
+        "A listener can picture the scene or mechanism.",
+        "The rewrite removes at least one generic placeholder."
+      ]
+    },
+    {
+      "id": "practice:hedging_vagueness",
+      "finding_id": "finding:hedging_vagueness",
+      "title": "No-Softener Opening",
+      "scenario_prompt": "Answer a hard question from this source using direct language first, then uncertainty only at the end if it is truly needed.",
+      "rubric": [
+        "Ban 'I think', 'maybe', 'kind of', and 'sort of' from the opening sentence.",
+        "Replace vague nouns with one named object, metric, or actor.",
+        "State your stance once before discussing nuance."
+      ],
+      "success_criteria": [
+        "The opening sentence survives without hedge language.",
+        "At least one concrete noun replaces a placeholder like 'thing'.",
+        "The listener could summarize your stance in one line."
+      ]
+    },
+    {
+      "id": "practice:coherence_topic_drift",
+      "finding_id": "finding:coherence_topic_drift",
+      "title": "Thread Lock Drill",
+      "scenario_prompt": "Respond to one objection from this source and hold one thread from claim to close without opening a second topic.",
+      "rubric": [
+        "State the claim.",
+        "Give one supporting example.",
+        "Close with the implication or ask."
+      ],
+      "success_criteria": [
+        "No abrupt transition into a new theme.",
+        "No loop reopening phrase.",
+        "The closing sentence answers the original objection directly."
+      ]
+    }
+  ],
+  "activation_loop": {
+    "weekly_focus": "I think / I feel / I guess",
+    "trigger_question": "What is the exact object, stance, or request I mean here?",
+    "ban_terms": [
+      "I think / I feel / I guess"
+    ],
+    "preload_words": [
+      "My view is"
+    ],
+    "daily_loop": [
+      "Start the day by reading the preload words once out loud.",
+      "Catch one vague or softened sentence in real use and repair it immediately.",
+      "Reuse one repaired sentence or replacement word later the same day."
+    ],
+    "repair_prompt": "Capture the weak line, rewrite it once, and say the stronger version out loud once.",
+    "contexts": [
+      "communication",
+      "learning"
+    ],
+    "repair_targets": [
+      "Lexical precision drag",
+      "Hedging and vagueness"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "finding:disfluency_restarts:reflection:segment:0",
+      "detector": "disfluency_restarts",
+      "sourceType": "finding",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 75,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "Disfluency and restarts",
+      "score": 0.0,
+      "confidence": 0.62,
+      "rationale": "Frequent restarts, fillers, and repair artifacts appear in dense clusters.",
+      "metrics": {
+        "artifacts": 0,
+        "fillers": 0,
+        "per100Words": 0.0,
+        "modeWeight": 0.22
+      }
+    },
+    {
+      "id": "finding:hedging_vagueness:reflection:segment:0",
+      "detector": "hedging_vagueness",
+      "sourceType": "finding",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 75,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "Hedging and vagueness",
+      "score": 76.0,
+      "confidence": 0.9,
+      "rationale": "Claims are repeatedly softened before they fully commit.",
+      "metrics": {
+        "hedges": 1,
+        "vagueWords": 1,
+        "modals": 0,
+        "ratePer100Words": 6.67,
+        "modeWeight": 0.95
+      }
+    },
+    {
+      "id": "finding:lexical_precision:reflection:segment:0",
+      "detector": "lexical_precision",
+      "sourceType": "finding",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 75,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "Lexical precision drag",
+      "score": 100.0,
+      "confidence": 0.86,
+      "rationale": "The transcript uses broad placeholders where concrete nouns or examples would carry more weight.",
+      "metrics": {
+        "genericNouns": 2,
+        "vagueWords": 1,
+        "uniqueRatio": 0.833,
+        "modeWeight": 1.0
+      }
+    },
+    {
+      "id": "finding:commitment_agency:reflection:segment:0",
+      "detector": "commitment_agency",
+      "sourceType": "finding",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 75,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "Commitment and agency leakage",
+      "score": 18.0,
+      "confidence": 0.61,
+      "rationale": "The wording leans toward aspiration and obligation more than decisive ownership.",
+      "metrics": {
+        "softAgency": 0,
+        "commitment": 0,
+        "actionWords": 1,
+        "modeWeight": 1.0
+      }
+    },
+    {
+      "id": "finding:contradiction_reversal:reflection:segment:0",
+      "detector": "contradiction_reversal",
+      "sourceType": "finding",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 75,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "Contradiction and reversal load",
+      "score": 0.0,
+      "confidence": 0.56,
+      "rationale": "Frequent reversals and caveats blur the actual stance.",
+      "metrics": {
+        "reversals": 0,
+        "flipPairs": 0,
+        "modeWeight": 0.95
+      }
+    },
+    {
+      "id": "finding:stress_self_protection:reflection:segment:0",
+      "detector": "stress_self_protection",
+      "sourceType": "finding",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 75,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "Stress and self-protection markers",
+      "score": 0.0,
+      "confidence": 0.66,
+      "rationale": "Fear language, absolutes, or self-protective phrasing are visibly shaping the transcript.",
+      "metrics": {
+        "fear": 0,
+        "selfAttack": 0,
+        "apology": 0,
+        "intensity": 0,
+        "absolutes": 0,
+        "modeWeight": 0.88
+      }
+    },
+    {
+      "id": "finding:coherence_topic_drift:reflection:segment:1",
+      "detector": "coherence_topic_drift",
+      "sourceType": "finding",
+      "segment_id": "segment:1",
+      "start": 75,
+      "end": 161,
+      "text": "I want the explanation to be clearer, more direct, and more concrete for the listener.",
+      "label": "Coherence and topic drift",
+      "score": 53.4,
+      "confidence": 0.84,
+      "rationale": "The note changes direction abruptly or reopens loops before the listener can consolidate the current one.",
+      "metrics": {
+        "abruptShifts": 1,
+        "avgSimilarity": 0.0,
+        "reopeners": 0,
+        "modeWeight": 0.92
+      }
+    },
+    {
+      "id": "finding:argument_structure:reflection:segment:1",
+      "detector": "argument_structure",
+      "sourceType": "finding",
+      "segment_id": "segment:1",
+      "start": 75,
+      "end": 161,
+      "text": "I want the explanation to be clearer, more direct, and more concrete for the listener.",
+      "label": "Argument structure weakness",
+      "score": 38.0,
+      "confidence": 0.65,
+      "rationale": "Claims show up faster than examples, anchors, or explicit asks.",
+      "metrics": {
+        "claimDensity": 1,
+        "anchors": 0,
+        "structure": 0,
+        "audience": 1,
+        "modeWeight": 1.0
+      }
+    },
+    {
+      "id": "vocabulary:i_think_feel_guess:segment:0:0",
+      "detector": "vocabulary",
+      "sourceType": "vocabulary",
+      "segment_id": "segment:0",
+      "start": 0,
+      "end": 7,
+      "text": "I think the main issue in my writing is that the thing stays too abstract.",
+      "label": "I think / I feel / I guess",
+      "score": 49,
+      "confidence": 0.66,
+      "rationale": "'i think' appears as a repeatable vocabulary habit here. A cleaner alternative in this context is 'My view is'.",
+      "metrics": {
+        "matchedTerm": "i think",
+        "suggestedReplacement": "My view is"
+      }
+    }
+  ],
+  "metadata": {
+    "generated_at": "2026-03-21T11:23:09.302719+00:00",
+    "report_version": "1.0.0",
+    "llm": {
+      "enabled": true,
+      "configured": true,
+      "model": "gpt-5-mini",
+      "reasoningEffort": "low",
+      "disabledReason": null
+    },
+    "context_banks": [
+      {
+        "context": "communication",
+        "words": [
+          {
+            "word": "framing",
+            "useWhen": "You mean the angle or interpretive lens that shapes how a point is received.",
+            "example": "The framing made the answer sound defensive instead of decisive."
+          },
+          {
+            "word": "throughline",
+            "useWhen": "You need a word for the main thread connecting your points.",
+            "example": "The throughline disappears when the answer opens too many loops."
+          },
+          {
+            "word": "qualifier",
+            "useWhen": "You want to name a hedge or narrowing phrase precisely.",
+            "example": "That qualifier weakens the opening sentence."
+          },
+          {
+            "word": "cadence",
+            "useWhen": "You are describing pace and sentence rhythm in speech.",
+            "example": "A steadier cadence would make the idea land harder."
+          },
+          {
+            "word": "precision",
+            "useWhen": "You want one word for verbal exactness and specificity.",
+            "example": "The explanation needs more precision in the middle."
+          }
+        ]
+      }
+    ],
+    "available_contexts": [
+      "career",
+      "communication",
+      "content",
+      "health",
+      "identity",
+      "learning",
+      "productivity",
+      "relationships",
+      "spirituality",
+      "startup"
+    ]
+  }
+}

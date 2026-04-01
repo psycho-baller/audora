@@ -20,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { getConversationDisplayTitle } from "~/lib/conversation-context";
 
 export default function AnalyticsDashboard() {
   const dashboardData = useQuery(api.analytics.getUserDashboard);
@@ -202,33 +203,39 @@ export default function AnalyticsDashboard() {
         <h3 className="text-xl font-bold text-white mb-4">Recent Conversations</h3>
         {recentConversations.length > 0 ? (
           <div className="space-y-3">
-            {recentConversations.map((conv, idx) => (
-              <div key={conv.id} className="flex items-center justify-between p-4 bg-gray-900 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-blue-400 font-semibold">{idx + 1}</span>
+            {recentConversations.map((conv, idx) => {
+              const conversationTimestamp = conv.startedAt ?? conv.endedAt;
+
+              return (
+                <div key={conv.id} className="flex items-center justify-between p-4 bg-gray-900 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                      <span className="text-blue-400 font-semibold">{idx + 1}</span>
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{getConversationDisplayTitle(conv)}</p>
+                      <p className="text-sm text-gray-400">
+                        {conversationTimestamp
+                          ? new Date(conversationTimestamp).toLocaleDateString()
+                          : "Not started yet"} •{" "}
+                        {conv.endedAt && conv.startedAt
+                          ? `${Math.round((conv.endedAt - conv.startedAt) / 60000)} min`
+                          : "In progress"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-medium">{conv.location || "Conversation"}</p>
-                    <p className="text-sm text-gray-400">
-                      {conv.startedAt ? new Date(conv.startedAt).toLocaleDateString() : "Unknown date"} •{" "}
-                      {conv.endedAt && conv.startedAt
-                        ? `${Math.round((conv.endedAt - conv.startedAt) / 60000)} min`
-                        : "In progress"}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      conv.status === "ended"
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-yellow-500/20 text-yellow-400"
+                    }`}>
+                      {conv.status}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    conv.status === "ended"
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-yellow-500/20 text-yellow-400"
-                  }`}>
-                    {conv.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-gray-400 text-center py-12">No conversations yet. Start recording!</p>

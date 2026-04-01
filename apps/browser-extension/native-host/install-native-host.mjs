@@ -6,6 +6,8 @@ import path from 'node:path';
 
 const HOST_NAME = 'studio.orbitlabs.audora.writing';
 const HOST_SCRIPT = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'index.mjs');
+const HOST_LAUNCHER = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'launcher.sh');
+const NODE_BINARY = process.execPath;
 const HOME = os.homedir();
 const args = process.argv.slice(2);
 
@@ -32,6 +34,12 @@ const FIREFOX_ALLOWED_EXTENSIONS = firefoxIds.length
   : ['writing-awareness@audora.local'];
 
 fs.chmodSync(HOST_SCRIPT, 0o755);
+fs.writeFileSync(
+  HOST_LAUNCHER,
+  `#!/bin/sh\nexec "${NODE_BINARY}" "${HOST_SCRIPT}" "$@"\n`,
+  { mode: 0o755 }
+);
+fs.chmodSync(HOST_LAUNCHER, 0o755);
 
 for (const directory of MANIFEST_TARGETS) {
   const isFirefoxFamily = directory.includes('Mozilla') || directory.includes(`${path.sep}zen${path.sep}`);
@@ -45,14 +53,14 @@ for (const directory of MANIFEST_TARGETS) {
     ? {
         name: HOST_NAME,
         description: 'Eloq Writing native host',
-        path: HOST_SCRIPT,
+        path: HOST_LAUNCHER,
         type: 'stdio',
         allowed_extensions: FIREFOX_ALLOWED_EXTENSIONS,
       }
     : {
         name: HOST_NAME,
         description: 'Eloq Writing native host',
-        path: HOST_SCRIPT,
+        path: HOST_LAUNCHER,
         type: 'stdio',
         allowed_origins: chromiumIds.map((id) => `chrome-extension://${id}/`),
       };

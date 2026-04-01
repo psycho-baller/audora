@@ -5,6 +5,7 @@ import { Loader2, Phone, Plus, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { buildConversationContextLabel } from "../lib/conversation-context";
 import ConversationHistory from "../components/ConversationHistory";
 import { Button } from "../components/ui/button";
 
@@ -25,7 +26,7 @@ export default function RecordPage() {
     try {
       setIsCreating(true);
       const result = await createConversation({
-        location: "Mount Royal University Library",
+        location: buildConversationContextLabel("live"),
       });
       navigate(`/dashboard/conversations/${result.id}`);
     } catch (error) {

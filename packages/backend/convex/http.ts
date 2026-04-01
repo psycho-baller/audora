@@ -101,7 +101,7 @@ export const chat = httpAction(async (ctx, req) => {
         conversationContext = `\n\n## RECORDED CONVERSATION DETAILS\n`;
         conversationContext += `Date: ${new Date(conversation._creationTime).toLocaleDateString()}\n`;
         conversationContext += `Status: ${conversation.status}\n`;
-        if (conversation.location) conversationContext += `Location: ${conversation.location}\n`;
+        if (conversation.location) conversationContext += `Context: ${conversation.location}\n`;
         if (conversation.summary) conversationContext += `Summary: ${conversation.summary}\n\n`;
 
         // Add analytics data

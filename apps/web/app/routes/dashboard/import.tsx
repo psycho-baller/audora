@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle, Loader2, Upload, User, UserX, Users } from "luc
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { buildConversationContextLabel } from "~/lib/conversation-context";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -284,7 +285,7 @@ export default function ImportConversationPage() {
       // Step 1: Create conversation
       toast.info("Creating conversation...");
       const conversation = await createConversation({
-        location: "Imported Conversation",
+        location: buildConversationContextLabel("audioImport", selectedFile.name),
         participantMode:
           participantMode === "contact"
             ? "linked"
@@ -412,7 +413,7 @@ export default function ImportConversationPage() {
       // Step 2: Create conversation
       toast.info("Creating conversation...");
       const conversation = await createConversation({
-        location: "Imported Text Transcript",
+        location: buildConversationContextLabel("textImport", selectedFile.name),
         participantMode:
           participantMode === "contact"
             ? "linked"

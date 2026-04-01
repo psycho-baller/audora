@@ -7,9 +7,9 @@ import {
     Clock,
     FileText,
     Loader2,
-    MapPin,
     MessageSquare,
     Phone,
+    Tag,
     TrendingUp
 } from "lucide-react";
 import { useState } from "react";
@@ -22,6 +22,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
+import { getConversationContextLabel } from "~/lib/conversation-context";
 
 function getInitials(name?: string | null, email?: string | null) {
   if (name && name.trim().length > 0) {
@@ -267,7 +268,9 @@ export default function ContactDetailPage() {
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {conversations.map((conversation) => (
+                    {conversations.map((conversation) => {
+                      const contextLabel = getConversationContextLabel(conversation);
+                      return (
                       <button
                         key={conversation._id}
                         onClick={() => navigate(`/dashboard/conversations/${conversation._id}`)}
@@ -297,17 +300,18 @@ export default function ContactDetailPage() {
                                   <span>{formatDuration(conversation.endedAt - conversation.startedAt)}</span>
                                 </div>
                               )}
-                              {conversation.location && (
+                              {contextLabel && (
                                 <div className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" />
-                                  <span>{conversation.location}</span>
+                                  <Tag className="w-3 h-3" />
+                                  <span>{contextLabel}</span>
                                 </div>
                               )}
                             </div>
                           </div>
                         </div>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

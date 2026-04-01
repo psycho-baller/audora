@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  browserMock,
-  sendNativeHostMessageMock,
-  bootstrapPayloadMock,
-  getExtensionStateMock,
-  getStoredSnapshotMock,
-  peekStoredSnapshotMock,
+  const {
+    browserMock,
+    sendNativeHostMessageMock,
+    bootstrapPayloadMock,
+    fetchMock,
+    getExtensionStateMock,
+    getStoredSnapshotMock,
+    loadBundledSnapshotMock,
+    peekStoredSnapshotMock,
   setExtensionStateMock,
   setStoredSnapshotMock,
   summarizeEventsMock,
@@ -36,8 +38,10 @@ const {
     browserMock,
     sendNativeHostMessageMock: vi.fn(),
     bootstrapPayloadMock: vi.fn(),
+    fetchMock: vi.fn(),
     getExtensionStateMock: vi.fn(),
     getStoredSnapshotMock: vi.fn(),
+    loadBundledSnapshotMock: vi.fn(),
     peekStoredSnapshotMock: vi.fn(),
     setExtensionStateMock: vi.fn(async () => undefined),
     setStoredSnapshotMock: vi.fn(async () => undefined),
@@ -61,6 +65,7 @@ vi.mock('../src/shared/storage', () => ({
   bootstrapPayload: bootstrapPayloadMock,
   getExtensionState: getExtensionStateMock,
   getStoredSnapshot: getStoredSnapshotMock,
+  loadBundledSnapshot: loadBundledSnapshotMock,
   peekStoredSnapshot: peekStoredSnapshotMock,
   setExtensionState: setExtensionStateMock,
   setStoredSnapshot: setStoredSnapshotMock,
@@ -102,13 +107,32 @@ const liveSnapshot = {
   connections: [],
 };
 
+const liveBootstrapPayload = {
+  seed: { sourceRunId: 'eloq-v1', generatedAt: liveSnapshot.generatedAt, rules: [], focusTemplates: [], contextWordBanks: [] },
+  state: {
+    ruleOverrides: {},
+    manualRules: [],
+    repairs: [],
+    reinforcementEvents: [],
+    mutedSites: [],
+    mutedTerms: [],
+  },
+  focusPack: { date: liveSnapshot.generatedAt, weeklyFamily: 'eloq', targetWords: [], bannedTerms: [], triggerQuestion: '', exampleRewrite: '' },
+  currentSite: 'example.com',
+  summary: { avoidCaught: 0, targetWins: 0, repairsCompleted: 0 },
+  snapshot: liveSnapshot,
+};
+
 describe('browser extension background sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     __resetBackgroundSyncStateForTests();
+    vi.stubGlobal('fetch', fetchMock);
 
     peekStoredSnapshotMock.mockResolvedValue(oldSnapshot);
     getStoredSnapshotMock.mockResolvedValue(oldSnapshot);
+    loadBundledSnapshotMock.mockResolvedValue(oldSnapshot);
+    fetchMock.mockRejectedValue(new Error('offline'));
     getExtensionStateMock.mockResolvedValue({
       ruleOverrides: {},
       manualRules: [],
@@ -161,5 +185,47 @@ describe('browser extension background sync', () => {
     expect(setExtensionStateMock).toHaveBeenCalled();
     expect(browserMock.tabs.sendMessage).toHaveBeenCalledWith(11, { type: 'awareness:refresh' });
     expect(browserMock.tabs.sendMessage).toHaveBeenCalledWith(12, { type: 'awareness:refresh' });
+  });
+
+  it('prefers the Eloq localhost bridge when it is available', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: vi.fn(async () => liveSnapshot),
+    });
+    bootstrapPayloadMock.mockResolvedValue(liveBootstrapPayload);
+
+    const payload = await handleMessage({ type: 'awareness:get-bootstrap' });
+
+    expect(sendNativeHostMessageMock).not.toHaveBeenCalled();
+    expect(setStoredSnapshotMock).toHaveBeenCalledWith(liveSnapshot);
+    expect(payload?.snapshot).toEqual(liveSnapshot);
+  });
+
+  it('forces a native sync when the cached snapshot is still the bundled fallback', async () => {
+    bootstrapPayloadMock.mockResolvedValue(liveBootstrapPayload);
+    sendNativeHostMessageMock.mockResolvedValue({
+      seed: { sourceRunId: 'eloq-v1', generatedAt: liveSnapshot.generatedAt, rules: [], focusTemplates: [], contextWordBanks: [] },
+      state: {
+        ruleOverrides: {},
+        manualRules: [],
+        repairs: [],
+        reinforcementEvents: [],
+        mutedSites: [],
+        mutedTerms: [],
+      },
+      focusPack: { date: liveSnapshot.generatedAt, weeklyFamily: 'eloq', targetWords: [], bannedTerms: [], triggerQuestion: '', exampleRewrite: '' },
+      currentSite: 'example.com',
+      summary: { avoidCaught: 0, targetWins: 0, repairsCompleted: 0 },
+      snapshot: liveSnapshot,
+    });
+
+    const payload = await handleMessage({ type: 'awareness:get-bootstrap' });
+
+    expect(sendNativeHostMessageMock).toHaveBeenCalledWith({
+      type: 'awareness:get-bootstrap',
+      site: 'example.com',
+    });
+    expect(setStoredSnapshotMock).toHaveBeenCalledWith(liveSnapshot);
+    expect(payload?.snapshot).toEqual(liveSnapshot);
   });
 });

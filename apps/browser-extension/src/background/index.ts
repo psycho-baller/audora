@@ -1,12 +1,15 @@
 import { browser } from '../shared/browser';
 import { sendNativeHostMessage } from '../shared/native-host';
-import { bootstrapPayload, getExtensionState, getStoredSnapshot, peekStoredSnapshot, setExtensionState, setStoredSnapshot, summarizeEvents } from '../shared/storage';
+import { bootstrapPayload, getExtensionState, getStoredSnapshot, loadBundledSnapshot, peekStoredSnapshot, setExtensionState, setStoredSnapshot, summarizeEvents } from '../shared/storage';
 import type { BackgroundMessage, BootstrapPayload, BrowserExtensionState } from '../shared/types';
 
 const NATIVE_SYNC_THROTTLE_MS = 5_000;
+const LOCAL_BRIDGE_SNAPSHOT_URL = 'http://127.0.0.1:43827/snapshot';
+const LOCAL_BRIDGE_TIMEOUT_MS = 1_500;
 
 let lastNativeSyncAt = 0;
 let nativeSyncInFlight: Promise<BootstrapPayload | null> | null = null;
+let bundledSnapshotFingerprintPromise: Promise<string> | null = null;
 
 browser.runtime.onInstalled.addListener(async () => {
   await ensureSeedLoaded();
@@ -167,7 +170,11 @@ async function broadcastRefresh(): Promise<void> {
 }
 
 async function loadMergedBootstrap(site: string) {
-  const nativePayload = await syncSnapshotFromNative({ site });
+  const existingSnapshot = await peekStoredSnapshot();
+  const nativePayload = await syncSnapshotFromNative({
+    force: existingSnapshot ? await isBundledFallbackSnapshot(existingSnapshot) : false,
+    site,
+  });
   if (nativePayload) {
     return mergeNativeBootstrap(nativePayload);
   }
@@ -209,26 +216,30 @@ async function syncSnapshotFromNative(
   const run = (async () => {
     lastNativeSyncAt = Date.now();
 
+    const site = options.site ?? '';
+    const bridgeSnapshot = await fetchSnapshotFromLocalBridge();
+    if (bridgeSnapshot) {
+      return await storeSnapshotAndBuildBootstrap({
+        snapshot: bridgeSnapshot,
+        site,
+        broadcast: options.broadcast === true,
+      });
+    }
+
     const nativePayload = await sendNativeHostMessage<BootstrapPayload>({
       type: 'awareness:get-bootstrap',
-      site: options.site ?? '',
+      site,
     });
 
     if (!nativePayload?.snapshot) {
       return null;
     }
 
-    const existingSnapshot = await peekStoredSnapshot();
-    const changed = snapshotFingerprint(existingSnapshot) !== snapshotFingerprint(nativePayload.snapshot);
-
-    await setStoredSnapshot(nativePayload.snapshot);
-    await markSnapshotSynced(nativePayload.snapshot);
-
-    if (options.broadcast && changed) {
-      await broadcastRefresh();
-    }
-
-    return nativePayload;
+    return await storeSnapshotAndBuildBootstrap({
+      snapshot: nativePayload.snapshot,
+      site,
+      broadcast: options.broadcast === true,
+    });
   })();
 
   nativeSyncInFlight = run;
@@ -240,6 +251,54 @@ async function syncSnapshotFromNative(
       nativeSyncInFlight = null;
     }
   }
+}
+
+async function fetchSnapshotFromLocalBridge(): Promise<BootstrapPayload['snapshot'] | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), LOCAL_BRIDGE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(LOCAL_BRIDGE_SNAPSHOT_URL, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      return null;
+    }
+
+    const snapshot = (await response.json()) as BootstrapPayload['snapshot'];
+    if (!snapshot?.words || !snapshot?.connections || !snapshot?.summary) {
+      return null;
+    }
+
+    return snapshot;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function storeSnapshotAndBuildBootstrap({
+  snapshot,
+  site,
+  broadcast,
+}: {
+  snapshot: NonNullable<BootstrapPayload['snapshot']>;
+  site: string;
+  broadcast: boolean;
+}): Promise<BootstrapPayload> {
+  const existingSnapshot = await peekStoredSnapshot();
+  const changed = snapshotFingerprint(existingSnapshot) !== snapshotFingerprint(snapshot);
+
+  await setStoredSnapshot(snapshot);
+  await markSnapshotSynced(snapshot);
+
+  if (broadcast && changed) {
+    await broadcastRefresh();
+  }
+
+  return bootstrapPayload(site);
 }
 
 async function markSnapshotSynced(snapshot: NonNullable<BootstrapPayload['snapshot']>): Promise<void> {
@@ -268,7 +327,23 @@ function snapshotFingerprint(snapshot: BootstrapPayload['snapshot'] | null | und
   ].join('|');
 }
 
+async function bundledSnapshotFingerprint(): Promise<string> {
+  bundledSnapshotFingerprintPromise ??= loadBundledSnapshot().then((snapshot) => snapshotFingerprint(snapshot));
+  return bundledSnapshotFingerprintPromise;
+}
+
+async function isBundledFallbackSnapshot(
+  snapshot: BootstrapPayload['snapshot'] | null | undefined
+): Promise<boolean> {
+  if (!snapshot) {
+    return false;
+  }
+
+  return snapshotFingerprint(snapshot) === (await bundledSnapshotFingerprint());
+}
+
 export function __resetBackgroundSyncStateForTests(): void {
   lastNativeSyncAt = 0;
   nativeSyncInFlight = null;
+  bundledSnapshotFingerprintPromise = null;
 }

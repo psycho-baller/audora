@@ -3,6 +3,7 @@ import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { Download, FileText, FileJson, Share2, Copy, Check } from "lucide-react";
 import { useState } from "react";
+import { getConversationDisplayTitle } from "~/lib/conversation-context";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -44,7 +45,7 @@ export function ExportDialog({ conversationId, trigger }: ExportDialogProps) {
     
     let content = `Conversation Transcript\n`;
     content += `Date: ${new Date(conversation?._creationTime || Date.now()).toLocaleDateString()}\n`;
-    content += `Location: ${conversation?.location || "N/A"}\n`;
+    content += `Context: ${getConversationDisplayTitle(conversation)}\n`;
     content += `\n${"=".repeat(50)}\n\n`;
     
     transcript.forEach((turn) => {
@@ -112,7 +113,7 @@ export function ExportDialog({ conversationId, trigger }: ExportDialogProps) {
     
     let content = `Speech Analytics Report\n`;
     content += `Date: ${new Date(conversation._creationTime).toLocaleDateString()}\n`;
-    content += `Location: ${conversation.location || "N/A"}\n`;
+    content += `Context: ${getConversationDisplayTitle(conversation)}\n`;
     content += `\n${"=".repeat(50)}\n\n`;
     
     content += `OVERALL SCORES\n`;

@@ -15,17 +15,18 @@ const STORAGE_OPTIONS = {
 };
 
 let stdinBuffer = Buffer.alloc(0);
+let inputClosed = false;
+let pendingResponses = 0;
 
-process.stdin.on('readable', () => {
-  let chunk;
-  while ((chunk = process.stdin.read()) !== null) {
-    stdinBuffer = Buffer.concat([stdinBuffer, chunk]);
-    parseMessages();
-  }
+process.stdin.on('data', (chunk) => {
+  stdinBuffer = Buffer.concat([stdinBuffer, chunk]);
+  parseMessages();
 });
 
 process.stdin.on('end', () => {
-  process.exit(0);
+  inputClosed = true;
+  parseMessages();
+  exitIfIdle();
 });
 
 function parseMessages() {
@@ -40,16 +41,27 @@ function parseMessages() {
 
     try {
       const message = JSON.parse(messageBuffer.toString('utf8'));
+      pendingResponses += 1;
       Promise.resolve(handleMessage(message))
         .then((response) => writeMessage(response))
         .catch((error) =>
           writeMessage({ error: error instanceof Error ? error.message : String(error) })
-        );
+        )
+        .finally(() => {
+          pendingResponses = Math.max(0, pendingResponses - 1);
+          exitIfIdle();
+        });
     } catch (error) {
       writeMessage({
         error: error instanceof Error ? error.message : 'Invalid native host message',
       });
     }
+  }
+}
+
+function exitIfIdle() {
+  if (inputClosed && pendingResponses === 0) {
+    process.exit(0);
   }
 }
 
