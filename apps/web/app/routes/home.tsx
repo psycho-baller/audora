@@ -53,20 +53,8 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-function getCookieFromRequest(request: Request, name: string): string | null {
-  const cookieHeader = request.headers.get("Cookie");
-  if (!cookieHeader) return null;
-  const cookies = cookieHeader.split(";").map((c) => c.trim());
-  const cookie = cookies.find((c) => c.startsWith(`${name}=`));
-  return cookie ? cookie.split("=")[1] : null;
-}
-
 export async function loader(args: Route.LoaderArgs) {
   const { userId } = await getAuth(args);
-
-  // Check if user has a valid invite code cookie
-  const inviteCode = getCookieFromRequest(args.request, "invite_code");
-  const hasInvite = !!inviteCode;
 
   // Parallel data fetching to reduce waterfall
   // const [subscriptionData, plans] = await Promise.all([
@@ -85,7 +73,9 @@ export async function loader(args: Route.LoaderArgs) {
     isSignedIn: !!userId,
     hasActiveSubscription: true,//subscriptionData?.hasActiveSubscription || false,
     plans: undefined,
-    hasInvite,
+    // Signup is now open on the web. Invite cookies are still consumed later
+    // during user sync so invite attribution continues to work.
+    hasInvite: true,
   };
 }
 
@@ -101,8 +91,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <ContentSection />
       <FeaturesSection />
       <HowItWorksSection
-        joinedWaitlist={joinedWaitlist}
-        onJoinedWaitlist={() => setJoinedWaitlist(true)}
+        loaderData={loaderData}
       />
       <TechnologiesSection />
       <Footer />

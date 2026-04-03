@@ -1,7 +1,6 @@
-import { api } from "@audora/backend/convex/_generated/api";
-import { useAction } from "convex/react";
 import { ArrowRight } from "lucide-react";
-import { WaitlistInput } from "./waitlist-input";
+import { Link } from "react-router";
+import { Button } from "~/components/ui/button";
 
 const steps = [
   {
@@ -37,13 +36,22 @@ const steps = [
 ];
 
 export default function HowItWorksSection({
-  joinedWaitlist,
-  onJoinedWaitlist,
+  loaderData,
 }: {
-  joinedWaitlist?: boolean;
-  onJoinedWaitlist?: () => void;
+  loaderData?: { isSignedIn: boolean; hasActiveSubscription: boolean };
 }) {
-  const addEmail = useAction(api.homepage.addEmailToWaitlist);
+  const primaryButtonLink = loaderData?.isSignedIn
+    ? loaderData.hasActiveSubscription
+      ? "/dashboard"
+      : "/pricing"
+    : "/sign-up";
+
+  const primaryButtonText = loaderData?.isSignedIn
+    ? loaderData.hasActiveSubscription
+      ? "Go to Dashboard"
+      : "Start Connecting Better"
+    : "Sign Up";
+
   return (
     <section id="how-it-works" className="py-16 md:py-32">
       <div className="mx-auto max-w-6xl px-6">
@@ -104,27 +112,27 @@ export default function HowItWorksSection({
             </h3>
             <p className="text-muted-foreground mb-6">
               We're focused on building the most useful communication tool possible.
-              Join us early and help shape what we build next.
+              Start using Audora on the web now and help shape what we build next.
             </p>
-            <div className="w-full flex flex-col items-center gap-4">
-              <WaitlistInput
-                  busy={false}
-                  joined={joinedWaitlist}
-                  onSubmit={async (email) => {
-                    const res = await addEmail({ email });
-                    if (res.alreadyAdded) {
-                      return { alreadyAdded: true };
-                    }
-                    onJoinedWaitlist?.();
-                    return { alreadyAdded: false };
-                  }}
-                />
-              <a
-                href="#all-features"
-                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                Explore Features
-              </a>
+            <div className="w-full flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <Button size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                <Link to={primaryButtonLink} prefetch="viewport">
+                  {primaryButtonText}
+                </Link>
+              </Button>
+              {loaderData?.isSignedIn ? (
+                <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                  <a href="#all-features">
+                    Explore Features
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="outline" size="lg" asChild className="rounded-full px-8 py-6 text-base font-medium">
+                  <Link to="/sign-in" prefetch="viewport">
+                    Login
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
