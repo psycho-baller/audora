@@ -4,7 +4,7 @@ import { api } from "@audora/backend/convex/_generated/api";
 import { useAuth } from "@clerk/react-router";
 import { useMutation } from "convex/react";
 import { Loader2, Phone, Plus, Upload, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { buildConversationContextLabel } from "~/lib/conversation-context";
@@ -17,10 +17,11 @@ export default function Page() {
   const createConversation = useMutation(api.conversations.create);
   const [isCreating, setIsCreating] = useState(false);
 
-  if (!isSignedIn) {
-    navigate("/sign-in");
-    return null;
-  }
+  useEffect(() => {
+    if (!isSignedIn) {
+      navigate('/sign-in');
+    }
+  }, [isSignedIn]);
 
   const handleStartRecording = async () => {
     try {

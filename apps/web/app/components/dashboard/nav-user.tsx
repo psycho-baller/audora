@@ -1,4 +1,4 @@
-import { SignOutButton } from "@clerk/react-router";
+import { useClerk } from "@clerk/react-router";
 import {
   IconDotsVertical,
   IconLogout,
@@ -21,7 +21,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { useClerk } from "@clerk/react-router";
 
 export function NavUser({ user }: any) {
   const { isMobile } = useSidebar();
@@ -91,7 +90,8 @@ export function NavUser({ user }: any) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut({ redirectUrl: "/" })}>
+            {/* clicking this button will also trigger the useEffect in routes/dashboard/index.tsx to navigate to '/sign-in' */}
+            <DropdownMenuItem onClick={() => signOut()}>
               <IconLogout />
               Sign Out
             </DropdownMenuItem>
