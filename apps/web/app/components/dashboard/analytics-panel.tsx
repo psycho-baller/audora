@@ -538,11 +538,11 @@ export function AnalyticsPanel({
         <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
       )}
 
-      <Tabs defaultValue="overview" className="flex flex-col h-full min-h-0">
+      <Tabs defaultValue="delivery" className="flex flex-col h-full min-h-0">
         <TabsList className="shrink-0 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="word-choice">Word Choice</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
+          <TabsTrigger value="word-choice">Word Choice</TabsTrigger>
+          <TabsTrigger value="overview">Feedback</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab - AI Feedback */}

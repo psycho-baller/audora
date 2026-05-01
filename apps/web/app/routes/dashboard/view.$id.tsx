@@ -1,8 +1,7 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, ArrowLeft, BarChart3, Calendar, Clock, Loader2, MessageSquare, MoveUpLeft, Share2, Users, X } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, ArrowLeft, Calendar, Clock, Loader2, MessageSquare, MoveUpLeft, Share2, Users } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
 import { TranscriptChatbot } from "~/components/dashboard/transcript-chatbot";
@@ -11,22 +10,13 @@ import CurrentView from "~/components/recording/CurrentView";
 import PendingView from "~/components/recording/PendingView";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AudioPlaybackProvider } from "~/hooks/use-audio-playback";
 import { getConversationDisplayTitle } from "~/lib/conversation-context";
 
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
   const navigate = useNavigate();
-  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-
-  const closeAnalytics = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsAnalyticsOpen(false);
-      setIsClosing(false);
-    }, 300);
-  };
 
   // Fetch conversation data
   const conversation = useQuery(
@@ -262,86 +252,46 @@ export default function ConversationDetailPage() {
         </div>
       </div>
 
-      {/* Two-column layout - Responsive */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-        {/* Left column: TranscriptPlayer (audio + transcript) */}
-        <div className="flex-1 lg:flex-[3] border-b lg:border-b-0 lg:border-r border-border flex flex-col h-full min-h-0 relative">
-          <div className="flex flex-col p-4 sm:p-6 h-full min-h-0">
-            <TranscriptPlayer
-              conversationId={id as Id<"conversations">}
-              getUserName={(userId) => {
-                if (!userId) return "Unknown";
-                if (initiatorUser && userId === conversation?.initiatorUserId) {
-                  return initiatorUser.name || "Speaker 1";
-                }
-                if (scannerUser && userId === conversation?.scannerUserId) {
-                  return scannerUser.name || "Speaker 2";
-                }
-                return "Speaker";
-              }}
+      <Tabs defaultValue="analytics" className="flex flex-1 min-h-0 flex-col gap-0">
+        <div className="border-b border-border bg-background px-4 sm:px-6">
+          <TabsList className="h-auto w-full justify-start rounded-none bg-transparent p-0">
+            <TabsTrigger
+              value="analytics"
+              className="h-12 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-3 pt-4 text-base text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
             >
-              <TranscriptChatbot conversationId={id as Id<"conversations">} />
-            </TranscriptPlayer>
-          </div>
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger
+              value="transcript"
+              className="h-12 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 pb-3 pt-4 text-base text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
+            >
+              Transcript
+            </TabsTrigger>
+          </TabsList>
         </div>
 
-        {/* Right column: Analytics - hidden on mobile, shown in modal */}
-        <div className="hidden lg:flex lg:flex-col lg:flex-[2] h-full min-h-0">
-          <div className="p-6 flex flex-col h-full min-h-0">
-            <div className="bg-card border border-border rounded-lg p-6 flex flex-col h-full min-h-0">
-              <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">
-                Analytics
-              </h2>
-              <div className="flex-1 min-h-0">
-                <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        <TabsContent value="analytics" className="min-h-0 flex-1 overflow-hidden p-4 sm:p-6">
+          <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
+        </TabsContent>
 
-      {/* Mobile bottom nav bar - shown on small screens */}
-      <div className="lg:hidden border-t border-border bg-card backdrop-blur-sm p-3 shrink-0">
-        <Button
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => setIsAnalyticsOpen(true)}
-        >
-          <BarChart3 className="w-4 h-4" />
-          View Analytics
-        </Button>
-      </div>
-
-      {/* Mobile Analytics slide-in panel */}
-      {isAnalyticsOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div
-            className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
-            onClick={closeAnalytics}
-          />
-          {/* Panel */}
-          <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-background shadow-xl transition-transform duration-300 ${isClosing ? 'translate-x-full' : 'translate-x-0 animate-in slide-in-from-right'}`}>
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-lg font-semibold text-foreground">Analytics</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeAnalytics}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto p-6 pr-3 custom-scrollbar">
-                <div className="bg-card border border-border rounded-lg p-6">
-                  <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <TabsContent value="transcript" className="min-h-0 flex-1 overflow-hidden p-4 sm:p-6">
+          <TranscriptPlayer
+            conversationId={id as Id<"conversations">}
+            getUserName={(userId) => {
+              if (!userId) return "Unknown";
+              if (initiatorUser && userId === conversation?.initiatorUserId) {
+                return initiatorUser.name || "Speaker 1";
+              }
+              if (scannerUser && userId === conversation?.scannerUserId) {
+                return scannerUser.name || "Speaker 2";
+              }
+              return "Speaker";
+            }}
+          >
+            <TranscriptChatbot conversationId={id as Id<"conversations">} />
+          </TranscriptPlayer>
+        </TabsContent>
+      </Tabs>
     </div>
     </AudioPlaybackProvider>
   );
