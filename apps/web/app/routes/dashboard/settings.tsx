@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Copy, Check } from "lucide-react";
 import SubscriptionStatus from "~/components/subscription-status";
 import ConnectionGraph from "~/components/network/ConnectionGraph";
+import { ThemeToggle } from "~/components/ThemeToggle";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<"profile" | "network" | "subscription">("profile");
@@ -78,6 +79,19 @@ export default function Page() {
                 <div>
                   <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
                   <p className="text-gray-400">Manage your profile information here.</p>
+                </div>
+
+                {/* Appearance Section */}
+                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-2">Appearance</h3>
+                      <p className="text-gray-400">
+                        Switch between light and dark mode.
+                      </p>
+                    </div>
+                    <ThemeToggle />
+                  </div>
                 </div>
 
                 {/* Invite Code Section */}
