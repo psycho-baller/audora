@@ -237,8 +237,8 @@ function PacingVariationChart({
   const y100Percent = (zoneBottom / height) * 100;
 
   return (
-    <div className="mt-4">
-      <div className="flex items-center gap-2 mb-2">
+    <div className="mt-2">
+      <div className="flex items-center gap-2 mb-1">
         <h5 className="text-sm font-medium text-foreground">Pacing Variation</h5>
         <div className="flex items-center gap-1">
           <div className="w-3 h-2 bg-primary/20 rounded-sm" />
@@ -249,7 +249,7 @@ function PacingVariationChart({
         {/* Chart with Y-axis labels */}
         <div className="flex">
           {/* Y-axis labels */}
-          <div className="relative w-8 h-24 flex-shrink-0 text-[10px] text-muted-foreground">
+          <div className="relative w-8 h-20 flex-shrink-0 text-[10px] text-muted-foreground">
             <span className="absolute right-1 top-0 -translate-y-1/2">{maxVal}</span>
             <span className="absolute right-1 text-primary/70" style={{ top: `${y160Percent}%`, transform: 'translateY(-50%)' }}>160</span>
             <span className="absolute right-1 text-primary/70" style={{ top: `${y100Percent}%`, transform: 'translateY(-50%)' }}>100</span>
@@ -257,7 +257,7 @@ function PacingVariationChart({
           </div>
           {/* Chart area */}
           <div className="flex-1 relative">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-24" preserveAspectRatio="none">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-20" preserveAspectRatio="none">
               {/* Conversational zone highlight (always shown at 100-160 WPM) */}
               <rect
               x="0"
@@ -345,7 +345,7 @@ function PacingVariationChart({
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
+      <p className="text-xs text-muted-foreground mt-1">
         <span className="font-medium">Vary your pace</span> to keep your audience engaged. <span className="font-medium">Practice sections</span> where your pace is flat.
       </p>
     </div>
@@ -489,6 +489,26 @@ export function AnalyticsPanel({
     return <TrendingDown className="w-4 h-4 text-red-500" />;
   };
 
+  const repeatedWordCount = analytics?.repetitions.repeatedWords.reduce(
+    (sum, word) => sum + word.count,
+    0
+  ) ?? 0;
+
+  const sentenceStarterTotal = analytics?.sentenceStarters.weak.reduce(
+    (sum, starter) => sum + starter.count,
+    0
+  ) ?? 0;
+
+  const topSentenceStarter = analytics?.sentenceStarters.weak[0];
+
+  const pacingMessage = analytics
+    ? analytics.pacing.wordsPerMinute < 100
+      ? "Your pace was slow. Try speaking faster than 120 WPM."
+      : analytics.pacing.wordsPerMinute > 160
+        ? "Your pace was fast. Try slowing down to under 160 WPM."
+        : "Great pace. Keep it between 100-160 WPM for clarity."
+    : "";
+
   // Loading state
   if (!conversationId) {
     return (
@@ -538,12 +558,208 @@ export function AnalyticsPanel({
         <h2 className="text-lg font-semibold text-foreground mb-4 shrink-0">Analytics</h2>
       )}
 
-      <Tabs defaultValue="delivery" className="flex flex-col h-full min-h-0">
-        <TabsList className="shrink-0 mb-4">
+      <Tabs defaultValue="summary" className="flex flex-col h-full min-h-0">
+        <TabsList className="hidden">
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="word-choice">Word Choice</TabsTrigger>
           <TabsTrigger value="overview">Feedback</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="summary" className="flex-1 min-h-0 overflow-hidden">
+          <div className="grid h-full min-h-0 gap-5 overflow-y-auto pr-3 custom-scrollbar xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="space-y-4">
+              <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Pace of Speech
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">{pacingMessage}</p>
+                  </div>
+                  <p className="text-2xl font-semibold text-foreground sm:text-right">
+                    {analytics.pacing.wordsPerMinute}
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">words/min</span>
+                  </p>
+                </div>
+                <PacingVariationChart
+                  wpm={analytics.pacing.wordsPerMinute}
+                  segments={analytics.pacing.segments}
+                  durationSeconds={analytics.pacing.durationSeconds}
+                />
+              </section>
+
+              <div className="grid auto-rows-fr gap-4 md:grid-cols-5">
+              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-2">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Filler Words
+                  </p>
+                  <span className="text-xs text-muted-foreground">
+                    {analytics.fillerWords.count} total
+                  </span>
+                </div>
+                <p className="mt-4 text-3xl font-semibold text-foreground">
+                  {analytics.fillerWords.ratePerMinute.toFixed(1)}
+                  <span className="ml-1 text-sm font-normal text-muted-foreground">words/min</span>
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You may be repeating filler words several times.
+                </p>
+                {analytics.fillerWords.instances.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {analytics.fillerWords.instances.slice(0, 6).map((instance, idx) => {
+                      const wordData = wordTimestampMap.get(instance.position);
+                      if (!wordData) {
+                        return (
+                          <span
+                            key={`${instance.word}-${idx}`}
+                            className="rounded-md border border-yellow-500/20 bg-yellow-500/10 px-2 py-1 text-xs text-yellow-700 dark:text-yellow-400"
+                          >
+                            {instance.word}
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={`${instance.word}-${idx}`}
+                          onClick={() => handleSeekToTime(wordData.startTime, wordData.wordId)}
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-yellow-500/20 bg-yellow-500/10 px-2 py-1 text-xs text-yellow-700 transition-colors hover:bg-yellow-500/20 dark:text-yellow-400"
+                          title={`Jump to "${instance.word}" at ${formatTimestamp(wordData.startTime)}`}
+                        >
+                          <Play className="h-2.5 w-2.5" fill="currentColor" />
+                          {instance.word}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Repetition
+                  </p>
+                  <span className="text-xs text-muted-foreground">Repeated words</span>
+                </div>
+                <p className="mt-4 text-3xl font-semibold text-foreground">
+                  {repeatedWordCount}
+                  <span className="ml-1 text-sm font-normal text-muted-foreground">instances</span>
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Repeated words can make speech feel less concise.
+                </p>
+                <div className="mt-4 space-y-2">
+                  {analytics.repetitions.repeatedWords.length > 0 ? (
+                    analytics.repetitions.repeatedWords.slice(0, 4).map((item) => (
+                      <div key={item.word} className="flex items-center justify-between text-sm">
+                        <span className="capitalize text-muted-foreground">{item.word}</span>
+                        <span className="font-medium text-foreground">{item.count}x</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No excessive repetitions detected.</p>
+                  )}
+                </div>
+              </section>
+
+              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Weak Words
+                  </p>
+                  <span className="text-xs text-muted-foreground">Word choice</span>
+                </div>
+                <p className="mt-4 text-3xl font-semibold text-foreground">
+                  {analytics.weakWords.length}
+                  <span className="ml-1 text-sm font-normal text-muted-foreground">found</span>
+                </p>
+                <div className="mt-4 space-y-3">
+                  {analytics.weakWords.length > 0 ? (
+                    analytics.weakWords.slice(0, 2).map((item, index) => (
+                      <div key={index} className="rounded-lg bg-muted/35 p-3">
+                        <p className="text-xs text-muted-foreground">
+                          Weak word: <span className="font-medium text-foreground">"{item.word}"</span>
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs italic text-foreground/80">
+                          "{item.sentence}"
+                        </p>
+                        {item.suggestion && (
+                          <p className="mt-2 text-xs font-medium text-primary">
+                            -&gt; "{item.suggestion}"
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No weak words detected.</p>
+                  )}
+                  {analytics.weakWords.some((word) => !word.suggestion) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleGenerateSuggestions}
+                      disabled={isGeneratingSuggestions}
+                      className="h-8 w-full text-xs"
+                    >
+                      {isGeneratingSuggestions ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1 h-3 w-3" />
+                      )}
+                      Generate AI Suggestions
+                    </Button>
+                  )}
+                </div>
+              </section>
+
+              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-2">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Sentence Starters
+                  </p>
+                  <span className="text-xs text-muted-foreground">Flow</span>
+                </div>
+                <p className="mt-4 text-3xl font-semibold text-foreground">
+                  {sentenceStarterTotal}
+                  <span className="ml-1 text-sm font-normal text-muted-foreground">uses</span>
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {topSentenceStarter
+                    ? `"${topSentenceStarter.word}" showed up most often.`
+                    : "No weak sentence starters detected."}
+                </p>
+                <div className="mt-4 space-y-2">
+                  {analytics.sentenceStarters.weak.slice(0, 4).map((item) => (
+                    <div key={item.word} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">"{item.word}"</span>
+                      <span className="font-medium text-foreground">{item.count}x</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              </div>
+            </div>
+
+            <aside className="rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm xl:sticky xl:top-0 xl:self-start">
+              <div className="mb-4 border-b border-primary/20 pb-3">
+                <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Focus areas from this conversation.
+                </p>
+              </div>
+              {currentUser ? (
+                <PersonalizedFeedback
+                  conversationId={conversationId}
+                  userId={currentUser._id}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">Sign in to view personalized insights.</p>
+              )}
+            </aside>
+          </div>
+        </TabsContent>
 
         {/* Overview Tab - AI Feedback */}
         <TabsContent value="overview" className="flex-1 min-h-0 overflow-hidden">

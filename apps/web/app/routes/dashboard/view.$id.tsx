@@ -1,8 +1,9 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AlertCircle, ArrowLeft, Calendar, Clock, Loader2, MessageSquare, MoveUpLeft, Share2, Users } from "lucide-react";
+import { AlertCircle, ArrowLeft, Calendar, Clock, Loader2, MoveUpLeft, Share2, Users } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
+import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedback";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
 import { TranscriptChatbot } from "~/components/dashboard/transcript-chatbot";
 import { ExportDialog } from "~/components/export/ExportDialog";
@@ -45,6 +46,7 @@ export default function ConversationDetailPage() {
     api.users.get,
     conversation?.scannerUserId ? { id: conversation.scannerUserId } : "skip"
   );
+  const currentUser = useQuery(api.users.getCurrentUser);
 
   // Loading state - only wait for conversation data initially
   if (conversation === undefined) {
@@ -184,31 +186,24 @@ export default function ConversationDetailPage() {
     <AudioPlaybackProvider>
     <div className="flex flex-col h-full bg-background">
       {/* Enhanced Header */}
-      <div className="border-b border-border bg-card backdrop-blur-sm shadow-sm">
+      <div className="bg-card backdrop-blur-sm">
         <div className="px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             {/* Left section */}
-            <div className="flex items-start gap-4 flex-1 min-w-0">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="flex-1 min-w-0">
+              <button
+                type="button"
                 onClick={() => navigate("/dashboard")}
-                className="gap-2 shrink-0 hover:bg-muted/80">
-                <ArrowLeft className="w-4 h-4" />
+                className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
                 Back
-              </Button>
+              </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-foreground truncate">
                     {getConversationTitle()}
                   </h1>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    conversation.status === 'ended' 
-                      ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' 
-                      : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20'
-                  }`}>
-                    {conversation.status === 'ended' ? 'Completed' : 'Active'}
-                  </span>
                 </div>
                 <div className="flex items-center gap-5 text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-1.5">
@@ -222,10 +217,6 @@ export default function ConversationDetailPage() {
                   <div className="flex items-center gap-1.5">
                     <Users className="w-4 h-4" />
                     <span>{participantCount} {participantCount === 1 ? 'participant' : 'participants'}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{transcript?.length || 0} turns</span>
                   </div>
                 </div>
               </div>
@@ -253,17 +244,17 @@ export default function ConversationDetailPage() {
       </div>
 
       <Tabs defaultValue="analytics" className="flex flex-1 min-h-0 flex-col gap-0">
-        <div className="border-b border-border bg-background px-4 sm:px-6">
+        <div className="border-b-2 border-border bg-card px-4 sm:px-6">
           <TabsList className="h-auto w-full justify-start rounded-none bg-transparent p-0">
             <TabsTrigger
               value="analytics"
-              className="h-12 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-3 pt-4 text-base text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
+              className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-0 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
             >
-              Analytics
+              Summary
             </TabsTrigger>
             <TabsTrigger
               value="transcript"
-              className="h-12 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-5 pb-3 pt-4 text-base text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
+              className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-5 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
             >
               Transcript
             </TabsTrigger>
@@ -275,21 +266,44 @@ export default function ConversationDetailPage() {
         </TabsContent>
 
         <TabsContent value="transcript" className="min-h-0 flex-1 overflow-hidden p-4 sm:p-6">
-          <TranscriptPlayer
-            conversationId={id as Id<"conversations">}
-            getUserName={(userId) => {
-              if (!userId) return "Unknown";
-              if (initiatorUser && userId === conversation?.initiatorUserId) {
-                return initiatorUser.name || "Speaker 1";
-              }
-              if (scannerUser && userId === conversation?.scannerUserId) {
-                return scannerUser.name || "Speaker 2";
-              }
-              return "Speaker";
-            }}
-          >
-            <TranscriptChatbot conversationId={id as Id<"conversations">} />
-          </TranscriptPlayer>
+          <div className="grid h-full min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="min-h-0">
+              <TranscriptPlayer
+                conversationId={id as Id<"conversations">}
+                getUserName={(userId) => {
+                  if (!userId) return "Unknown";
+                  if (initiatorUser && userId === conversation?.initiatorUserId) {
+                    return initiatorUser.name || "Speaker 1";
+                  }
+                  if (scannerUser && userId === conversation?.scannerUserId) {
+                    return scannerUser.name || "Speaker 2";
+                  }
+                  return "Speaker";
+                }}
+              >
+                <TranscriptChatbot conversationId={id as Id<"conversations">} />
+              </TranscriptPlayer>
+            </div>
+
+            <aside className="min-h-0 overflow-y-auto rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm custom-scrollbar xl:sticky xl:top-0 xl:self-start">
+              <div className="mb-4 border-b border-primary/20 pb-3">
+                <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Focus areas from this conversation.
+                </p>
+              </div>
+              {currentUser ? (
+                <PersonalizedFeedback
+                  conversationId={id as Id<"conversations">}
+                  userId={currentUser._id}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Sign in to view personalized insights.
+                </p>
+              )}
+            </aside>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
