@@ -12,6 +12,14 @@ import CurrentView from "~/components/recording/CurrentView";
 import PendingView from "~/components/recording/PendingView";
 import TranscriptPlayer from "~/components/transcript/TranscriptPlayer";
 import { Button } from "~/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AudioPlaybackProvider } from "~/hooks/use-audio-playback";
 import { getConversationDisplayTitle } from "~/lib/conversation-context";
@@ -247,7 +255,8 @@ export default function ConversationDetailPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 min-h-0 flex-col gap-0">
         <div className="relative border-b-2 border-border bg-sidebar px-4 before:absolute before:inset-y-0 before:-left-px before:w-px before:bg-sidebar dark:bg-card dark:before:bg-card sm:px-6">
-          <TabsList className="h-auto w-full justify-start rounded-none bg-transparent p-0">
+          <div className="flex items-center justify-between gap-4">
+          <TabsList className="h-auto justify-start rounded-none bg-transparent p-0">
             <TabsTrigger
               value="analytics"
               className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-0 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 hover:bg-transparent focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-b-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-primary sm:px-4"
@@ -261,6 +270,36 @@ export default function ConversationDetailPage() {
               Transcript
             </TabsTrigger>
           </TabsList>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 shrink-0 bg-transparent text-muted-foreground hover:bg-transparent hover:text-primary dark:hover:bg-transparent xl:hidden"
+              >
+                Actionable Insights
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[22rem] max-w-[calc(100vw-2rem)] bg-sidebar p-0 dark:bg-card">
+              <SheetHeader className="border-b border-border/70 p-5">
+                <SheetTitle>Actionable Insights</SheetTitle>
+                <SheetDescription>Focus areas from this conversation.</SheetDescription>
+              </SheetHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto p-5 pr-7 custom-scrollbar">
+                {currentUser ? (
+                  <PersonalizedFeedback
+                    conversationId={id as Id<"conversations">}
+                    userId={currentUser._id}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Sign in to view personalized insights.
+                  </p>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+          </div>
         </div>
 
         <TabsContent value="analytics" className="min-h-0 flex-1 overflow-hidden p-4 sm:p-6">
@@ -291,7 +330,7 @@ export default function ConversationDetailPage() {
               </TranscriptPlayer>
             </div>
 
-            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-sidebar p-5 shadow-sm dark:bg-card">
+            <aside className="hidden h-full min-h-0 flex-col rounded-xl border border-border bg-sidebar p-5 shadow-sm dark:bg-card xl:flex">
               <div className="shrink-0 border-b border-border/70 pb-3">
                 <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
                 <p className="mt-1 text-sm text-muted-foreground">

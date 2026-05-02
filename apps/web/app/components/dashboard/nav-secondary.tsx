@@ -36,14 +36,18 @@ export function NavSecondary({
             return (
               <SidebarMenuItem key={item.title}>
                 {isImplemented ? (
-                  <SidebarMenuButton isActive={isActive} asChild>
-                    <Link to={item.url} prefetch="intent">
+                  <SidebarMenuButton tooltip={item.title} isActive={isActive} asChild>
+                    <Link
+                      to={item.url}
+                      prefetch="intent"
+                      className="group-data-[collapsible=icon]:justify-center"
+                    >
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 ) : (
-                  <SidebarMenuButton disabled>
+                  <SidebarMenuButton tooltip={item.title} disabled>
                     <item.icon />
                     <span>{item.title}</span>
                   </SidebarMenuButton>

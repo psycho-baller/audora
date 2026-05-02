@@ -568,6 +568,15 @@ export function AnalyticsPanel({
     }
   }, [weakWordExampleIndex, weakWordExamples.length]);
 
+  const actionableInsightsContent = currentUser ? (
+    <PersonalizedFeedback
+      conversationId={conversationId}
+      userId={currentUser._id}
+    />
+  ) : (
+    <p className="text-sm text-muted-foreground">Sign in to view personalized insights.</p>
+  );
+
   // Loading state
   if (!conversationId) {
     return (
@@ -818,7 +827,7 @@ export function AnalyticsPanel({
 
             </div>
 
-            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-sidebar p-5 shadow-sm dark:bg-card">
+            <aside className="hidden h-full min-h-0 flex-col rounded-xl border border-border bg-sidebar p-5 shadow-sm dark:bg-card xl:flex">
               <div className="shrink-0 border-b border-border/70 pb-3">
                 <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -826,14 +835,7 @@ export function AnalyticsPanel({
                 </p>
               </div>
               <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                {currentUser ? (
-                  <PersonalizedFeedback
-                    conversationId={conversationId}
-                    userId={currentUser._id}
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">Sign in to view personalized insights.</p>
-                )}
+                {actionableInsightsContent}
               </div>
             </aside>
           </div>

@@ -40,7 +40,11 @@ export const NavMain = memo(({
                 isActive={item.isActive}
                 asChild
               >
-                <Link to={item.url} prefetch="intent">
+                <Link
+                  to={item.url}
+                  prefetch="intent"
+                  className="group-data-[collapsible=icon]:justify-center"
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                 </Link>

@@ -52,12 +52,17 @@ export function AppSidebar({
   user: any;
 }) {
   return (
-    <Sidebar collapsible="offcanvas" variant={variant}>
+    <Sidebar collapsible="icon" variant={variant}>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <Link to="/" prefetch="viewport">
-              <span className="text-base font-semibold">Audora</span>
+          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+            <Link
+              to="/"
+              prefetch="viewport"
+              className="block group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center"
+            >
+              <span className="text-base font-semibold group-data-[collapsible=icon]:hidden">Audora</span>
+              <span className="hidden text-xl font-bold leading-none group-data-[collapsible=icon]:block">A</span>
             </Link>
           </SidebarMenuItem>
         </SidebarMenu>
