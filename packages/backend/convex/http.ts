@@ -61,8 +61,8 @@ export const chat = httpAction(async (ctx, req) => {
     return new Response("Origin not allowed", { status: 403 });
   }
 
-  // Extract the `messages` and optional `conversationId` from the body of the request
-  const { messages, conversationId } = await req.json();
+  // Extract the `messages` and optional conversation selectors from the body
+  const { messages, conversationId, conversationIds } = await req.json();
 
   // Get user identity from auth
   const identity = await ctx.auth.getUserIdentity();
@@ -170,13 +170,23 @@ export const chat = httpAction(async (ctx, req) => {
 
       } else {
         // === GENERAL MODE ===
-        // Load last 10 conversations (existing behavior)
+        // Load either linked conversations or the most recent history.
         const conversations = await ctx.runQuery(api.conversations.list, {});
+        const selectedConversationIds = Array.isArray(conversationIds)
+          ? new Set<string>(conversationIds)
+          : null;
+        const relevantConversations = selectedConversationIds?.size
+          ? conversations.filter((conversation) =>
+              selectedConversationIds.has(conversation._id)
+            )
+          : conversations;
 
-        if (conversations.length > 0) {
-          conversationContext = `\n\n## USER'S CONVERSATION HISTORY\nYou have access to ${conversations.length} conversation(s) from this user:\n\n`;
+        if (relevantConversations.length > 0) {
+          conversationContext = selectedConversationIds?.size
+            ? `\n\n## LINKED CONVERSATIONS\nThe user linked ${relevantConversations.length} conversation(s) for this coaching request:\n\n`
+            : `\n\n## USER'S CONVERSATION HISTORY\nYou have access to ${relevantConversations.length} conversation(s) from this user:\n\n`;
 
-          for (const conv of conversations.slice(0, 10)) {
+          for (const conv of relevantConversations.slice(0, 10)) {
             const transcript = await ctx.runQuery(api.conversations.getTranscript, {
               conversationId: conv._id
             });
