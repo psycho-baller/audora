@@ -187,15 +187,17 @@ export default defineSchema({
 
   // AI Chatbot Messages (for persistent chat history per conversation)
   chatMessages: defineTable({
-    conversationId: v.id("conversations"),
+    conversationId: v.optional(v.id("conversations")),
     userId: v.id("users"),
+    threadKey: v.optional(v.string()),
     role: v.union(v.literal("user"), v.literal("assistant")),
     content: v.string(),
     createdAt: v.number(),
   })
     .index("by_conversation_and_user", ["conversationId", "userId"])
     .index("by_conversation", ["conversationId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_user_and_thread", ["userId", "threadKey"]),
 
   // Background import jobs for long-running audio transcription.
   importJobs: defineTable({

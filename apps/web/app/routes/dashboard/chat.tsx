@@ -1,8 +1,9 @@
 "use client";
 
 import { api } from "@audora/backend/convex/_generated/api";
+import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAuth, useUser } from "@clerk/react-router";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   FolderOpen,
   Loader2,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
+import { useSearchParams } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -39,6 +41,8 @@ const SUGGESTED_PROMPTS = [
   "Help me prepare for my pitch",
 ];
 
+const GENERAL_THREAD_KEY = "general";
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -57,19 +61,57 @@ interface ChatConversation {
   participantCount: number;
 }
 
+function buildChatThreadKey(conversationIds: string[]) {
+  if (conversationIds.length === 0) {
+    return GENERAL_THREAD_KEY;
+  }
+
+  const sortedIds = [...conversationIds].sort();
+
+  if (sortedIds.length === 1) {
+    return `conversation:${sortedIds[0]}`;
+  }
+
+  return `multi:${sortedIds.join("|")}`;
+}
+
+function parseChatThreadKey(threadKey: string) {
+  if (!threadKey || threadKey === GENERAL_THREAD_KEY) {
+    return [];
+  }
+
+  if (threadKey.startsWith("conversation:")) {
+    const conversationId = threadKey.slice("conversation:".length);
+    return conversationId ? [conversationId] : [];
+  }
+
+  if (threadKey.startsWith("multi:")) {
+    return threadKey
+      .slice("multi:".length)
+      .split("|")
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 export default function Chat() {
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
+  const [searchParams, setSearchParams] = useSearchParams();
   const conversations = (useQuery(api.conversations.list) ?? []) as ChatConversation[];
+  const saveMessage = useMutation(api.chat.saveMessage);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [selectedConversationIds, setSelectedConversationIds] = useState<string[]>([]);
   const [draftSelectedConversationIds, setDraftSelectedConversationIds] = useState<string[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const activeThreadKey = searchParams.get("thread") ?? GENERAL_THREAD_KEY;
+  const selectedConversationIds = parseChatThreadKey(activeThreadKey);
+  const chatHistory = useQuery(api.chat.getMessages, { threadKey: activeThreadKey });
 
   const firstName =
     user?.firstName ||
@@ -85,6 +127,37 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    setMessages([]);
+  }, [activeThreadKey]);
+
+  useEffect(() => {
+    if (chatHistory === undefined || isLoading) {
+      return;
+    }
+
+    setMessages(
+      chatHistory.map((message) => ({
+        id: message._id,
+        role: message.role as "user" | "assistant",
+        content: message.content,
+      }))
+    );
+  }, [chatHistory, isLoading]);
+
+  const setActiveThread = (threadKey: string) => {
+    const normalizedThreadKey = threadKey || GENERAL_THREAD_KEY;
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (normalizedThreadKey === GENERAL_THREAD_KEY) {
+      nextParams.delete("thread");
+    } else {
+      nextParams.set("thread", normalizedThreadKey);
+    }
+
+    setSearchParams(nextParams);
+  };
+
   const openConversationPicker = () => {
     setDraftSelectedConversationIds(selectedConversationIds);
     setIsPickerOpen(true);
@@ -99,12 +172,12 @@ export default function Chat() {
   };
 
   const applyConversationSelection = () => {
-    setSelectedConversationIds(draftSelectedConversationIds);
+    setActiveThread(buildChatThreadKey(draftSelectedConversationIds));
     setIsPickerOpen(false);
   };
 
   const removeLinkedConversation = (conversationId: string) => {
-    setSelectedConversationIds((current) => current.filter((id) => id !== conversationId));
+    setActiveThread(buildChatThreadKey(selectedConversationIds.filter((id) => id !== conversationId)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,8 +196,28 @@ export default function Chat() {
     }));
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput("");
     setIsLoading(true);
+
+    const singleConversationId =
+      selectedConversationIds.length === 1
+        ? (selectedConversationIds[0] as Id<"conversations">)
+        : undefined;
+    const linkedConversationIds =
+      selectedConversationIds.length > 1
+        ? (selectedConversationIds as Id<"conversations">[])
+        : undefined;
+
+    saveMessage({
+      conversationId: singleConversationId,
+      linkedConversationIds,
+      threadKey: activeThreadKey,
+      role: "user",
+      content: userInput,
+    }).catch((error) => {
+      console.error("Failed to save user message:", error);
+    });
 
     const assistantMessageId = `assistant-${Date.now()}`;
     setMessages((prev) => [
@@ -176,6 +269,18 @@ export default function Chat() {
               : message
           )
         );
+      }
+
+      if (assistantContent) {
+        saveMessage({
+          conversationId: singleConversationId,
+          linkedConversationIds,
+          threadKey: activeThreadKey,
+          role: "assistant",
+          content: assistantContent,
+        }).catch((error) => {
+          console.error("Failed to save assistant message:", error);
+        });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";

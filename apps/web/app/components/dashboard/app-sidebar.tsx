@@ -1,16 +1,24 @@
-import { IconDashboard, IconSettings, IconMessageCircle, IconMessages, IconChartBar, IconUsers } from "@tabler/icons-react";
-import { Link } from "react-router";
-import { NavMain } from "./nav-main";
-import { NavSecondary } from "./nav-secondary";
-import { NavUser } from "./nav-user";
+import { api } from "@audora/backend/convex/_generated/api";
+import { IconChartBar, IconMessageCircle, IconMessages, IconSettings, IconUsers } from "@tabler/icons-react";
+import { useQuery } from "convex/react";
+import { Link, useLocation } from "react-router";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
+import { NavMain } from "./nav-main";
+import { NavSecondary } from "./nav-secondary";
+import { NavUser } from "./nav-user";
 
 const data = {
   navMain: [
@@ -51,6 +59,11 @@ export function AppSidebar({
   variant: "sidebar" | "floating" | "inset";
   user: any;
 }) {
+  const location = useLocation();
+  const isChatPage = location.pathname === "/dashboard/chat";
+  const activeThreadKey = new URLSearchParams(location.search).get("thread") ?? "general";
+  const chatThreads = useQuery(api.chat.listThreads, isChatPage ? {} : "skip");
+
   return (
     <Sidebar collapsible="icon" variant={variant}>
       <SidebarHeader>
@@ -69,6 +82,28 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        {isChatPage && chatThreads && chatThreads.length > 0 ? (
+          <SidebarGroup className="pt-0">
+            <SidebarGroupLabel>Chat History</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenuSub>
+                {chatThreads.map((thread) => (
+                  <SidebarMenuSubItem key={thread.threadKey}>
+                    <SidebarMenuSubButton asChild isActive={activeThreadKey === thread.threadKey}>
+                      <Link
+                        to={thread.threadKey === "general" ? "/dashboard/chat" : `/dashboard/chat?thread=${encodeURIComponent(thread.threadKey)}`}
+                        prefetch="intent"
+                        title={thread.preview}
+                      >
+                        <span>{thread.title}</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
