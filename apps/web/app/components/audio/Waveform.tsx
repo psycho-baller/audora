@@ -1,14 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 
+export type MarkerType = "filler" | "weak" | "starter" | null;
+
+export interface WaveformMarker {
+  time: number;
+  type: MarkerType;
+  word?: string;
+}
+
 interface WaveformProps {
   audioUrl: string;
   currentTime: number;
   duration: number;
   onSeek?: (time: number) => void;
   className?: string;
+  markers?: WaveformMarker[];
 }
 
-export function Waveform({ audioUrl, currentTime, duration, onSeek, className = "" }: WaveformProps) {
+const MARKER_COLORS: Record<NonNullable<MarkerType>, string> = {
+  filler: "#eab308",  // yellow-500
+  weak: "#f97316",    // orange-500
+  starter: "#3b82f6", // blue-500
+};
+
+export function Waveform({ audioUrl, currentTime, duration, onSeek, className = "", markers }: WaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [waveformData, setWaveformData] = useState<number[]>([]);
@@ -84,9 +99,22 @@ export function Waveform({ audioUrl, currentTime, duration, onSeek, className = 
     const primaryColor = getComputedStyle(document.documentElement)
       .getPropertyValue('--color-primary')
       .trim();
-    const borderColor = getComputedStyle(document.documentElement)
-      .getPropertyValue('--color-border')
+    // foreground = black in light mode, white in dark mode → naturally high contrast in both
+    const unplayedColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-foreground')
       .trim();
+
+    // Build a map of barIndex → marker color for O(1) lookup per bar
+    const markerColorMap = new Map<number, string>();
+    if (markers && duration > 0) {
+      for (const marker of markers) {
+        if (!marker.type) continue;
+        const barIndex = Math.round((marker.time / duration) * (waveformData.length - 1));
+        if (barIndex >= 0 && barIndex < waveformData.length) {
+          markerColorMap.set(barIndex, MARKER_COLORS[marker.type]);
+        }
+      }
+    }
 
     // Draw waveform bars
     waveformData.forEach((value, index) => {
@@ -94,16 +122,24 @@ export function Waveform({ audioUrl, currentTime, duration, onSeek, className = 
       const x = index * barWidth;
       const y = (height - barHeight) / 2;
 
-      // Determine color based on playback position
+      const markerColor = markerColorMap.get(index);
+
+      // Draw the waveform bar
       const barTime = (index / waveformData.length) * duration;
       const isPlayed = barTime <= currentTime;
-
-      ctx.globalAlpha = isPlayed ? 1 : 0.35;
-      ctx.fillStyle = isPlayed ? primaryColor : borderColor;
+      ctx.globalAlpha = isPlayed ? 1 : 0.28;
+      ctx.fillStyle = isPlayed ? primaryColor : unplayedColor;
       ctx.fillRect(x, y, actualBarWidth, barHeight);
+
+      if (markerColor) {
+        // Draw marker indicator at the top (structured and aligned)
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = markerColor;
+        ctx.fillRect(x, 2, actualBarWidth, 6); // 6px tall marker near the top
+      }
     });
     ctx.globalAlpha = 1; // reset
-  }, [waveformData, currentTime, duration]);
+  }, [waveformData, currentTime, duration, markers]);
 
   // Handle click to seek
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -149,4 +185,3 @@ export function Waveform({ audioUrl, currentTime, duration, onSeek, className = 
     </div>
   );
 }
-
