@@ -4,6 +4,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { Clock, Download, Loader2, Phone, Sparkles, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { formatConversationDuration, getConversationDurationMs } from "~/lib/conversation-duration";
 import SpeechAnalytics from "../analytics/SpeechAnalytics";
 import { PhoneNumberDialog } from "../network/PhoneNumberDialog";
 import TranscriptPlayer from "../transcript/TranscriptPlayer";
@@ -248,13 +249,7 @@ export default function CompletedView({
   };
 
   const calculateDuration = () => {
-    if (conversation.startedAt && conversation.endedAt) {
-      const durationMs = conversation.endedAt - conversation.startedAt;
-      const minutes = Math.floor(durationMs / 60000);
-      const seconds = Math.floor((durationMs % 60000) / 1000);
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    }
-    return "N/A";
+    return formatConversationDuration(getConversationDurationMs(conversation, transcriptTurns));
   };
 
   return (

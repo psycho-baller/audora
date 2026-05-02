@@ -258,6 +258,27 @@ const saveTranscriptDataArgs = {
   anonymousSpeakerCount: v.optional(v.number()),
 };
 
+function inferTranscriptDurationMs(transcript: any[]): number | null {
+  let maxEndTimeSeconds = 0;
+
+  for (const turn of transcript) {
+    if (Array.isArray(turn.words)) {
+      for (const word of turn.words) {
+        const endTime = Number(word?.endTime);
+        if (Number.isFinite(endTime)) {
+          maxEndTimeSeconds = Math.max(maxEndTimeSeconds, endTime);
+        }
+      }
+    }
+  }
+
+  if (maxEndTimeSeconds <= 0) {
+    return null;
+  }
+
+  return Math.round(maxEndTimeSeconds * 1000);
+}
+
 async function saveTranscriptDataImpl(ctx: any, args: any) {
   // Get conversation to extract user IDs
   const conversation = await ctx.db.get(args.conversationId);
@@ -273,6 +294,11 @@ async function saveTranscriptDataImpl(ctx: any, args: any) {
   );
   const anonymousSpeakerCount =
     args.anonymousSpeakerCount ?? detectedAnonymousSpeakers.size;
+  const inferredDurationMs = inferTranscriptDurationMs(args.transcript);
+  const completedAt =
+    inferredDurationMs !== null && conversation.startedAt
+      ? conversation.startedAt + inferredDurationMs
+      : Date.now();
 
   const conversationUpdates: {
     summary: string;
@@ -282,7 +308,7 @@ async function saveTranscriptDataImpl(ctx: any, args: any) {
   } = {
     summary: args.summary,
     status: "ended",
-    endedAt: Date.now(),
+    endedAt: completedAt,
   };
 
   if (anonymousSpeakerCount > 0) {
