@@ -123,20 +123,20 @@ export function Waveform({ audioUrl, currentTime, duration, onSeek, className = 
       const y = (height - barHeight) / 2;
 
       const markerColor = markerColorMap.get(index);
-
-      // Draw the waveform bar
       const barTime = (index / waveformData.length) * duration;
       const isPlayed = barTime <= currentTime;
-      ctx.globalAlpha = isPlayed ? 1 : 0.28;
-      ctx.fillStyle = isPlayed ? primaryColor : unplayedColor;
-      ctx.fillRect(x, y, actualBarWidth, barHeight);
 
       if (markerColor) {
-        // Draw marker indicator at the top (structured and aligned)
-        ctx.globalAlpha = 1;
+        // Colored bar for markers
+        ctx.globalAlpha = isPlayed ? 1 : 0.6; // Higher visibility for unplayed markers
         ctx.fillStyle = markerColor;
-        ctx.fillRect(x, 2, actualBarWidth, 6); // 6px tall marker near the top
+      } else {
+        // Standard bar
+        ctx.globalAlpha = isPlayed ? 1 : 0.28;
+        ctx.fillStyle = isPlayed ? primaryColor : unplayedColor;
       }
+      
+      ctx.fillRect(x, y, actualBarWidth, barHeight);
     });
     ctx.globalAlpha = 1; // reset
   }, [waveformData, currentTime, duration, markers]);

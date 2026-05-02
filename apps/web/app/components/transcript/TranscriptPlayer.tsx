@@ -486,6 +486,25 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
                 ) : (
                   /* Timeline with markers */
                   <div className="relative h-10 flex items-center">
+                    {/* Timeline markers */}
+                    <div className="absolute inset-x-0 top-0 h-full flex items-center pointer-events-none">
+                      {timelineMarkers.map((marker, i) => {
+                        const position = (marker.time / (duration || 100)) * 100;
+                        let color = "bg-yellow-500";
+                        if (marker.type === "weak") color = "bg-orange-500";
+                        if (marker.type === "starter") color = "bg-blue-500";
+
+                        return (
+                          <div
+                            key={`${marker.time}-${i}`}
+                            className={`absolute w-0.5 h-3 ${color} rounded-full opacity-60 hover:opacity-100 transition-opacity`}
+                            style={{ left: `${position}%`, transform: 'translateX(-50%)', top: '4px' }}
+                            title={`${marker.type}: ${marker.word}`}
+                          />
+                        );
+                      })}
+                    </div>
+
                     {/* Progress bar */}
                     <input
                       type="range"
@@ -505,7 +524,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
                       }}
                     />
                   </div>
-                )/* Timeline markers removed from here as they were messy */}
+                )}
               </div>
               <span className="text-sm font-mono text-muted-foreground min-w-[50px] tabular-nums">
                 {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, "0")}
