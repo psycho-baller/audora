@@ -1,33 +1,48 @@
 .theme-dark,
 .theme-light {
-  --eloq-accent: #79afa3;
-  --eloq-accent-strong: #5d8f84;
-  --eloq-accent-soft: rgba(121, 175, 163, 0.18);
+  --eloq-accent: #e4f222;
+  --eloq-accent-strong: #f5ff78;
+  --eloq-accent-soft: rgba(228, 242, 34, 0.18);
   --eloq-warning: #c69662;
   --eloq-danger: #b46e69;
-  --eloq-panel-bg: rgba(247, 245, 240, 0.98);
-  --eloq-panel-border: rgba(121, 175, 163, 0.2);
-  --eloq-panel-shadow: 0 18px 42px rgba(20, 28, 36, 0.14);
-  --eloq-copy: rgba(27, 33, 39, 0.96);
-  --eloq-muted: rgba(86, 96, 104, 0.78);
-  --eloq-button-bg: rgba(27, 33, 39, 0.04);
-  --eloq-button-border: rgba(27, 33, 39, 0.1);
-  --eloq-button-hover: rgba(121, 175, 163, 0.1);
-  --eloq-primary-copy: rgba(17, 22, 26, 0.96);
-  --eloq-primary-shadow: 0 10px 24px rgba(93, 143, 132, 0.18);
+  --eloq-panel-bg: rgba(250, 248, 245, 0.98);
+  --eloq-panel-border: rgba(23, 51, 45, 0.12);
+  --eloq-panel-shadow: 0 18px 42px rgba(12, 10, 8, 0.12);
+  --eloq-copy: rgba(12, 10, 8, 0.96);
+  --eloq-muted: rgba(98, 92, 85, 0.78);
+  --eloq-button-bg: rgba(12, 10, 8, 0.04);
+  --eloq-button-border: rgba(12, 10, 8, 0.08);
+  --eloq-button-hover: rgba(228, 242, 34, 0.1);
+  --eloq-primary-copy: rgba(12, 10, 8, 0.98);
+  --eloq-primary-shadow: 0 10px 24px rgba(185, 201, 52, 0.18);
+  --eloq-reward-underline: rgba(228, 242, 34, 0.92);
+  --eloq-accent-border-soft: rgba(228, 242, 34, 0.22);
+  --eloq-accent-border: rgba(228, 242, 34, 0.24);
+  --eloq-accent-border-strong: rgba(228, 242, 34, 0.34);
+  --eloq-accent-ring: rgba(228, 242, 34, 0.16);
+  --eloq-primary-shadow-strong: 0 10px 24px rgba(185, 201, 52, 0.24);
 }
 
 .theme-dark {
-  --eloq-panel-bg: rgba(27, 33, 39, 0.98);
-  --eloq-panel-border: rgba(121, 175, 163, 0.16);
+  --eloq-accent: #d9ef59;
+  --eloq-accent-strong: #f5ff78;
+  --eloq-accent-soft: rgba(217, 239, 89, 0.18);
+  --eloq-panel-bg: rgba(18, 24, 22, 0.98);
+  --eloq-panel-border: rgba(217, 239, 89, 0.16);
   --eloq-panel-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
-  --eloq-copy: rgba(242, 238, 231, 0.95);
-  --eloq-muted: rgba(166, 176, 182, 0.78);
-  --eloq-button-bg: rgba(255, 255, 255, 0.03);
+  --eloq-copy: rgba(244, 242, 240, 0.95);
+  --eloq-muted: rgba(190, 184, 178, 0.78);
+  --eloq-button-bg: rgba(255, 255, 255, 0.04);
   --eloq-button-border: rgba(255, 255, 255, 0.08);
-  --eloq-button-hover: rgba(121, 175, 163, 0.12);
-  --eloq-primary-copy: rgba(17, 22, 26, 0.98);
-  --eloq-primary-shadow: 0 12px 26px rgba(93, 143, 132, 0.2);
+  --eloq-button-hover: rgba(217, 239, 89, 0.12);
+  --eloq-primary-copy: rgba(12, 10, 8, 0.98);
+  --eloq-primary-shadow: 0 12px 26px rgba(217, 239, 89, 0.2);
+  --eloq-reward-underline: rgba(217, 239, 89, 0.92);
+  --eloq-accent-border-soft: rgba(217, 239, 89, 0.22);
+  --eloq-accent-border: rgba(217, 239, 89, 0.24);
+  --eloq-accent-border-strong: rgba(217, 239, 89, 0.34);
+  --eloq-accent-ring: rgba(217, 239, 89, 0.16);
+  --eloq-primary-shadow-strong: 0 10px 24px rgba(217, 239, 89, 0.24);
 }
 
 .cm-audora-avoid {
@@ -41,7 +56,7 @@
 .cm-audora-reward {
   text-decoration-line: underline;
   text-decoration-style: solid;
-  text-decoration-color: rgba(121, 175, 163, 0.92);
+  text-decoration-color: var(--eloq-reward-underline);
   text-decoration-thickness: 2px;
   text-underline-offset: 0.18em;
 }
@@ -162,13 +177,13 @@
 
 .audora-writing-tooltip__button:hover {
   background: var(--eloq-button-hover);
-  border-color: rgba(121, 175, 163, 0.22);
+  border-color: var(--eloq-accent-border-soft);
   color: var(--eloq-copy);
 }
 
 .audora-writing-tooltip__actions .audora-writing-tooltip__button.audora-writing-tooltip__button--primary {
   color: var(--eloq-primary-copy) !important;
-  border-color: rgba(121, 175, 163, 0.24) !important;
+  border-color: var(--eloq-accent-border) !important;
   background: var(--eloq-accent) !important;
   box-shadow: var(--eloq-primary-shadow) !important;
 }
@@ -178,16 +193,16 @@
 .audora-writing-tooltip__actions .audora-writing-tooltip__button.audora-writing-tooltip__button--primary:active {
   color: rgba(13, 18, 22, 0.98) !important;
   background: var(--eloq-accent-strong) !important;
-  border-color: rgba(121, 175, 163, 0.34) !important;
+  border-color: var(--eloq-accent-border-strong) !important;
   box-shadow:
-    0 0 0 1px rgba(121, 175, 163, 0.16),
-    0 10px 24px rgba(93, 143, 132, 0.24) !important;
+    0 0 0 1px var(--eloq-accent-ring),
+    var(--eloq-primary-shadow-strong) !important;
   outline: none;
 }
 
 .audora-writing-tooltip__actions .audora-writing-tooltip__button:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 1px rgba(121, 175, 163, 0.16),
+    0 0 0 1px var(--eloq-accent-ring),
     0 8px 18px rgba(0, 0, 0, 0.16);
 }
