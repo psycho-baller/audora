@@ -215,22 +215,11 @@ export default function Chat() {
               </div>
 
               <section className="mx-auto max-w-2xl space-y-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="space-y-1 text-left">
-                    <p className="text-2xl text-muted-foreground">Hi {firstName}</p>
-                    <h1 className="text-[2rem] font-medium tracking-tight text-foreground sm:text-[2.25rem]">
-                      What&apos;s on your mind today?
-                    </h1>
-                  </div>
-
-                  <Button
-                    type="button"
-                    onClick={openConversationPicker}
-                    className="h-11 self-start rounded-xl sm:self-auto"
-                  >
-                    <FolderOpen className="size-4" />
-                    {linkedButtonLabel}
-                  </Button>
+                <div className="space-y-1 text-left">
+                  <p className="text-2xl text-muted-foreground">Hi {firstName}</p>
+                  <h1 className="text-[2rem] font-medium tracking-tight text-foreground sm:text-[2.25rem]">
+                    What&apos;s on your mind today?
+                  </h1>
                 </div>
 
                 <CoachComposer
@@ -266,18 +255,6 @@ export default function Chat() {
 
             <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
               <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-                {linkedConversations.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {linkedConversations.map((conversation) => (
-                      <LinkedConversationChip
-                        key={conversation._id}
-                        conversation={conversation}
-                        onRemove={() => removeLinkedConversation(conversation._id)}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-
                 <div className="space-y-6">
                   {messages.map((message) => (
                     <div
@@ -297,36 +274,29 @@ export default function Chat() {
                         className={cn(
                           "max-w-[85%] rounded-3xl px-5 py-4 shadow-sm sm:max-w-[70%]",
                           message.role === "user"
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-[#6d63d9] text-white dark:bg-[#7a70eb]"
                             : "border border-border bg-card text-foreground"
                         )}
                       >
-                        <div
-                          className={cn(
-                            "prose prose-sm max-w-none",
-                            message.role === "user"
-                              ? "prose-invert"
-                              : "prose-foreground dark:prose-invert",
-                            "prose-p:my-1 prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2",
-                            "prose-headings:mt-3 prose-headings:mb-2"
-                          )}
-                        >
-                          <Markdown>{message.content}</Markdown>
-                        </div>
+                        {message.role === "assistant" && !message.content.trim() ? (
+                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <div
+                            className={cn(
+                              "prose prose-sm max-w-none",
+                              message.role === "user"
+                                ? "prose-invert"
+                                : "prose-foreground dark:prose-invert",
+                              "prose-p:my-1 prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2",
+                              "prose-headings:mt-3 prose-headings:mb-2"
+                            )}
+                          >
+                            <Markdown>{message.content}</Markdown>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
-
-                  {isLoading ? (
-                    <div className="flex gap-3 justify-start">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-                        <Sparkles className="size-5" />
-                      </div>
-                      <div className="rounded-3xl border border-border bg-card px-5 py-4 shadow-sm">
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      </div>
-                    </div>
-                  ) : null}
 
                   <div ref={messagesEndRef} />
                 </div>
@@ -475,32 +445,38 @@ function CoachComposer({
 }) {
   return (
     <div className="space-y-3">
-      {compact ? (
-        <div className="flex items-center justify-end">
-          <Button
-            type="button"
-            onClick={onOpenConversationPicker}
-            className="h-11 rounded-xl"
-          >
-            <FolderOpen className="size-4" />
-            {pickerButtonLabel}
-          </Button>
+      {compact || conversations.length >= 0 ? (
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-center gap-2">
+              {conversations.map((conversation) => (
+                <LinkedConversationChip
+                  key={conversation._id}
+                  conversation={conversation}
+                  onRemove={() => onRemoveConversation(conversation._id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {compact ? (
+            <div className="flex h-11 shrink-0 items-center text-sm font-medium text-black dark:text-white">
+              {pickerButtonLabel}
+            </div>
+          ) : (
+            <Button
+              type="button"
+              onClick={onOpenConversationPicker}
+              className="h-11 shrink-0 rounded-xl"
+            >
+              <FolderOpen className="size-4" />
+              {pickerButtonLabel}
+            </Button>
+          )}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-        {conversations.length > 0 ? (
-          <div className="mb-3 flex flex-wrap gap-2 border-b border-border pb-3">
-            {conversations.map((conversation) => (
-              <LinkedConversationChip
-                key={conversation._id}
-                conversation={conversation}
-                onRemove={() => onRemoveConversation(conversation._id)}
-              />
-            ))}
-          </div>
-        ) : null}
-
+      <div className="rounded-2xl border border-border bg-card/50 p-3 shadow-sm">
         <form onSubmit={onSubmit} className="flex items-center gap-2">
           <Input
             ref={inputRef}
@@ -508,7 +484,7 @@ function CoachComposer({
             onChange={(e) => onChange(e.target.value)}
             placeholder="Ask Audora"
             disabled={isLoading}
-            className="h-12 border-0 bg-transparent px-3 text-base text-foreground shadow-none focus-visible:ring-0"
+            className="h-12 rounded-none border-0 bg-transparent px-3 text-base text-foreground shadow-none dark:bg-transparent focus-visible:ring-0"
           />
           <button
             type="button"
