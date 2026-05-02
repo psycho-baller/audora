@@ -101,10 +101,14 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
     );
   }
 
-  const needsWorkTitle = feedback.improvements?.[0] || "Keep tightening your delivery";
-  const improvingTitle =
-    feedback.comparisonToPrevious || feedback.actionItems?.[0] || "Building consistency";
-  const strongSkillTitle = feedback.strengths?.[0] || "Clear communication habits";
+  const strengths = feedback.strengths ?? [];
+  const improvements = feedback.improvements ?? [];
+  const actionItems = feedback.actionItems ?? [];
+  const generatedAtLabel = new Date(feedback.generatedAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
     <div className="space-y-4">
@@ -114,10 +118,33 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-foreground">Personalized Feedback</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground">Personalized Feedback</h3>
+              <span className="text-[11px] text-muted-foreground">{generatedAtLabel}</span>
+            </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {feedback.summary}
             </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-full bg-green-500/10 p-2">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-foreground">Strengths</h4>
+            {strengths.length > 0 ? (
+              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+                {strengths.map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">No strengths were generated yet.</p>
+            )}
           </div>
         </div>
       </div>
@@ -129,13 +156,14 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
           </div>
           <div className="min-w-0 flex-1">
             <h4 className="text-sm font-semibold text-foreground">Needs Work</h4>
-            <p className="mt-0.5 text-xs font-medium text-red-500">{needsWorkTitle}</p>
-            {feedback.actionItems && feedback.actionItems.length > 0 && (
+            {improvements.length > 0 ? (
               <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
-                {feedback.actionItems.slice(0, 2).map((item: string, index: number) => (
+                {improvements.map((item: string, index: number) => (
                   <li key={index}>{item}</li>
                 ))}
               </ul>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">No improvement areas were generated yet.</p>
             )}
           </div>
         </div>
@@ -147,41 +175,35 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
             <TrendingUp className="h-4 w-4 text-yellow-500" />
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-sm font-semibold text-foreground">Currently Improving</h4>
-            <p className="mt-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
-              {improvingTitle}
-            </p>
-            {feedback.improvements && feedback.improvements.length > 1 && (
+            <h4 className="text-sm font-semibold text-foreground">Action Items</h4>
+            {actionItems.length > 0 ? (
               <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
-                {feedback.improvements.slice(1, 3).map((item: string, index: number) => (
+                {actionItems.map((item: string, index: number) => (
                   <li key={index}>{item}</li>
                 ))}
               </ul>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">No action items were generated yet.</p>
             )}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
-        <div className="flex items-start gap-3">
-          <div className="shrink-0 rounded-full bg-green-500/10 p-2">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-sm font-semibold text-foreground">Strong Skill</h4>
-            <p className="mt-0.5 text-xs font-medium text-green-600 dark:text-green-400">
-              {strongSkillTitle}
-            </p>
-            {feedback.strengths && feedback.strengths.length > 1 && (
-              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
-                {feedback.strengths.slice(1, 3).map((item: string, index: number) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            )}
+      {feedback.comparisonToPrevious && (
+        <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 rounded-full bg-primary/10 p-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-foreground">Compared With Previous</h4>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {feedback.comparisonToPrevious}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

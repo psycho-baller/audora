@@ -151,6 +151,10 @@ export default defineSchema({
     weakWords: v.array(v.object({
       word: v.string(),
       sentence: v.string(),
+      position: v.optional(v.number()),
+      startTime: v.optional(v.number()),
+      endTime: v.optional(v.number()),
+      replacement: v.optional(v.string()),
       suggestion: v.optional(v.string()),
     })),
     // Overall scores

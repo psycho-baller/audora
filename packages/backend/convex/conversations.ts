@@ -347,9 +347,19 @@ async function saveTranscriptDataImpl(ctx: any, args: any) {
       ? turn.startTime
       : (turn.words && turn.words.length > 0 ? turn.words[0].startTime : undefined);
 
+    // If userId is missing, try to infer it from speaker (for Mac recordings)
+    let userId = turn.userId;
+    if (!userId) {
+      if (turn.speaker === "S1") {
+        userId = conversation.initiatorUserId;
+      } else if (turn.speaker === "S2" && conversation.scannerUserId) {
+        userId = conversation.scannerUserId;
+      }
+    }
+
     await ctx.db.insert("transcriptTurns", {
       conversationId: args.conversationId,
-      userId: turn.userId,
+      userId,
       speaker: turn.speaker,
       text: turn.text,
       order: i,

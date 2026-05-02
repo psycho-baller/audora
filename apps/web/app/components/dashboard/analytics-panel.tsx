@@ -16,6 +16,7 @@ import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedbac
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useAudioPlaybackOptional } from "~/hooks/use-audio-playback";
+import { formatConversationDuration, getConversationDurationMs } from "~/lib/conversation-duration";
 
 // Format seconds to MM:SS
 function formatTimestamp(seconds: number): string {
@@ -42,6 +43,137 @@ function getWeakWordSnippet(sentence: string, word: string, maxLength = 96): str
   const snippet = normalizedSentence.slice(start, start + availableLength).trim();
 
   return `${prefix}${snippet}${suffix}`;
+}
+
+const WEAK_WORD_REPLACEMENT_LABELS: Record<string, string> = {
+  thing: "a specific noun",
+  stuff: "specific details",
+  just: "remove it",
+  really: "a stronger adjective",
+  very: "a stronger adjective",
+  quite: "a precise qualifier",
+  pretty: "a precise qualifier",
+  "kind of": "a direct phrase",
+  "sort of": "a direct phrase",
+  "a bit": "slightly, or a specific amount",
+  maybe: "a clear recommendation",
+  probably: "likely, with evidence",
+};
+
+function normalizeSpeechToken(token: string): string {
+  return token.toLowerCase().replace(/^[^a-z0-9']+|[^a-z0-9']+$/gi, "");
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getFallbackWeakWordReplacement(word: string): string {
+  return WEAK_WORD_REPLACEMENT_LABELS[word.toLowerCase()] ?? "a more specific word";
+}
+
+function cleanWeakWordSuggestion(suggestion?: string): string | null {
+  if (!suggestion) return null;
+
+  const cleaned = suggestion
+    .trim()
+    .replace(/^["']+|["']+$/g, "")
+    .replace(/^(try|rewrite|suggestion):\s*/i, "")
+    .trim();
+
+  if (!cleaned || cleaned.length > 220) return null;
+
+  const sentenceCount = cleaned.split(/[.!?]+/).filter((part) => part.trim().length > 0).length;
+  if (sentenceCount > 2 && cleaned.length > 120) return null;
+
+  return cleaned;
+}
+
+function getWeakWordRecommendation(word: string, replacement?: string, suggestion?: string) {
+  return {
+    replacement: replacement?.trim() || getFallbackWeakWordReplacement(word),
+    rewrite: cleanWeakWordSuggestion(suggestion),
+  };
+}
+
+function splitWeakWordContext(sentence: string, word: string): Array<{ text: string; isWeak: boolean }> {
+  const pattern = escapeRegExp(word.trim()).replace(/\s+/g, "\\s+");
+  const match = sentence.match(new RegExp(`\\b${pattern}\\b`, "i"));
+
+  if (!match || match.index === undefined) {
+    return [{ text: sentence, isWeak: false }];
+  }
+
+  const start = match.index;
+  const end = start + match[0].length;
+  return [
+    { text: sentence.slice(0, start), isWeak: false },
+    { text: sentence.slice(start, end), isWeak: true },
+    { text: sentence.slice(end), isWeak: false },
+  ].filter((part) => part.text.length > 0);
+}
+
+function WeakWordContext({ sentence, word }: { sentence: string; word: string }) {
+  return (
+    <p className="mt-1 text-xs italic leading-5 text-foreground/80">
+      "
+      {splitWeakWordContext(sentence, word).map((part, index) =>
+        part.isWeak ? (
+          <mark
+            key={`${part.text}-${index}`}
+            className="rounded-sm bg-orange-500/15 px-0.5 font-semibold text-orange-700 dark:text-orange-300"
+          >
+            {part.text}
+          </mark>
+        ) : (
+          <span key={`${part.text}-${index}`}>{part.text}</span>
+        )
+      )}
+      "
+    </p>
+  );
+}
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function formatPercent(value: number, fractionDigits = 0): string {
+  if (!Number.isFinite(value)) return "0%";
+  return `${value.toFixed(fractionDigits)}%`;
+}
+
+function formatCompactNumber(value: number): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value);
+}
+
+function getScoreLabel(score: number): string {
+  if (score >= 85) return "Strong";
+  if (score >= 70) return "Solid";
+  if (score >= 55) return "Needs attention";
+  return "High priority";
+}
+
+function getPaceLabel(wpm: number): string {
+  if (wpm < 100) return "Slow";
+  if (wpm > 160) return "Fast";
+  return "Conversational";
+}
+
+function getPaceTarget(wpm: number): string {
+  if (wpm < 100) return "Aim for 100-160 WPM when the point does not need extra emphasis.";
+  if (wpm > 160) return "Slow down toward 100-160 WPM so listeners can keep up.";
+  return "This sits inside the target range for clear conversational pacing.";
+}
+
+function countBy<T extends string>(items: T[]): Array<{ item: T; count: number }> {
+  const counts = new Map<T, number>();
+  for (const item of items) {
+    counts.set(item, (counts.get(item) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([item, count]) => ({ item, count }))
+    .sort((a, b) => b.count - a.count || a.item.localeCompare(b.item));
 }
 
 // Clickable timestamp button component
@@ -428,6 +560,11 @@ export function AnalyticsPanel({
     conversationId ? { conversationId } : "skip"
   );
 
+  const conversation = useQuery(
+    api.conversations.get,
+    conversationId ? { id: conversationId } : "skip"
+  );
+
   // Filter to current user's analytics
   const currentUserAnalytics =
     conversationAnalytics?.filter(
@@ -436,6 +573,20 @@ export function AnalyticsPanel({
 
   const analytics = currentUserAnalytics[0];
 
+  const isCurrentUserTranscriptTurn = useMemo(() => {
+    return (turn: NonNullable<typeof transcript>[number]) => {
+      if (!currentUser) return false;
+      if (turn.userId === currentUser._id) return true;
+
+      if (!turn.userId && conversation) {
+        if (turn.speaker === "S1" && conversation.initiatorUserId === currentUser._id) return true;
+        if (turn.speaker === "S2" && conversation.scannerUserId === currentUser._id) return true;
+      }
+
+      return false;
+    };
+  }, [conversation, currentUser]);
+
   // Build mapping of words to their timestamps for the current user
   const wordTimestampMap = useMemo(() => {
     const map = new Map<number, { word: string; startTime: number; wordId: string }>();
@@ -443,7 +594,7 @@ export function AnalyticsPanel({
     
     let wordIndex = 0;
     transcript.forEach((turn) => {
-      if (turn.userId === currentUser._id && turn.words) {
+      if (isCurrentUserTranscriptTurn(turn) && turn.words) {
         turn.words.forEach((word) => {
           map.set(wordIndex, {
             word: word.word,
@@ -455,7 +606,7 @@ export function AnalyticsPanel({
       }
     });
     return map;
-  }, [transcript, currentUser]);
+  }, [transcript, currentUser, isCurrentUserTranscriptTurn]);
 
   // Handle seeking to a timestamp
   const handleSeekToTime = (time: number, wordId?: string) => {
@@ -547,19 +698,124 @@ export function AnalyticsPanel({
 
   const topSentenceStarter = analytics?.sentenceStarters.weak[0];
 
-  const pacingMessage = analytics
-    ? analytics.pacing.wordsPerMinute < 100
-      ? "Your pace was slow. Try speaking faster than 120 WPM."
-      : analytics.pacing.wordsPerMinute > 160
-        ? "Your pace was fast. Try slowing down to under 160 WPM."
-        : "Great pace. Keep it between 100-160 WPM for clarity."
-    : "";
+  const currentUserTurns = useMemo(() => {
+    if (!transcript) return [];
+    return transcript.filter(isCurrentUserTranscriptTurn);
+  }, [transcript, isCurrentUserTranscriptTurn]);
+
+  const currentUserWordCount = useMemo(
+    () => currentUserTurns.reduce((sum, turn) => sum + countWords(turn.text), 0),
+    [currentUserTurns]
+  );
+
+  const totalTranscriptWordCount = useMemo(
+    () => transcript?.reduce((sum, turn) => sum + countWords(turn.text), 0) ?? 0,
+    [transcript]
+  );
+
+  const conversationDurationMs = getConversationDurationMs(conversation, transcript);
+  const speakingMinutes =
+    analytics && analytics.pacing.wordsPerMinute > 0
+      ? currentUserWordCount / analytics.pacing.wordsPerMinute
+      : 0;
+  const speakingTimeLabel =
+    speakingMinutes > 0
+      ? formatConversationDuration(Math.round(speakingMinutes * 60000))
+      : "N/A";
+  const conversationShare =
+    totalTranscriptWordCount > 0 ? (currentUserWordCount / totalTranscriptWordCount) * 100 : 0;
+  const averageWordsPerTurn =
+    currentUserTurns.length > 0 ? currentUserWordCount / currentUserTurns.length : 0;
+
+  const scoreCards = analytics
+    ? [
+        {
+          label: "Clarity",
+          score: analytics.scores.clarity,
+          detail: `${analytics.fillerWords.count} filler ${
+            analytics.fillerWords.count === 1 ? "word" : "words"
+          } detected`,
+        },
+        {
+          label: "Conciseness",
+          score: analytics.scores.conciseness,
+          detail: `${repeatedWordCount} repeated word ${
+            repeatedWordCount === 1 ? "instance" : "instances"
+          }`,
+        },
+        {
+          label: "Confidence",
+          score: analytics.scores.confidence,
+          detail: `${sentenceStarterTotal} weak sentence ${
+            sentenceStarterTotal === 1 ? "starter" : "starters"
+          }`,
+        },
+      ]
+    : [];
+
+  const overallScore =
+    analytics
+      ? Math.round(
+          (analytics.scores.clarity +
+            analytics.scores.conciseness +
+            analytics.scores.confidence) /
+            3
+        )
+      : 0;
+
+  const fillerBreakdown = analytics
+    ? countBy(analytics.fillerWords.instances.map((instance) => instance.word)).slice(0, 6)
+    : [];
+  const weakWordBreakdown = analytics
+    ? countBy(analytics.weakWords.map((item) => item.word)).slice(0, 6)
+    : [];
+  const weakWordsNeedSuggestions =
+    analytics?.weakWords.some((word) => !cleanWeakWordSuggestion(word.suggestion)) ?? false;
+  const repeatedPhraseCount =
+    analytics?.repetitions.repeatedPhrases.reduce((sum, phrase) => sum + phrase.count, 0) ?? 0;
+  const weakStarterRate =
+    analytics && analytics.sentenceStarters.total > 0
+      ? (sentenceStarterTotal / analytics.sentenceStarters.total) * 100
+      : 0;
+  const fillerPer100Words =
+    currentUserWordCount > 0 && analytics
+      ? (analytics.fillerWords.count / currentUserWordCount) * 100
+      : 0;
+  const hasConversationSummary = Boolean(conversation?.summary?.trim());
 
   const weakWordExamples = analytics?.weakWords || [];
   const selectedWeakWordExample =
     weakWordExamples.length > 0
       ? weakWordExamples[weakWordExampleIndex % weakWordExamples.length]
       : null;
+  const getWeakWordLocation = (item: NonNullable<typeof selectedWeakWordExample>) => {
+    if (typeof item.position === "number") {
+      const wordData = wordTimestampMap.get(item.position);
+      if (wordData) return wordData;
+    }
+
+    if (typeof item.startTime === "number") {
+      return {
+        word: item.word,
+        startTime: item.startTime,
+        wordId: undefined,
+      };
+    }
+
+    return Array.from(wordTimestampMap.values()).find(
+      (wordData) => normalizeSpeechToken(wordData.word) === item.word.toLowerCase()
+    ) ?? null;
+  };
+  const selectedWeakWordLocation = selectedWeakWordExample
+    ? getWeakWordLocation(selectedWeakWordExample)
+    : null;
+  const selectedWeakWordRecommendation = selectedWeakWordExample
+    ? getWeakWordRecommendation(
+        selectedWeakWordExample.word,
+        selectedWeakWordExample.replacement,
+        selectedWeakWordExample.suggestion
+      )
+    : null;
 
   useEffect(() => {
     if (weakWordExampleIndex >= weakWordExamples.length) {
@@ -634,9 +890,95 @@ export function AnalyticsPanel({
 
         <TabsContent value="summary" className="flex-1 min-h-0 overflow-hidden">
           <div className="grid h-full min-h-0 gap-5 overflow-hidden xl:grid-cols-[minmax(0,1fr)_22rem]">
-            <div className="grid min-h-0 min-w-0 auto-rows-[minmax(14rem,auto)] items-stretch gap-4 overflow-y-auto custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
-              <section className="flex min-h-[14rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
-                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+            <div className="grid min-h-0 min-w-0 auto-rows-min items-start gap-5 overflow-y-auto pr-1 custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
+              <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-6">
+                <div className="grid gap-4 border-b border-border/70 pb-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Conversation Summary
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold leading-tight text-foreground">
+                      {hasConversationSummary ? "What this conversation covered" : "Transcript-based context"}
+                    </h3>
+                  </div>
+                  <div className="flex min-w-0 flex-wrap gap-2 text-xs text-muted-foreground lg:justify-end">
+                    <span className="whitespace-nowrap rounded-md border border-border bg-background px-2 py-1">
+                      {formatConversationDuration(conversationDurationMs)}
+                    </span>
+                    <span className="whitespace-nowrap rounded-md border border-border bg-background px-2 py-1">
+                      {formatCompactNumber(totalTranscriptWordCount)} total words
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-4 max-h-36 overflow-y-auto pr-2 text-sm leading-7 text-muted-foreground custom-scrollbar">
+                  {conversation === undefined
+                    ? "Loading conversation summary..."
+                    : hasConversationSummary
+                    ? conversation?.summary
+                    : "No AI-generated conversation summary has been saved yet. The rest of this screen uses transcript analytics and coaching feedback that are available for this conversation."}
+                </p>
+              </section>
+
+              <section className="flex min-h-[11rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Overall Score
+                  </p>
+                  <span className={`text-xs font-medium ${getScoreColor(overallScore)}`}>
+                    {getScoreLabel(overallScore)}
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-1">
+                  <p className={`text-4xl font-semibold leading-none ${getScoreColor(overallScore)}`}>
+                    {overallScore}
+                  </p>
+                  <p className="pb-1 text-sm leading-none text-muted-foreground">/100 average</p>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Average of clarity, conciseness, and confidence for your speech in this conversation.
+                </p>
+              </section>
+
+              {scoreCards.map((scoreCard) => (
+                <section
+                  key={scoreCard.label}
+                  className={`flex min-h-[11rem] min-w-0 flex-col rounded-xl border p-5 shadow-sm xl:col-span-1 ${getScoreBgColor(scoreCard.score)}`}
+                >
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {scoreCard.label}
+                    </p>
+                    <span className="shrink-0">{getTrendIcon(scoreCard.score)}</span>
+                  </div>
+                  <p className={`mt-4 text-3xl font-semibold leading-none ${getScoreColor(scoreCard.score)}`}>
+                    {scoreCard.score}
+                  </p>
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                    {scoreCard.detail}
+                  </p>
+                </section>
+              ))}
+
+              <section className="flex min-h-[11rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-1">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 pb-3">
+                  <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Speaking Share
+                  </p>
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                    {currentUserTurns.length} turns
+                  </span>
+                </div>
+                <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
+                  {formatPercent(conversationShare)}
+                </p>
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  {formatCompactNumber(currentUserWordCount)} words from you, about{" "}
+                  {formatCompactNumber(averageWordsPerTurn)} words per turn, over {speakingTimeLabel} speaking time.
+                </p>
+              </section>
+
+              <section className="flex min-h-[15rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
+                <div className="grid gap-3 border-b border-border/70 pb-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Pace of Speech
@@ -646,12 +988,17 @@ export function AnalyticsPanel({
                       Conversational (100-160)
                     </span>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-foreground">
-                    {analytics.pacing.wordsPerMinute}
-                    <span className="ml-1 font-normal text-muted-foreground">words/min</span>
-                  </span>
+                  <div className="shrink-0 text-left sm:text-right">
+                    <span className="block text-sm font-semibold text-foreground">
+                      {analytics.pacing.wordsPerMinute}
+                      <span className="ml-1 font-normal text-muted-foreground">words/min</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {getPaceLabel(analytics.pacing.wordsPerMinute)}
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">{pacingMessage}</p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{getPaceTarget(analytics.pacing.wordsPerMinute)}</p>
                 <PacingVariationChart
                   wpm={analytics.pacing.wordsPerMinute}
                   segments={analytics.pacing.segments}
@@ -659,22 +1006,34 @@ export function AnalyticsPanel({
                 />
               </section>
 
-              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
-                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <section className="flex min-h-[15rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Filler Words
                   </p>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
                     {analytics.fillerWords.count} total
                   </span>
                 </div>
-                <p className="mt-4 text-3xl font-semibold text-foreground">
+                <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
                   {analytics.fillerWords.ratePerMinute.toFixed(1)}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">words/min</span>
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  You may be repeating filler words several times.
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  {analytics.fillerWords.count > 0
+                    ? `${formatPercent(fillerPer100Words, 1)} of your words were fillers.`
+                    : "No filler words detected in your analyzed speech."}
                 </p>
+                {fillerBreakdown.length > 0 && (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {fillerBreakdown.slice(0, 4).map((item) => (
+                      <div key={item.item} className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-xs">
+                        <span className="font-medium text-foreground">"{item.item}"</span>
+                        <span className="text-muted-foreground">{item.count}x</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {analytics.fillerWords.instances.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-1.5">
                     {analytics.fillerWords.instances.slice(0, 6).map((instance, idx) => {
@@ -706,14 +1065,16 @@ export function AnalyticsPanel({
                 )}
               </section>
 
-              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
-                <div className="flex items-center justify-between border-b border-border/70 pb-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <section className="flex min-h-[15rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 pb-3">
+                  <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Repetition
                   </p>
-                  <span className="text-xs text-muted-foreground">Repeated words</span>
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                    {repeatedPhraseCount} phrase {repeatedPhraseCount === 1 ? "hit" : "hits"}
+                  </span>
                 </div>
-                <p className="mt-4 text-3xl font-semibold text-foreground">
+                <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
                   {repeatedWordCount}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">instances</span>
                 </p>
@@ -729,39 +1090,85 @@ export function AnalyticsPanel({
                     <p className="text-sm text-muted-foreground">No excessive repetitions detected.</p>
                   )}
                 </div>
+                {analytics.repetitions.repeatedPhrases.length > 0 && (
+                  <div className="mt-auto border-t border-border/70 pt-3">
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Repeated phrases</p>
+                    <div className="space-y-1.5">
+                      {analytics.repetitions.repeatedPhrases.slice(0, 3).map((item) => (
+                        <div key={item.phrase} className="flex items-center justify-between gap-3 text-xs">
+                          <span className="truncate text-muted-foreground">"{item.phrase}"</span>
+                          <span className="shrink-0 font-medium text-foreground">{item.count}x</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
 
-              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
-                <div className="flex items-center justify-between border-b border-border/70 pb-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <section className="flex min-h-[15rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 pb-3">
+                  <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Weak Words
                   </p>
-                  <span className="text-xs text-muted-foreground">Word choice</span>
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">Word choice</span>
                 </div>
-                <p className="mt-4 text-3xl font-semibold text-foreground">
+                <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
                   {analytics.weakWords.length}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">found</span>
                 </p>
+                {weakWordBreakdown.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {weakWordBreakdown.slice(0, 5).map((item) => (
+                      <span
+                        key={item.item}
+                        className="rounded-md border border-orange-500/20 bg-orange-500/10 px-2 py-1 text-xs text-orange-700 dark:text-orange-400"
+                      >
+                        {item.item} {item.count > 1 ? `${item.count}x` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-4 pb-3">
                   {selectedWeakWordExample ? (
                     <div className="p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-muted-foreground">
-                            Weak word:{" "}
-                            <span className="font-medium text-foreground">
-                              "{selectedWeakWordExample.word}"
+                          <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>
+                              Weak word:{" "}
+                              <span className="font-medium text-foreground">
+                                "{selectedWeakWordExample.word}"
+                              </span>
                             </span>
-                          </p>
-                          <p
-                            className="mt-1 truncate text-xs italic text-foreground/80"
-                            title={selectedWeakWordExample.sentence}
-                          >
-                            "{getWeakWordSnippet(
+                            {selectedWeakWordLocation ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleSeekToTime(
+                                    selectedWeakWordLocation.startTime,
+                                    selectedWeakWordLocation.wordId
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 rounded-md bg-orange-500/10 px-1.5 py-0.5 font-mono text-[10px] text-orange-700 transition-colors hover:bg-orange-500/20 dark:text-orange-400"
+                                title={`Jump to ${formatTimestamp(selectedWeakWordLocation.startTime)}`}
+                              >
+                                <Play className="h-2.5 w-2.5" fill="currentColor" />
+                                {formatTimestamp(selectedWeakWordLocation.startTime)}
+                              </button>
+                            ) : typeof selectedWeakWordExample.position === "number" ? (
+                              <span className="font-mono text-[10px]">
+                                word {selectedWeakWordExample.position + 1}
+                              </span>
+                            ) : null}
+                          </div>
+                          <WeakWordContext
+                            sentence={getWeakWordSnippet(
                               selectedWeakWordExample.sentence,
-                              selectedWeakWordExample.word
-                            )}"
-                          </p>
+                              selectedWeakWordExample.word,
+                              120
+                            )}
+                            word={selectedWeakWordExample.word}
+                          />
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
                           <button
@@ -791,27 +1198,60 @@ export function AnalyticsPanel({
                       <p className="mt-3 text-[11px] text-muted-foreground">
                         {weakWordExampleIndex + 1} of {weakWordExamples.length}
                       </p>
+                      {selectedWeakWordRecommendation && (
+                        <div className="mt-3 border-l-2 border-orange-500/50 pl-3">
+                          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Replace with
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">
+                            {selectedWeakWordRecommendation.replacement}
+                          </p>
+                          {selectedWeakWordRecommendation.rewrite && (
+                            <p className="mt-2 text-xs leading-5 text-primary">
+                              Cleaner sentence: "{selectedWeakWordRecommendation.rewrite}"
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">No weak words detected.</p>
                   )}
                 </div>
+                {weakWordsNeedSuggestions && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateSuggestions}
+                    disabled={isGeneratingSuggestions}
+                    className="mt-auto h-8 text-xs"
+                  >
+                    {isGeneratingSuggestions ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    Generate suggestions
+                  </Button>
+                )}
               </section>
 
-              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
-                <div className="flex items-center justify-between border-b border-border/70 pb-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <section className="flex min-h-[15rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
+                <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/70 pb-3">
+                  <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Sentence Starters
                   </p>
-                  <span className="text-xs text-muted-foreground">Flow</span>
+                  <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                    {analytics.sentenceStarters.total} sentences
+                  </span>
                 </div>
-                <p className="mt-4 text-3xl font-semibold text-foreground">
+                <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
                   {sentenceStarterTotal}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">uses</span>
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   {topSentenceStarter
-                    ? `"${topSentenceStarter.word}" showed up most often.`
+                    ? `"${topSentenceStarter.word}" showed up most often. ${formatPercent(weakStarterRate)} of starts were weak.`
                     : "No weak sentence starters detected."}
                 </p>
                 <div className="mt-4 space-y-2 pb-3">
@@ -979,9 +1419,11 @@ export function AnalyticsPanel({
                     <div className="px-3 pb-3 pt-1">
                       <div className="space-y-3">
                         {analytics.weakWords.slice(0, 3).map((item, index) => {
-                          // Find this weak word in the transcript to get its timestamp
-                          const wordData = Array.from(wordTimestampMap.values()).find(
-                            (w) => w.word.toLowerCase().replace(/[.,!?;:]/g, "") === item.word.toLowerCase()
+                          const wordData = getWeakWordLocation(item);
+                          const recommendation = getWeakWordRecommendation(
+                            item.word,
+                            item.replacement,
+                            item.suggestion
                           );
                           
                           return (
@@ -1002,16 +1444,27 @@ export function AnalyticsPanel({
                                   </button>
                                 )}
                               </div>
-                              <p className="text-xs text-foreground/80 italic">"{item.sentence}"</p>
-                              {item.suggestion && (
-                                <p className="text-xs text-primary font-medium mt-2">
-                                  → "{item.suggestion}"
+                              <WeakWordContext
+                                sentence={getWeakWordSnippet(item.sentence, item.word, 140)}
+                                word={item.word}
+                              />
+                              <div className="mt-2 border-l-2 border-orange-500/50 pl-2">
+                                <p className="text-[11px] text-muted-foreground">
+                                  Replace with{" "}
+                                  <span className="font-semibold text-foreground">
+                                    {recommendation.replacement}
+                                  </span>
+                                </p>
+                              </div>
+                              {recommendation.rewrite && (
+                                <p className="mt-2 text-xs font-medium leading-5 text-primary">
+                                  Cleaner sentence: "{recommendation.rewrite}"
                                 </p>
                               )}
                             </div>
                           );
                         })}
-                        {analytics.weakWords.some((w) => !w.suggestion) && (
+                        {weakWordsNeedSuggestions && (
                           <Button
                             size="sm"
                             variant="outline"

@@ -71,11 +71,12 @@ export function AppSidebar({
           <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
             <Link
               to="/"
+              aria-label="Audora home"
               prefetch="viewport"
-              className="block group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center"
+              className="flex h-10 items-center gap-2 rounded-md px-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
             >
+              <img src="/logo.png" alt="" className="size-8 shrink-0 rounded-[10px]" />
               <span className="text-base font-semibold group-data-[collapsible=icon]:hidden">Audora</span>
-              <span className="hidden text-xl font-bold leading-none group-data-[collapsible=icon]:block">A</span>
             </Link>
           </SidebarMenuItem>
         </SidebarMenu>

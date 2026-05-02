@@ -1,7 +1,15 @@
 import { api } from '@audora/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
-import { View, Text, ScrollView, ActivityIndicator, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
+function averageScore(item: { clarity: number; conciseness: number; confidence: number }) {
+  return Math.round((item.clarity + item.conciseness + item.confidence) / 3);
+}
 
 export default function AnalyticsScreen() {
   const dashboardData = useQuery(api.analytics.getUserDashboard);
@@ -25,6 +33,28 @@ export default function AnalyticsScreen() {
   );
   const wordsPerMin =
     overview.totalMinutes > 0 ? Math.round(overview.totalWords / overview.totalMinutes) : 0;
+  const avgSpeechWpm = overview.avgWordsPerMinute ?? wordsPerMin;
+  const avgFillerRate = overview.avgFillerRate ?? 0;
+  const totalFillerWords = overview.totalFillerWords ?? 0;
+  const totalWeakWords = overview.totalWeakWords ?? 0;
+  const totalRepeatedWords = overview.totalRepeatedWords ?? 0;
+  const totalRepeatedPhrases = overview.totalRepeatedPhrases ?? 0;
+  const totalWeakStarters = overview.totalWeakStarters ?? 0;
+  const recentPerformance = performanceTrend.slice(-5);
+  const recentFiller = fillerTrend.slice(-5);
+  const latestPerformance = recentPerformance[recentPerformance.length - 1];
+  const previousPerformance = recentPerformance[recentPerformance.length - 2];
+  const performanceDelta =
+    latestPerformance && previousPerformance
+      ? averageScore(latestPerformance) - averageScore(previousPerformance)
+      : null;
+  const latestFiller = recentFiller[recentFiller.length - 1];
+  const previousFiller = recentFiller[recentFiller.length - 2];
+  const fillerDelta =
+    latestFiller && previousFiller
+      ? Math.round((latestFiller.rate - previousFiller.rate) * 10) / 10
+      : null;
+  const maxRecentFillerRate = Math.max(...recentFiller.map((item) => item.rate), 1);
 
   return (
     <SafeAreaView style={styles.container} className="bg-background" edges={['bottom']}>
@@ -72,6 +102,53 @@ export default function AnalyticsScreen() {
               </View>
               <Text className="text-3xl font-bold text-white">{avgScore}</Text>
               <Text className="text-xs text-yellow-300 mt-1">out of 100</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Speech Signals */}
+        <View className="bg-card border border-border rounded-xl p-4 mb-6">
+          <Text className="text-xl font-bold text-foreground mb-4">Speech Signals</Text>
+          <View className="gap-3">
+            <View className="flex-row gap-3">
+              <View className="flex-1 bg-muted/40 rounded-lg p-3">
+                <Text className="text-xs text-muted-foreground mb-1">Avg Pace</Text>
+                <Text className="text-2xl font-bold text-foreground">{avgSpeechWpm}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">words/min</Text>
+              </View>
+              <View className="flex-1 bg-muted/40 rounded-lg p-3">
+                <Text className="text-xs text-muted-foreground mb-1">Filler Rate</Text>
+                <Text className="text-2xl font-bold text-foreground">{avgFillerRate}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">per min</Text>
+              </View>
+            </View>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1 bg-muted/40 rounded-lg p-3">
+                <Text className="text-xs text-muted-foreground mb-1">Fillers</Text>
+                <Text className="text-2xl font-bold text-foreground">{totalFillerWords}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">total detected</Text>
+              </View>
+              <View className="flex-1 bg-muted/40 rounded-lg p-3">
+                <Text className="text-xs text-muted-foreground mb-1">Weak Words</Text>
+                <Text className="text-2xl font-bold text-foreground">{totalWeakWords}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">across sessions</Text>
+              </View>
+            </View>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1 bg-muted/40 rounded-lg p-3">
+                <Text className="text-xs text-muted-foreground mb-1">Repetition</Text>
+                <Text className="text-2xl font-bold text-foreground">{totalRepeatedWords}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">
+                  words • {totalRepeatedPhrases} phrases
+                </Text>
+              </View>
+              <View className="flex-1 bg-muted/40 rounded-lg p-3">
+                <Text className="text-xs text-muted-foreground mb-1">Weak Starters</Text>
+                <Text className="text-2xl font-bold text-foreground">{totalWeakStarters}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">sentence openings</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -126,6 +203,118 @@ export default function AnalyticsScreen() {
             </View>
           </View>
         </View>
+
+        {/* Recent Performance Trend */}
+        {recentPerformance.length > 0 && (
+          <View className="bg-card border border-border rounded-xl p-4 mb-6">
+            <View className="flex-row items-start justify-between mb-4">
+              <View>
+                <Text className="text-xl font-bold text-foreground">Recent Trend</Text>
+                <Text className="text-xs text-muted-foreground mt-1">
+                  Last {recentPerformance.length} analyzed conversations
+                </Text>
+              </View>
+              {performanceDelta !== null && (
+                <View
+                  className={`px-2 py-1 rounded-full ${
+                    performanceDelta >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      performanceDelta >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}
+                  >
+                    {performanceDelta >= 0 ? '+' : ''}
+                    {performanceDelta}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View className="gap-3">
+              {recentPerformance.map((item) => {
+                const score = averageScore(item);
+                return (
+                  <View key={item.conversation} className="gap-2">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-sm font-medium text-foreground">
+                        Conversation {item.conversation}
+                      </Text>
+                      <Text className="text-sm font-semibold text-muted-foreground">
+                        {score}/100 avg
+                      </Text>
+                    </View>
+                    <View className="h-2 bg-muted rounded-full overflow-hidden">
+                      <View
+                        className="h-full bg-blue-400 rounded-full"
+                        style={{ width: `${clampPercent(score)}%` }}
+                      />
+                    </View>
+                    <Text className="text-xs text-muted-foreground">
+                      Clarity {item.clarity} • Conciseness {item.conciseness} • Confidence{' '}
+                      {item.confidence}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Filler Word Trend */}
+        {recentFiller.length > 0 && (
+          <View className="bg-card border border-border rounded-xl p-4 mb-6">
+            <View className="flex-row items-start justify-between mb-4">
+              <View>
+                <Text className="text-xl font-bold text-foreground">Filler Trend</Text>
+                <Text className="text-xs text-muted-foreground mt-1">
+                  Count and rate from recent analyzed conversations
+                </Text>
+              </View>
+              {fillerDelta !== null && (
+                <View
+                  className={`px-2 py-1 rounded-full ${
+                    fillerDelta <= 0 ? 'bg-green-500/20' : 'bg-yellow-500/20'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      fillerDelta <= 0 ? 'text-green-400' : 'text-yellow-400'
+                    }`}
+                  >
+                    {fillerDelta > 0 ? '+' : ''}
+                    {fillerDelta}/min
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View className="gap-3">
+              {recentFiller.map((item) => {
+                const width = clampPercent((item.rate / maxRecentFillerRate) * 100);
+                return (
+                  <View key={item.conversation} className="gap-2">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-sm font-medium text-foreground">
+                        Conversation {item.conversation}
+                      </Text>
+                      <Text className="text-sm font-semibold text-muted-foreground">
+                        {item.count} total • {item.rate}/min
+                      </Text>
+                    </View>
+                    <View className="h-2 bg-muted rounded-full overflow-hidden">
+                      <View
+                        className="h-full bg-yellow-400 rounded-full"
+                        style={{ width: `${width}%` }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Top Keywords */}
         {topKeywords.length > 0 && (

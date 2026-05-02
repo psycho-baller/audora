@@ -17,6 +17,134 @@ const WEAK_WORDS = [
   "kind of", "sort of", "a bit", "maybe", "probably"
 ];
 
+const WEAK_WORD_REPLACEMENTS: Record<string, string> = {
+  thing: "a specific noun",
+  stuff: "specific details",
+  just: "remove it",
+  really: "a stronger adjective",
+  very: "a stronger adjective",
+  quite: "a precise qualifier",
+  pretty: "a precise qualifier",
+  "kind of": "a direct phrase",
+  "sort of": "a direct phrase",
+  "a bit": "slightly, or a specific amount",
+  maybe: "a clear recommendation",
+  probably: "likely, with evidence",
+};
+
+function normalizeSpeechToken(token: string): string {
+  return token.toLowerCase().replace(/^[^a-z0-9']+|[^a-z0-9']+$/gi, "");
+}
+
+function getDefaultWeakWordReplacement(word: string): string {
+  return WEAK_WORD_REPLACEMENTS[word.toLowerCase()] ?? "a more specific word";
+}
+
+function buildWeakWordContext(
+  rawWords: string[],
+  startPosition: number,
+  length: number,
+  wordsBefore = 7,
+  wordsAfter = 9
+): string {
+  let start = Math.max(0, startPosition - wordsBefore);
+  let end = Math.min(rawWords.length, startPosition + length + wordsAfter);
+
+  for (let index = startPosition - 1; index >= start; index--) {
+    if (/[.!?]["')\]]?$/.test(rawWords[index])) {
+      start = index + 1;
+      break;
+    }
+  }
+
+  for (let index = startPosition + length - 1; index < end - 1; index++) {
+    if (/[.!?]["')\]]?$/.test(rawWords[index])) {
+      end = index + 1;
+      break;
+    }
+  }
+
+  const prefix = start > 0 ? "... " : "";
+  const suffix = end < rawWords.length ? " ..." : "";
+  return `${prefix}${rawWords.slice(start, end).join(" ")}${suffix}`.trim();
+}
+
+function getShortContextAroundWeakWord(text: string, word: string, maxLength = 180): string {
+  const normalizedText = text.trim().replace(/\s+/g, " ");
+  if (normalizedText.length <= maxLength) return normalizedText;
+
+  const wordIndex = normalizedText.toLowerCase().indexOf(word.toLowerCase());
+  if (wordIndex === -1) {
+    return `${normalizedText.slice(0, maxLength - 3).trimEnd()}...`;
+  }
+
+  const targetStart = Math.max(0, wordIndex - Math.floor((maxLength - word.length) / 2));
+  const targetEnd = Math.min(normalizedText.length, targetStart + maxLength);
+  const start = Math.max(0, targetEnd - maxLength);
+  const prefix = start > 0 ? "..." : "";
+  const suffix = targetEnd < normalizedText.length ? "..." : "";
+  const availableLength = maxLength - prefix.length - suffix.length;
+  const snippet = normalizedText.slice(start, start + availableLength).trim();
+
+  return `${prefix}${snippet}${suffix}`;
+}
+
+function stripSuggestionDecorations(value: string): string {
+  return value
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim()
+    .replace(/^["']+|["']+$/g, "")
+    .trim();
+}
+
+function cleanReplacement(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const replacement = stripSuggestionDecorations(value)
+    .replace(/^replace with:?\s*/i, "")
+    .trim();
+
+  if (!replacement || replacement.length > 80) return fallback;
+  return replacement;
+}
+
+function cleanRewrite(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const rewrite = stripSuggestionDecorations(value)
+    .replace(/^(try|rewrite|suggestion):\s*/i, "")
+    .trim();
+
+  if (!rewrite || rewrite.length > 220) return undefined;
+
+  const sentenceCount = rewrite.split(/[.!?]+/).filter((part) => part.trim().length > 0).length;
+  if (sentenceCount > 2 && rewrite.length > 120) return undefined;
+
+  return rewrite;
+}
+
+function parseWeakWordSuggestionResponse(
+  content: string | undefined,
+  weakWord: string
+): { replacement: string; suggestion?: string } {
+  const fallback = getDefaultWeakWordReplacement(weakWord);
+  if (!content) return { replacement: fallback };
+
+  const cleaned = stripSuggestionDecorations(content);
+  try {
+    const parsed = JSON.parse(cleaned);
+    return {
+      replacement: cleanReplacement(parsed.replacement, fallback),
+      suggestion: cleanRewrite(parsed.rewrite ?? parsed.suggestion),
+    };
+  } catch {
+    return {
+      replacement: fallback,
+      suggestion: cleanRewrite(cleaned),
+    };
+  }
+}
+
 // Analyze transcript for a specific user
 export const analyzeUserSpeech = mutation({
   args: {
@@ -37,9 +165,30 @@ export const analyzeUserSpeech = mutation({
       .collect();
 
     console.log("Total transcript turns found:", allTurns.length);
-    console.log("User IDs in transcript:", Array.from(new Set(allTurns.map(t => t.userId))));
 
-    const userTurns = allTurns.filter((turn) => turn.userId === args.userId);
+    // Get conversation for duration and for inferring missing userIds
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      console.log("⚠️ Conversation not found, returning null");
+      return null;
+    }
+
+    const userTurns = allTurns.filter((turn) => {
+      const turnUserId = turn.userId ? String(turn.userId) : null;
+      const targetUserId = String(args.userId);
+      const initiatorId = String(conversation.initiatorUserId);
+      const scannerId = conversation.scannerUserId ? String(conversation.scannerUserId) : null;
+
+      if (turnUserId === targetUserId) return true;
+
+      // Fallback for Mac recordings or older recordings where userId might be missing
+      if (!turn.userId) {
+        if (turn.speaker === "S1" && initiatorId === targetUserId) return true;
+        if (turn.speaker === "S2" && scannerId === targetUserId) return true;
+      }
+      return false;
+    });
+
     console.log("User turns found:", userTurns.length);
 
     if (userTurns.length === 0) {
@@ -49,13 +198,23 @@ export const analyzeUserSpeech = mutation({
 
     // Combine all text
     const fullText = userTurns.map((t) => t.text).join(" ");
-    const words = fullText.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+    const rawWords = fullText.split(/\s+/).filter((word) => word.length > 0);
+    const wordEntries = rawWords
+      .map((word, position) => ({
+        normalized: normalizeSpeechToken(word),
+        position,
+      }))
+      .filter((entry) => entry.normalized.length > 0);
+    const words = wordEntries.map((entry) => entry.normalized);
     const wordCount = words.length;
 
-    // Get conversation duration
-    const conversation = await ctx.db.get(args.conversationId);
-    const durationMinutes = conversation?.startedAt && conversation?.endedAt
-      ? (conversation.endedAt - conversation.startedAt) / 60000
+    if (wordCount === 0) {
+      console.log("⚠️ User turns have no words, returning null");
+      return null;
+    }
+
+    const durationMinutes = conversation.startedAt && conversation.endedAt
+      ? Math.max(0.1, (conversation.endedAt - conversation.startedAt) / 60000)
       : 1;
 
     console.log("Word count:", wordCount);
@@ -145,7 +304,7 @@ export const analyzeUserSpeech = mutation({
         )
         .collect();
 
-      const totalWordsInConvo = totalTurns.reduce((sum, t) => sum + t.text.split(/\s+/).length, 0);
+      const totalWordsInConvo = totalTurns.reduce((sum, t) => sum + t.text.split(/\s+/).filter(Boolean).length, 0);
       const userWordRatio = totalWordsInConvo > 0 ? wordCount / totalWordsInConvo : 0.5;
       userSpeakingDurationMinutes = Math.max(durationMinutes * userWordRatio, 0.1);
       console.log(`User speaking duration (estimated from word ratio ${(userWordRatio * 100).toFixed(0)}%): ${userSpeakingDurationMinutes.toFixed(2)} minutes`);
@@ -238,27 +397,52 @@ export const analyzeUserSpeech = mutation({
     }));
 
     // 5. Weak Word Detection
-    const weakWordInstances: Array<{ word: string; sentence: string }> = [];
-    sentences.forEach((sentence) => {
-      const lowerSentence = sentence.toLowerCase();
-      WEAK_WORDS.forEach((weakWord) => {
-        if (lowerSentence.includes(weakWord)) {
-          weakWordInstances.push({
-            word: weakWord,
-            sentence: sentence.trim(),
-          });
-        }
-      });
-    });
+    const weakWordInstances: Array<{
+      word: string;
+      sentence: string;
+      position: number;
+      startTime?: number;
+      endTime?: number;
+      replacement: string;
+    }> = [];
+    const weakWordPatterns = WEAK_WORDS.map((weakWord) => ({
+      word: weakWord,
+      tokens: weakWord.split(/\s+/).map(normalizeSpeechToken),
+    })).sort((a, b) => b.tokens.length - a.tokens.length);
+
+    for (let index = 0; index < wordEntries.length; index++) {
+      for (const pattern of weakWordPatterns) {
+        const isMatch = pattern.tokens.every(
+          (token, offset) => wordEntries[index + offset]?.normalized === token
+        );
+
+        if (!isMatch) continue;
+
+        const startPosition = wordEntries[index].position;
+        const endPosition = wordEntries[index + pattern.tokens.length - 1].position;
+        const startTiming = allWordsWithTiming[startPosition];
+        const endTiming = allWordsWithTiming[endPosition];
+
+        weakWordInstances.push({
+          word: pattern.word,
+          sentence: buildWeakWordContext(rawWords, startPosition, endPosition - startPosition + 1),
+          position: startPosition,
+          startTime: startTiming?.startTime,
+          endTime: endTiming?.endTime,
+          replacement: getDefaultWeakWordReplacement(pattern.word),
+        });
+        break;
+      }
+    }
 
     // 6. Calculate Scores (0-100)
-    const fillerRate = (fillerInstances.length / wordCount) * 100;
+    const fillerRate = wordCount > 0 ? (fillerInstances.length / wordCount) * 100 : 0;
     const clarityScore = Math.max(0, Math.min(100, 100 - fillerRate * 10));
 
-    const repetitionRate = repeatedWords.reduce((sum, w) => sum + w.count, 0) / wordCount;
+    const repetitionRate = wordCount > 0 ? repeatedWords.reduce((sum, w) => sum + w.count, 0) / wordCount : 0;
     const concisenessScore = Math.max(0, Math.min(100, 100 - repetitionRate * 50));
 
-    const weakStarterRate = weakStarterCount / sentences.length;
+    const weakStarterRate = sentences.length > 0 ? weakStarterCount / sentences.length : 0;
     const confidenceScore = Math.max(0, Math.min(100, 100 - weakStarterRate * 100));
 
     // Store analytics
@@ -398,10 +582,19 @@ export const generateWeakWordSuggestions = action({
     }
 
     // Get OpenAI suggestions for weak sentences
-    const suggestions: Array<{ word: string; sentence: string; suggestion: string }> = [];
+    const suggestions: Array<{
+      word: string;
+      sentence: string;
+      position?: number;
+      startTime?: number;
+      endTime?: number;
+      replacement?: string;
+      suggestion?: string;
+    }> = [];
 
     for (const weakWord of analytics.weakWords.slice(0, 5)) {
       console.log("Generating suggestion for:", weakWord.word);
+      const context = getShortContextAroundWeakWord(weakWord.sentence, weakWord.word);
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -414,32 +607,42 @@ export const generateWeakWordSuggestions = action({
             messages: [
               {
                 role: "system",
-                content: "You are a communication coach. Rewrite sentences to be more clear and confident by replacing weak words. Keep the meaning the same but make it stronger.",
+                content: [
+                  "You are a communication coach.",
+                  "For a weak word, suggest a concise replacement and a short rewrite of only the local context.",
+                  "Return JSON only with keys replacement and rewrite.",
+                  "replacement must be 1-5 words and replace only the weak word or phrase. Use \"remove it\" when deletion is best.",
+                  "rewrite must stay under 25 words and must not add facts.",
+                ].join(" "),
               },
               {
                 role: "user",
-                content: `Improve this sentence by removing the weak word "${weakWord.word}":\n\n"${weakWord.sentence}"`,
+                content: `Weak word: "${weakWord.word}"\nLocal context: "${context}"`,
               },
             ],
-            max_tokens: 100,
-            temperature: 0.7,
+            max_tokens: 120,
+            temperature: 0.2,
           }),
         });
 
         const data = await response.json();
-        const suggestion = data.choices?.[0]?.message?.content?.trim();
+        const content = data.choices?.[0]?.message?.content?.trim();
+        const parsedSuggestion = parseWeakWordSuggestionResponse(content, weakWord.word);
 
         console.log("OpenAI response:", data);
-        console.log("Suggestion:", suggestion);
+        console.log("Suggestion:", parsedSuggestion);
 
-        if (suggestion) {
-          suggestions.push({
-            ...weakWord,
-            suggestion,
-          });
-        }
+        suggestions.push({
+          ...weakWord,
+          replacement: parsedSuggestion.replacement,
+          suggestion: parsedSuggestion.suggestion,
+        });
       } catch (error) {
         console.error("❌ Error generating suggestion:", error);
+        suggestions.push({
+          ...weakWord,
+          replacement: getDefaultWeakWordReplacement(weakWord.word),
+        });
       }
     }
 
@@ -450,11 +653,31 @@ export const generateWeakWordSuggestions = action({
       console.log("Updating analytics with suggestions...");
       const existingAnalytics = await ctx.runQuery(api.analytics.getAnalytics, args);
       if (existingAnalytics) {
-        const updatedWeakWords = existingAnalytics.weakWords.map((ww: { word: string; sentence: string; suggestion?: string }) => {
+        const updatedWeakWords = existingAnalytics.weakWords.map((ww: {
+          word: string;
+          sentence: string;
+          position?: number;
+          startTime?: number;
+          endTime?: number;
+          replacement?: string;
+          suggestion?: string;
+        }) => {
           const suggestion = suggestions.find(
-            (s) => s.word === ww.word && s.sentence === ww.sentence
+            (s) =>
+              s.word === ww.word &&
+              ((s.position !== undefined && ww.position !== undefined && s.position === ww.position) ||
+                s.sentence === ww.sentence)
           );
-          return suggestion || ww;
+          return suggestion
+            ? {
+                ...ww,
+                replacement: suggestion.replacement ?? ww.replacement,
+                suggestion: suggestion.suggestion ?? ww.suggestion,
+              }
+            : {
+                ...ww,
+                replacement: ww.replacement ?? getDefaultWeakWordReplacement(ww.word),
+              };
         });
 
         await ctx.runMutation(api.analytics.updateWeakWordSuggestions, {
@@ -479,6 +702,10 @@ export const updateWeakWordSuggestions = mutation({
     weakWords: v.array(v.object({
       word: v.string(),
       sentence: v.string(),
+      position: v.optional(v.number()),
+      startTime: v.optional(v.number()),
+      endTime: v.optional(v.number()),
+      replacement: v.optional(v.string()),
       suggestion: v.optional(v.string()),
     })),
   },
@@ -531,9 +758,37 @@ export const getUserDashboard = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
+    const conversationsById = new Map(
+      allConversations.map((conversation) => [conversation._id, conversation])
+    );
+    const getConversationTime = (conversationId: typeof allAnalytics[number]["conversationId"]) => {
+      const conversation = conversationsById.get(conversationId);
+      return conversation?.endedAt ?? conversation?.startedAt ?? conversation?._creationTime ?? 0;
+    };
+    const analyticsByConversationTime = allAnalytics
+      .map((analytics) => ({
+        analytics,
+        time: getConversationTime(analytics.conversationId) || analytics._creationTime,
+      }))
+      .sort((a, b) => a.time - b.time);
+
     // Calculate aggregate stats
     const totalConversations = allConversations.length;
     const completedConversations = allConversations.filter(c => c.status === "ended").length;
+    const totalFillerWords = allAnalytics.reduce((sum, a) => sum + a.fillerWords.count, 0);
+    const totalWeakWords = allAnalytics.reduce((sum, a) => sum + a.weakWords.length, 0);
+    const totalRepeatedWords = allAnalytics.reduce(
+      (sum, a) => sum + a.repetitions.repeatedWords.reduce((wordSum, word) => wordSum + word.count, 0),
+      0
+    );
+    const totalRepeatedPhrases = allAnalytics.reduce(
+      (sum, a) => sum + a.repetitions.repeatedPhrases.reduce((phraseSum, phrase) => phraseSum + phrase.count, 0),
+      0
+    );
+    const totalWeakStarters = allAnalytics.reduce(
+      (sum, a) => sum + a.sentenceStarters.weak.reduce((starterSum, starter) => starterSum + starter.count, 0),
+      0
+    );
 
     // Average scores
     const avgClarity = allAnalytics.length > 0
@@ -544,6 +799,12 @@ export const getUserDashboard = query({
       : 0;
     const avgConfidence = allAnalytics.length > 0
       ? Math.round(allAnalytics.reduce((sum, a) => sum + a.scores.confidence, 0) / allAnalytics.length)
+      : 0;
+    const avgFillerRate = allAnalytics.length > 0
+      ? Math.round((allAnalytics.reduce((sum, a) => sum + a.fillerWords.ratePerMinute, 0) / allAnalytics.length) * 10) / 10
+      : 0;
+    const avgWordsPerMinute = allAnalytics.length > 0
+      ? Math.round(allAnalytics.reduce((sum, a) => sum + a.pacing.wordsPerMinute, 0) / allAnalytics.length)
       : 0;
 
     // Total speaking time and words
@@ -559,12 +820,12 @@ export const getUserDashboard = query({
           q.eq("conversationId", conv._id).eq("userId", user._id)
         )
         .collect();
-      totalWords += turns.reduce((sum, t) => sum + t.text.split(/\s+/).length, 0);
+      totalWords += turns.reduce((sum, t) => sum + t.text.split(/\s+/).filter(Boolean).length, 0);
     }
 
     // Recent performance trend (last 10 conversations)
-    const recentAnalytics = allAnalytics.slice(0, 10).reverse();
-    const performanceTrend = recentAnalytics.map((a, idx) => ({
+    const recentAnalytics = analyticsByConversationTime.slice(-10);
+    const performanceTrend = recentAnalytics.map(({ analytics: a }, idx) => ({
       conversation: idx + 1,
       clarity: a.scores.clarity,
       conciseness: a.scores.conciseness,
@@ -593,7 +854,7 @@ export const getUserDashboard = query({
       .map(([word, count]) => ({ word, count }));
 
     // Filler word trends
-    const fillerTrend = allAnalytics.slice(0, 10).reverse().map((a, idx) => ({
+    const fillerTrend = recentAnalytics.map(({ analytics: a }, idx) => ({
       conversation: idx + 1,
       count: a.fillerWords.count,
       rate: Math.round(a.fillerWords.ratePerMinute * 10) / 10,
@@ -608,6 +869,13 @@ export const getUserDashboard = query({
         avgClarity,
         avgConciseness,
         avgConfidence,
+        avgFillerRate,
+        avgWordsPerMinute,
+        totalFillerWords,
+        totalWeakWords,
+        totalRepeatedWords,
+        totalRepeatedPhrases,
+        totalWeakStarters,
       },
       performanceTrend,
       fillerTrend,
@@ -785,9 +1053,15 @@ export const generatePersonalizedFeedback = action({
     console.log("=== GENERATE PERSONALIZED FEEDBACK ===");
 
     // Get analytics for this conversation
-    const analytics = await ctx.runQuery(api.analytics.getAnalytics, args);
+    let analytics = await ctx.runQuery(api.analytics.getAnalytics, args);
     if (!analytics) {
-      console.log("No analytics found");
+      console.log("No analytics found, attempting to analyze first...");
+      await ctx.runMutation(api.analytics.analyzeUserSpeech, args);
+      analytics = await ctx.runQuery(api.analytics.getAnalytics, args);
+    }
+
+    if (!analytics) {
+      console.log("No analytics found after analysis attempt");
       return null;
     }
 
