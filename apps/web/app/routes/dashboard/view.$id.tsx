@@ -2,6 +2,7 @@ import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { AlertCircle, ArrowLeft, Calendar, Clock, Loader2, MoveUpLeft, Share2, Users } from "lucide-react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedback";
 import { AnalyticsPanel } from "~/components/dashboard/analytics-panel";
@@ -18,6 +19,7 @@ import { getConversationDisplayTitle } from "~/lib/conversation-context";
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("analytics");
 
   // Fetch conversation data
   const conversation = useQuery(
@@ -243,7 +245,7 @@ export default function ConversationDetailPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="analytics" className="flex flex-1 min-h-0 flex-col gap-0">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 min-h-0 flex-col gap-0">
         <div className="border-b-2 border-border bg-card px-4 sm:px-6">
           <TabsList className="h-auto w-full justify-start rounded-none bg-transparent p-0">
             <TabsTrigger
@@ -262,7 +264,11 @@ export default function ConversationDetailPage() {
         </div>
 
         <TabsContent value="analytics" className="min-h-0 flex-1 overflow-hidden p-4 sm:p-6">
-          <AnalyticsPanel showHeader={false} conversationId={id as Id<"conversations">} />
+          <AnalyticsPanel
+            showHeader={false}
+            conversationId={id as Id<"conversations">}
+            onOpenTranscript={() => setActiveTab("transcript")}
+          />
         </TabsContent>
 
         <TabsContent value="transcript" className="min-h-0 flex-1 overflow-hidden p-4 sm:p-6">
@@ -285,23 +291,25 @@ export default function ConversationDetailPage() {
               </TranscriptPlayer>
             </div>
 
-            <aside className="min-h-0 overflow-y-auto rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm custom-scrollbar xl:sticky xl:top-0 xl:self-start">
-              <div className="mb-4 border-b border-primary/20 pb-3">
+            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm">
+              <div className="shrink-0 border-b border-primary/20 pb-3">
                 <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Focus areas from this conversation.
                 </p>
               </div>
-              {currentUser ? (
-                <PersonalizedFeedback
-                  conversationId={id as Id<"conversations">}
-                  userId={currentUser._id}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Sign in to view personalized insights.
-                </p>
-              )}
+              <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                {currentUser ? (
+                  <PersonalizedFeedback
+                    conversationId={id as Id<"conversations">}
+                    userId={currentUser._id}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Sign in to view personalized insights.
+                  </p>
+                )}
+              </div>
             </aside>
           </div>
         </TabsContent>

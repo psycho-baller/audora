@@ -1,8 +1,8 @@
 import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useQuery } from "convex/react";
-import { Sparkles, Loader2, TrendingUp, Target, Lightbulb, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, CheckCircle2, Loader2, Sparkles, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 
 interface PersonalizedFeedbackProps {
@@ -12,182 +12,176 @@ interface PersonalizedFeedbackProps {
 
 export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFeedbackProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  
-  // Query for existing feedback
-  const feedback = useQuery(
-    api.analytics.getPersonalizedFeedback,
-    { conversationId, userId }
-  );
-  
+  const [generationFailed, setGenerationFailed] = useState(false);
+  const autoGenerateStarted = useRef(false);
+
+  const feedback = useQuery(api.analytics.getPersonalizedFeedback, {
+    conversationId,
+    userId,
+  });
+
   const generateFeedback = useAction(api.analytics.generatePersonalizedFeedback);
-  
+
   const handleGenerateFeedback = async () => {
     setIsGenerating(true);
+    setGenerationFailed(false);
     try {
-      await generateFeedback({ conversationId, userId });
+      const result = await generateFeedback({ conversationId, userId });
+      if (!result) {
+        setGenerationFailed(true);
+      }
     } catch (error) {
       console.error("Error generating feedback:", error);
+      setGenerationFailed(true);
     } finally {
       setIsGenerating(false);
     }
   };
-  
+
+  useEffect(() => {
+    autoGenerateStarted.current = false;
+    setGenerationFailed(false);
+  }, [conversationId, userId]);
+
+  useEffect(() => {
+    if (feedback !== null || isGenerating || generationFailed || autoGenerateStarted.current) return;
+
+    autoGenerateStarted.current = true;
+    void handleGenerateFeedback();
+  }, [feedback, isGenerating, generationFailed]);
+
   if (feedback === undefined) {
     return (
-      <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-xl p-6 border border-primary/10">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-6">
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       </div>
     );
   }
-  
+
   if (!feedback) {
     return (
-      <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-xl p-6 border border-primary/10">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-6">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg shrink-0">
-            <Sparkles className="w-6 h-6 text-primary" />
+          <div className="shrink-0 rounded-lg bg-primary/10 p-3">
+            {generationFailed ? (
+              <AlertCircle className="h-6 w-6 text-primary" />
+            ) : (
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            )}
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              AI Personalized Feedback
+            <h3 className="mb-2 text-lg font-semibold text-foreground">
+              {generationFailed ? "AI Insights Unavailable" : "Generating AI Insights"}
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Get personalized insights and actionable recommendations based on your speech patterns, 
-              communication style, and areas for improvement.
+            <p className="mb-4 text-sm text-muted-foreground">
+              {generationFailed
+                ? "We could not generate insights for this conversation yet. This usually means analytics are still being prepared or the AI service is unavailable."
+                : "We are creating personalized insights for this conversation. They will be saved here automatically once ready."}
             </p>
-            <Button
-              onClick={handleGenerateFeedback}
-              disabled={isGenerating}
-              className="gap-2"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate AI Feedback
-                </>
-              )}
-            </Button>
+            {generationFailed && (
+              <Button onClick={handleGenerateFeedback} disabled={isGenerating} className="gap-2">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Try Again
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
     );
   }
-  
+
+  const needsWorkTitle = feedback.improvements?.[0] || "Keep tightening your delivery";
+  const improvingTitle =
+    feedback.comparisonToPrevious || feedback.actionItems?.[0] || "Building consistency";
+  const strongSkillTitle = feedback.strengths?.[0] || "Clear communication habits";
+
   return (
     <div className="space-y-4">
-      {/* Overall Summary */}
-      <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 rounded-xl p-6 border border-primary/10">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-            <Sparkles className="w-5 h-5 text-primary" />
+      <div className="rounded-xl border border-primary/10 bg-background/70 p-4">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-lg bg-primary/10 p-2">
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
-          <div className="flex-1">
-            <h3 className="text-base font-semibold text-foreground mb-1">
-              AI Personalized Feedback
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Based on your speech patterns and communication style
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold text-foreground">Personalized Feedback</h3>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {feedback.summary}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleGenerateFeedback}
-            disabled={isGenerating}
-            className="gap-1 text-xs"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <Sparkles className="w-3 h-3" />
-            )}
-            Refresh
-          </Button>
-        </div>
-        
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <p className="text-sm text-foreground leading-relaxed">
-            {feedback.summary}
-          </p>
         </div>
       </div>
-      
-      {/* Strengths */}
-      {feedback.strengths && feedback.strengths.length > 0 && (
-        <div className="bg-green-500/5 rounded-xl p-5 border border-green-500/10">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-500" />
-            <h4 className="text-sm font-semibold text-foreground">Your Strengths</h4>
+
+      <div className="rounded-xl border border-red-500/10 bg-background/80 p-4">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-full bg-red-500/10 p-2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
           </div>
-          <ul className="space-y-2">
-            {feedback.strengths.map((strength: string, index: number) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
-                <span className="text-green-600 dark:text-green-500 mt-0.5">•</span>
-                <span className="flex-1">{strength}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      
-      {/* Areas for Improvement */}
-      {feedback.improvements && feedback.improvements.length > 0 && (
-        <div className="bg-orange-500/5 rounded-xl p-5 border border-orange-500/10">
-          <div className="flex items-center gap-2 mb-3">
-            <Target className="w-5 h-5 text-orange-600 dark:text-orange-500" />
-            <h4 className="text-sm font-semibold text-foreground">Areas to Improve</h4>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-foreground">Needs Work</h4>
+            <p className="mt-0.5 text-xs font-medium text-red-500">{needsWorkTitle}</p>
+            {feedback.actionItems && feedback.actionItems.length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+                {feedback.actionItems.slice(0, 2).map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            )}
           </div>
-          <ul className="space-y-2">
-            {feedback.improvements.map((improvement: string, index: number) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-foreground">
-                <span className="text-orange-600 dark:text-orange-500 mt-0.5">•</span>
-                <span className="flex-1">{improvement}</span>
-              </li>
-            ))}
-          </ul>
         </div>
-      )}
-      
-      {/* Action Items */}
-      {feedback.actionItems && feedback.actionItems.length > 0 && (
-        <div className="bg-blue-500/5 rounded-xl p-5 border border-blue-500/10">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-            <h4 className="text-sm font-semibold text-foreground">Action Items</h4>
+      </div>
+
+      <div className="rounded-xl border border-yellow-500/10 bg-background/80 p-4">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-full bg-yellow-500/10 p-2">
+            <TrendingUp className="h-4 w-4 text-yellow-500" />
           </div>
-          <ul className="space-y-2.5">
-            {feedback.actionItems.map((item: string, index: number) => (
-              <li key={index} className="flex items-start gap-2.5 text-sm">
-                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-500 text-xs font-semibold shrink-0 mt-0.5">
-                  {index + 1}
-                </div>
-                <span className="flex-1 text-foreground">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      
-      {/* Progress Tracking */}
-      {feedback.comparisonToPrevious && (
-        <div className="bg-purple-500/5 rounded-xl p-5 border border-purple-500/10">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-500" />
-            <h4 className="text-sm font-semibold text-foreground">Your Progress</h4>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-foreground">Currently Improving</h4>
+            <p className="mt-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+              {improvingTitle}
+            </p>
+            {feedback.improvements && feedback.improvements.length > 1 && (
+              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+                {feedback.improvements.slice(1, 3).map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            )}
           </div>
-          <p className="text-sm text-foreground leading-relaxed">
-            {feedback.comparisonToPrevious}
-          </p>
         </div>
-      )}
+      </div>
+
+      <div className="rounded-xl border border-green-500/10 bg-background/80 p-4">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-full bg-green-500/10 p-2">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-foreground">Strong Skill</h4>
+            <p className="mt-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+              {strongSkillTitle}
+            </p>
+            {feedback.strengths && feedback.strengths.length > 1 && (
+              <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+                {feedback.strengths.slice(1, 3).map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-

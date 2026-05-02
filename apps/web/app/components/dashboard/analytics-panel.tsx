@@ -2,6 +2,7 @@ import { api } from "@audora/backend/convex/_generated/api";
 import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
+    ChevronLeft,
     ChevronRight,
     Clock,
     Loader2,
@@ -22,6 +23,26 @@ function formatTimestamp(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function getWeakWordSnippet(sentence: string, word: string, maxLength = 96): string {
+  const normalizedSentence = sentence.trim().replace(/\s+/g, " ");
+  if (normalizedSentence.length <= maxLength) return normalizedSentence;
+
+  const wordIndex = normalizedSentence.toLowerCase().indexOf(word.toLowerCase());
+  if (wordIndex === -1) {
+    return `${normalizedSentence.slice(0, maxLength - 3).trimEnd()}...`;
+  }
+
+  const targetStart = Math.max(0, wordIndex - Math.floor((maxLength - word.length) / 2));
+  const targetEnd = Math.min(normalizedSentence.length, targetStart + maxLength);
+  const start = Math.max(0, targetEnd - maxLength);
+  const prefix = start > 0 ? "..." : "";
+  const suffix = targetEnd < normalizedSentence.length ? "..." : "";
+  const availableLength = maxLength - prefix.length - suffix.length;
+  const snippet = normalizedSentence.slice(start, start + availableLength).trim();
+
+  return `${prefix}${snippet}${suffix}`;
 }
 
 // Clickable timestamp button component
@@ -235,119 +256,140 @@ function PacingVariationChart({
   // Calculate Y positions as percentages for HTML labels
   const y160Percent = (zoneTop / height) * 100;
   const y100Percent = (zoneBottom / height) * 100;
+  const hoveredPoint = hoveredIndex !== null ? pointCoords[hoveredIndex] : null;
+  const hoveredXPercent = hoveredPoint ? (hoveredPoint.x / width) * 100 : 0;
+  const hoveredYPercent = hoveredPoint ? (hoveredPoint.y / height) * 100 : 0;
+  const tooltipLeft =
+    hoveredXPercent < 12
+      ? "0.5rem"
+      : hoveredXPercent > 88
+        ? "calc(100% - 0.5rem)"
+        : `${hoveredXPercent}%`;
+  const tooltipXTransform =
+    hoveredXPercent < 12
+      ? "translateX(0)"
+      : hoveredXPercent > 88
+        ? "translateX(-100%)"
+        : "translateX(-50%)";
 
   return (
     <div className="mt-2">
-      <div className="flex items-center gap-2 mb-1">
-        <h5 className="text-sm font-medium text-foreground">Pacing Variation</h5>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-2 bg-primary/20 rounded-sm" />
-          <span className="text-[10px] text-muted-foreground">Conversational (100-160)</span>
-        </div>
-      </div>
-      <div className="relative bg-muted/20 rounded-lg p-2">
-        {/* Chart with Y-axis labels */}
-        <div className="flex">
+      <div className="relative rounded-lg bg-muted/20 p-2">
+        <div className="flex items-start">
           {/* Y-axis labels */}
-          <div className="relative w-8 h-20 flex-shrink-0 text-[10px] text-muted-foreground">
-            <span className="absolute right-1 top-0 -translate-y-1/2">{maxVal}</span>
-            <span className="absolute right-1 text-primary/70" style={{ top: `${y160Percent}%`, transform: 'translateY(-50%)' }}>160</span>
-            <span className="absolute right-1 text-primary/70" style={{ top: `${y100Percent}%`, transform: 'translateY(-50%)' }}>100</span>
-            <span className="absolute right-1 bottom-0 translate-y-1/2">{minVal}</span>
-          </div>
-          {/* Chart area */}
-          <div className="flex-1 relative">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-20" preserveAspectRatio="none">
-              {/* Conversational zone highlight (always shown at 100-160 WPM) */}
-              <rect
-              x="0"
-              y={zoneTop}
-              width={width}
-              height={zoneHeight}
-              fill="currentColor"
-              className="text-primary/10"
-            />
-            {/* Grid lines at 100 and 160 WPM boundaries */}
-            <line x1="0" y1={zoneTop} x2={width} y2={zoneTop} stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground/30" strokeDasharray="2,2" style={{ pointerEvents: 'none' }} />
-            <line x1="0" y1={zoneBottom} x2={width} y2={zoneBottom} stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground/30" strokeDasharray="2,2" style={{ pointerEvents: 'none' }} />
-            {/* Smooth line chart */}
-            <path
-              d={smoothPath}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="text-primary"
-              vectorEffect="non-scaling-stroke"
-              style={{ pointerEvents: 'none' }}
-            />
-            {/* Hover vertical line */}
-            {hoveredIndex !== null && (
-              <line
-                x1={pointCoords[hoveredIndex].x}
-                y1={0}
-                x2={pointCoords[hoveredIndex].x}
-                y2={height}
-                stroke="currentColor"
-                strokeWidth="0.5"
-                className="text-muted-foreground"
-                strokeDasharray="2,1"
-                vectorEffect="non-scaling-stroke"
-                style={{ pointerEvents: 'none' }}
-              />
-            )}
-            {/* Interactive hover areas */}
-            {pointCoords.map((point, i) => (
-              <rect
-                key={i}
-                x={point.x - (width / data.length / 2)}
-                y={0}
-                width={width / data.length}
-                height={height}
-                fill="transparent"
-                className="cursor-pointer"
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
-              />
-            ))}
-            {/* Hover point indicator */}
-            {hoveredIndex !== null && (
-              <circle
-                cx={pointCoords[hoveredIndex].x}
-                cy={pointCoords[hoveredIndex].y}
-                r="3"
-                fill="currentColor"
-                className="text-primary"
-                vectorEffect="non-scaling-stroke"
-                style={{ pointerEvents: 'none' }}
-              />
-            )}
-          </svg>
-          {/* Tooltip */}
-          {hoveredIndex !== null && (
-            <div
-              className="absolute bg-popover text-popover-foreground border border-border rounded-md px-2 py-1 text-xs shadow-md pointer-events-none z-10"
-              style={{
-                left: `${(pointCoords[hoveredIndex].x / width) * 100}%`,
-                top: `${(pointCoords[hoveredIndex].y / height) * 100}%`,
-                transform: 'translate(-50%, -120%)'
-              }}
-            >
-              <div className="font-medium">{pointCoords[hoveredIndex].value} WPM</div>
-              <div className="text-muted-foreground">{pointCoords[hoveredIndex].time}</div>
+          <div className="flex-shrink-0 pb-4">
+            <div className="relative h-16 w-12 text-[10px] text-muted-foreground">
+              <span className="absolute right-3 text-primary/70" style={{ top: `${y160Percent}%`, transform: "translateY(-50%)" }}>160</span>
+              <span className="absolute right-3 text-primary/70" style={{ top: `${y100Percent}%`, transform: "translateY(-50%)" }}>100</span>
             </div>
-          )}
-          {/* X-axis labels */}
-          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            {timeLabels.map((label, i) => (
-              <span key={i}>{label}</span>
-            ))}
           </div>
+          <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="min-w-[560px] pb-0.5">
+              {/* Chart area */}
+              <div className="relative h-16 overflow-hidden">
+                <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full" preserveAspectRatio="none">
+                  <defs>
+                    <clipPath id="pacing-chart-clip">
+                      <rect x="0" y="0" width={width} height={height} />
+                    </clipPath>
+                  </defs>
+                  {/* Conversational zone highlight (always shown at 100-160 WPM) */}
+                  <rect
+                    x="0"
+                    y={zoneTop}
+                    width={width}
+                    height={zoneHeight}
+                    fill="currentColor"
+                    className="text-primary/10"
+                  />
+                  {/* Grid lines at 100 and 160 WPM boundaries */}
+                  <line x1="0" y1={zoneTop} x2={width} y2={zoneTop} stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground/30" strokeDasharray="2,2" style={{ pointerEvents: 'none' }} />
+                  <line x1="0" y1={zoneBottom} x2={width} y2={zoneBottom} stroke="currentColor" strokeWidth="0.5" className="text-muted-foreground/30" strokeDasharray="2,2" style={{ pointerEvents: 'none' }} />
+                  {/* Smooth line chart */}
+                  <path
+                    d={smoothPath}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-primary"
+                    clipPath="url(#pacing-chart-clip)"
+                    vectorEffect="non-scaling-stroke"
+                    style={{ pointerEvents: 'none' }}
+                  />
+                  {/* Hover vertical line */}
+                  {hoveredIndex !== null && (
+                    <line
+                      x1={pointCoords[hoveredIndex].x}
+                      y1={0}
+                      x2={pointCoords[hoveredIndex].x}
+                      y2={height}
+                      stroke="currentColor"
+                      strokeWidth="0.5"
+                      className="text-muted-foreground"
+                      strokeDasharray="2,1"
+                      clipPath="url(#pacing-chart-clip)"
+                      vectorEffect="non-scaling-stroke"
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  )}
+                  {/* Interactive hover areas */}
+                  {pointCoords.map((point, i) => (
+                    <rect
+                      key={i}
+                      x={point.x - (width / data.length / 2)}
+                      y={0}
+                      width={width / data.length}
+                      height={height}
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredIndex(i)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                    />
+                  ))}
+                  {/* Hover point indicator */}
+                  {hoveredIndex !== null && (
+                    <circle
+                      cx={pointCoords[hoveredIndex].x}
+                      cy={pointCoords[hoveredIndex].y}
+                      r="3"
+                      fill="currentColor"
+                      className="text-primary"
+                      clipPath="url(#pacing-chart-clip)"
+                      vectorEffect="non-scaling-stroke"
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  )}
+                </svg>
+                {/* Tooltip */}
+                {hoveredIndex !== null && (
+                  <div
+                    className="absolute z-10 rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md pointer-events-none"
+                    style={{
+                      left: tooltipLeft,
+                      top: `clamp(0.25rem, ${hoveredYPercent}%, calc(100% - 2.75rem))`,
+                      transform: tooltipXTransform
+                    }}
+                  >
+                    <div className="font-medium">{pointCoords[hoveredIndex].value} WPM</div>
+                    <div className="text-muted-foreground">{pointCoords[hoveredIndex].time}</div>
+                  </div>
+                )}
+              </div>
+              {/* X-axis labels */}
+              <div className="mt-1 grid grid-flow-col auto-cols-fr px-1 text-[10px] leading-none text-muted-foreground">
+                {timeLabels.map((label, i) => (
+                  <span
+                    key={i}
+                    className={i === 0 ? "text-left" : i === timeLabels.length - 1 ? "text-right" : "text-center"}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        <span className="font-medium">Vary your pace</span> to keep your audience engaged. <span className="font-medium">Practice sections</span> where your pace is flat.
-      </p>
     </div>
   );
 }
@@ -356,15 +398,18 @@ interface AnalyticsPanelProps {
   showHeader?: boolean;
   className?: string;
   conversationId?: Id<"conversations">;
+  onOpenTranscript?: () => void;
 }
 
 export function AnalyticsPanel({
   showHeader = true,
   className,
   conversationId,
+  onOpenTranscript,
 }: AnalyticsPanelProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [weakWordExampleIndex, setWeakWordExampleIndex] = useState(0);
 
   // Audio playback context for syncing with transcript
   const audioPlayback = useAudioPlaybackOptional();
@@ -415,6 +460,8 @@ export function AnalyticsPanel({
 
   // Handle seeking to a timestamp
   const handleSeekToTime = (time: number, wordId?: string) => {
+    onOpenTranscript?.();
+
     if (audioPlayback) {
       if (wordId) {
         // Set highlighted word ID - this will trigger the TranscriptPlayer to seek and highlight
@@ -427,6 +474,22 @@ export function AnalyticsPanel({
 
   const analyzeUserSpeech = useMutation(api.analytics.analyzeUserSpeech);
   const generateSuggestions = useAction(api.analytics.generateWeakWordSuggestions);
+
+  const handleGenerateSuggestions = async () => {
+    if (!conversationId || !currentUser) return;
+
+    setIsGeneratingSuggestions(true);
+    try {
+      await generateSuggestions({
+        conversationId,
+        userId: currentUser._id,
+      });
+    } catch (error) {
+      console.error("Error generating suggestions:", error);
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
+  };
 
   // Auto-analyze if no analytics exist
   useEffect(() => {
@@ -454,22 +517,6 @@ export function AnalyticsPanel({
 
     runAnalysis();
   }, [conversationId, currentUser?._id, currentUserAnalytics.length, conversationAnalytics, analyzeUserSpeech]);
-
-  const handleGenerateSuggestions = async () => {
-    if (!conversationId || !currentUser) return;
-
-    setIsGeneratingSuggestions(true);
-    try {
-      await generateSuggestions({
-        conversationId,
-        userId: currentUser._id,
-      });
-    } catch (error) {
-      console.error("Error generating suggestions:", error);
-    } finally {
-      setIsGeneratingSuggestions(false);
-    }
-  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-500";
@@ -508,6 +555,18 @@ export function AnalyticsPanel({
         ? "Your pace was fast. Try slowing down to under 160 WPM."
         : "Great pace. Keep it between 100-160 WPM for clarity."
     : "";
+
+  const weakWordExamples = analytics?.weakWords || [];
+  const selectedWeakWordExample =
+    weakWordExamples.length > 0
+      ? weakWordExamples[weakWordExampleIndex % weakWordExamples.length]
+      : null;
+
+  useEffect(() => {
+    if (weakWordExampleIndex >= weakWordExamples.length) {
+      setWeakWordExampleIndex(0);
+    }
+  }, [weakWordExampleIndex, weakWordExamples.length]);
 
   // Loading state
   if (!conversationId) {
@@ -566,21 +625,25 @@ export function AnalyticsPanel({
         </TabsList>
 
         <TabsContent value="summary" className="flex-1 min-h-0 overflow-hidden">
-          <div className="grid h-full min-h-0 gap-5 overflow-y-auto pr-3 custom-scrollbar xl:grid-cols-[minmax(0,1fr)_22rem]">
-            <div className="space-y-4">
-              <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
+          <div className="grid h-full min-h-0 gap-5 overflow-hidden xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="grid min-h-0 auto-rows-[minmax(14rem,auto)] items-stretch gap-4 overflow-y-auto pr-3 custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
+              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Pace of Speech
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">{pacingMessage}</p>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium normal-case tracking-normal text-muted-foreground">
+                      <span className="h-2 w-3 rounded-sm bg-primary/20" />
+                      Conversational (100-160)
+                    </span>
                   </div>
-                  <p className="text-2xl font-semibold text-foreground sm:text-right">
+                  <span className="shrink-0 text-sm font-semibold text-foreground">
                     {analytics.pacing.wordsPerMinute}
-                    <span className="ml-1 text-sm font-normal text-muted-foreground">words/min</span>
-                  </p>
+                    <span className="ml-1 font-normal text-muted-foreground">words/min</span>
+                  </span>
                 </div>
+                <p className="mt-3 text-sm text-muted-foreground">{pacingMessage}</p>
                 <PacingVariationChart
                   wpm={analytics.pacing.wordsPerMinute}
                   segments={analytics.pacing.segments}
@@ -588,8 +651,7 @@ export function AnalyticsPanel({
                 />
               </section>
 
-              <div className="grid auto-rows-fr gap-4 md:grid-cols-5">
-              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-2">
+              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Filler Words
@@ -636,7 +698,7 @@ export function AnalyticsPanel({
                 )}
               </section>
 
-              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-3">
+              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Repetition
@@ -647,10 +709,7 @@ export function AnalyticsPanel({
                   {repeatedWordCount}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">instances</span>
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Repeated words can make speech feel less concise.
-                </p>
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 pb-3">
                   {analytics.repetitions.repeatedWords.length > 0 ? (
                     analytics.repetitions.repeatedWords.slice(0, 4).map((item) => (
                       <div key={item.word} className="flex items-center justify-between text-sm">
@@ -664,7 +723,7 @@ export function AnalyticsPanel({
                 </div>
               </section>
 
-              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-3">
+              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Weak Words
@@ -675,46 +734,63 @@ export function AnalyticsPanel({
                   {analytics.weakWords.length}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">found</span>
                 </p>
-                <div className="mt-4 space-y-3">
-                  {analytics.weakWords.length > 0 ? (
-                    analytics.weakWords.slice(0, 2).map((item, index) => (
-                      <div key={index} className="rounded-lg bg-muted/35 p-3">
-                        <p className="text-xs text-muted-foreground">
-                          Weak word: <span className="font-medium text-foreground">"{item.word}"</span>
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-xs italic text-foreground/80">
-                          "{item.sentence}"
-                        </p>
-                        {item.suggestion && (
-                          <p className="mt-2 text-xs font-medium text-primary">
-                            -&gt; "{item.suggestion}"
+                <div className="mt-4 pb-3">
+                  {selectedWeakWordExample ? (
+                    <div className="rounded-lg bg-muted/35 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-muted-foreground">
+                            Weak word:{" "}
+                            <span className="font-medium text-foreground">
+                              "{selectedWeakWordExample.word}"
+                            </span>
                           </p>
-                        )}
+                          <p
+                            className="mt-1 truncate text-xs italic text-foreground/80"
+                            title={selectedWeakWordExample.sentence}
+                          >
+                            "{getWeakWordSnippet(
+                              selectedWeakWordExample.sentence,
+                              selectedWeakWordExample.word
+                            )}"
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setWeakWordExampleIndex((index) =>
+                                (index - 1 + weakWordExamples.length) % weakWordExamples.length
+                              )
+                            }
+                            className="rounded-md border border-border bg-background p-1 text-muted-foreground transition-colors hover:text-foreground"
+                            aria-label="Previous weak word example"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setWeakWordExampleIndex((index) => (index + 1) % weakWordExamples.length)
+                            }
+                            className="rounded-md border border-border bg-background p-1 text-muted-foreground transition-colors hover:text-foreground"
+                            aria-label="Next weak word example"
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    ))
+                      <p className="mt-3 text-[11px] text-muted-foreground">
+                        {weakWordExampleIndex + 1} of {weakWordExamples.length}
+                      </p>
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">No weak words detected.</p>
-                  )}
-                  {analytics.weakWords.some((word) => !word.suggestion) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleGenerateSuggestions}
-                      disabled={isGeneratingSuggestions}
-                      className="h-8 w-full text-xs"
-                    >
-                      {isGeneratingSuggestions ? (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="mr-1 h-3 w-3" />
-                      )}
-                      Generate AI Suggestions
-                    </Button>
                   )}
                 </div>
               </section>
 
-              <section className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm md:col-span-2">
+              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Sentence Starters
@@ -730,7 +806,7 @@ export function AnalyticsPanel({
                     ? `"${topSentenceStarter.word}" showed up most often.`
                     : "No weak sentence starters detected."}
                 </p>
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-2 pb-3">
                   {analytics.sentenceStarters.weak.slice(0, 4).map((item) => (
                     <div key={item.word} className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">"{item.word}"</span>
@@ -739,24 +815,25 @@ export function AnalyticsPanel({
                   ))}
                 </div>
               </section>
-              </div>
             </div>
 
-            <aside className="rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm xl:sticky xl:top-0 xl:self-start">
-              <div className="mb-4 border-b border-primary/20 pb-3">
+            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm">
+              <div className="shrink-0 border-b border-primary/20 pb-3">
                 <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Focus areas from this conversation.
                 </p>
               </div>
-              {currentUser ? (
-                <PersonalizedFeedback
-                  conversationId={conversationId}
-                  userId={currentUser._id}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">Sign in to view personalized insights.</p>
-              )}
+              <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                {currentUser ? (
+                  <PersonalizedFeedback
+                    conversationId={conversationId}
+                    userId={currentUser._id}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Sign in to view personalized insights.</p>
+                )}
+              </div>
             </aside>
           </div>
         </TabsContent>
