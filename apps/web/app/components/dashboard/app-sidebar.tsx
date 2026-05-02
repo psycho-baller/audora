@@ -1,16 +1,16 @@
-import { IconDashboard, IconSettings, IconMessageCircle, IconMessages, IconChartBar, IconUsers } from "@tabler/icons-react";
+import { IconChartBar, IconMessageCircle, IconMessages, IconSettings, IconUsers } from "@tabler/icons-react";
 import { Link } from "react-router";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuItem,
+} from "~/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { NavSecondary } from "./nav-secondary";
 import { NavUser } from "./nav-user";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-} from "~/components/ui/sidebar";
 
 const data = {
   navMain: [
@@ -18,11 +18,6 @@ const data = {
       title: "Conversations",
       url: "/dashboard",
       icon: IconMessages,
-    },
-    {
-      title: "Chat",
-      url: "/dashboard/chat",
-      icon: IconMessageCircle,
     },
     {
       title: "Network",
@@ -33,6 +28,11 @@ const data = {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: IconChartBar,
+    },
+    {
+      title: "Chat",
+      url: "/dashboard/chat",
+      icon: IconMessageCircle,
     },
   ],
   navSecondary: [
