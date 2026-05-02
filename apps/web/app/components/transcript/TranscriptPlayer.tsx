@@ -432,7 +432,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
   return (
     <div className="flex flex-col h-full min-h-0 space-y-4">
       {/* Enhanced Audio Player */}
-      <div className="bg-card border border-border rounded-xl p-5 shrink-0 shadow-sm">
+      <div className="bg-secondary dark:bg-card border border-border dark:border-border rounded-xl p-5 shrink-0 shadow-sm">
         <div className="flex items-center gap-4 mb-3">
           <button
             onClick={handlePlayPause}
@@ -535,9 +535,9 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
                         }
                         setCurrentTime(newTime);
                       }}
-                      className="w-full h-2 bg-muted/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-md hover:[&::-moz-range-thumb]:scale-110 [&::-moz-range-thumb]:transition-transform relative z-10"
+                      className="w-full h-2 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-md hover:[&::-moz-range-thumb]:scale-110 [&::-moz-range-thumb]:transition-transform relative z-10"
                       style={{
-                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) ${(currentTime / (duration || 100)) * 100}%, hsl(var(--muted) / 0.3) 100%)`
+                        background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${(currentTime / (duration || 100)) * 100}%, var(--color-border) ${(currentTime / (duration || 100)) * 100}%, var(--color-border) 100%)`
                       }}
                     />
                   </div>
@@ -560,7 +560,7 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
 
         {/* Highlight legend */}
         {wordHighlights.size > 0 && (
-          <div className="flex items-center gap-4 pt-3 border-t border-border/50">
+          <div className="flex items-center gap-4 pt-3 border-t border-border">
             <span className="text-xs text-muted-foreground font-medium">Timeline markers:</span>
             <div className="flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5">

@@ -80,6 +80,14 @@ export function Waveform({ audioUrl, currentTime, duration, onSeek, className = 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
+    // Read theme colors once (outside loop for performance)
+    const primaryColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-primary')
+      .trim();
+    const borderColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-border')
+      .trim();
+
     // Draw waveform bars
     waveformData.forEach((value, index) => {
       const barHeight = value * height * 0.8;
@@ -90,20 +98,11 @@ export function Waveform({ audioUrl, currentTime, duration, onSeek, className = 
       const barTime = (index / waveformData.length) * duration;
       const isPlayed = barTime <= currentTime;
 
-      // Use CSS variables for colors
-      const primaryColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--primary')
-        .trim();
-      const mutedColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--muted')
-        .trim();
-
-      ctx.fillStyle = isPlayed 
-        ? `hsl(${primaryColor})` 
-        : `hsl(${mutedColor} / 0.4)`;
-      
+      ctx.globalAlpha = isPlayed ? 1 : 0.35;
+      ctx.fillStyle = isPlayed ? primaryColor : borderColor;
       ctx.fillRect(x, y, actualBarWidth, barHeight);
     });
+    ctx.globalAlpha = 1; // reset
   }, [waveformData, currentTime, duration]);
 
   // Handle click to seek
