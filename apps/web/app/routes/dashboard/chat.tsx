@@ -438,7 +438,7 @@ export default function Chat() {
                         className={cn(
                           "max-w-[85%] rounded-3xl px-5 py-4 shadow-sm sm:max-w-[70%]",
                           message.role === "user"
-                            ? "bg-[#6d63d9] text-white dark:bg-[#7a70eb]"
+                            ? "bg-primary text-primary-foreground"
                             : "border border-border bg-card text-foreground"
                         )}
                       >
@@ -449,7 +449,7 @@ export default function Chat() {
                             className={cn(
                               "prose prose-sm max-w-none",
                               message.role === "user"
-                                ? "prose-invert"
+                                ? "prose-invert prose-p:text-primary-foreground prose-headings:text-primary-foreground prose-strong:text-primary-foreground prose-a:text-primary-foreground"
                                 : "prose-foreground dark:prose-invert",
                               "prose-p:my-1 prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2",
                               "prose-headings:mt-3 prose-headings:mb-2"

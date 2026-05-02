@@ -36,9 +36,9 @@ export async function loader(args: Route.LoaderArgs) {
 export default function InvitePage() {
   // This component should never render as the loader always redirects
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-b from-[#343D40] to-[#131519] text-white">
+    <div className="h-screen flex items-center justify-center bg-background text-foreground">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p>Validating invite code...</p>
       </div>
     </div>

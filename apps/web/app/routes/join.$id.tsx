@@ -92,25 +92,23 @@ export default function JoinPage() {
     }
   };
 
-  // Show loading while auth is loading
   if (!isLoaded) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-[#343D40] to-[#131519] text-white">
+      <div className="h-screen flex items-center justify-center bg-background text-foreground">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p>Loading...</p>
         </div>
       </div>
     );
   }
 
-  // If not signed in, show sign-in UI
   if (!isSignedIn) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#343D40] to-[#131519] text-white">
+      <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold mb-2">Join Conversation</h1>
-          <p className="text-gray-300">
+          <p className="text-muted-foreground">
             Sign in to give your consent and join this conversation
           </p>
         </div>
@@ -126,16 +124,15 @@ export default function JoinPage() {
     );
   }
 
-  // Show error if any
   if (error) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center text-white bg-gradient-to-b from-[#343D40] to-[#131519]">
+      <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-red-400">Failed to Join</h1>
-          <p className="text-gray-300">{error}</p>
+          <h1 className="text-2xl font-bold text-destructive">Failed to Join</h1>
+          <p className="text-muted-foreground">{error}</p>
           <button
             onClick={() => navigate("/dashboard")}
-            className="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded-lg text-white font-medium">
+            className="bg-primary hover:bg-primary/90 px-6 py-2 rounded-lg text-primary-foreground font-medium">
             Go to Home
           </button>
         </div>
@@ -143,10 +140,9 @@ export default function JoinPage() {
     );
   }
 
-  // Show success message
   if (claimed) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-[#343D40] to-[#131519] text-white">
+      <div className="h-screen flex items-center justify-center bg-background text-foreground">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto">
             <svg
@@ -163,17 +159,16 @@ export default function JoinPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold">Successfully Joined!</h1>
-          <p className="text-gray-300">Redirecting to conversation...</p>
+          <p className="text-muted-foreground">Redirecting to conversation...</p>
         </div>
       </div>
     );
   }
 
-  // Show processing
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-b from-[#343D40] to-[#131519] text-white">
+    <div className="h-screen flex items-center justify-center bg-background text-foreground">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p>Joining conversation...</p>
       </div>
     </div>
