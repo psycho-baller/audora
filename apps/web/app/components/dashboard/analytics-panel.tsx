@@ -4,7 +4,6 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import {
     ChevronLeft,
     ChevronRight,
-    Clock,
     Loader2,
     Minus,
     Play,
@@ -14,9 +13,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { PersonalizedFeedback } from "~/components/analytics/PersonalizedFeedback";
-import { useAudioPlaybackOptional } from "~/hooks/use-audio-playback";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useAudioPlaybackOptional } from "~/hooks/use-audio-playback";
 
 // Format seconds to MM:SS
 function formatTimestamp(seconds: number): string {
@@ -284,7 +283,7 @@ function PacingVariationChart({
             </div>
           </div>
           <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            <div className="min-w-[560px] pb-0.5">
+            <div className="min-w-full pb-0.5 sm:min-w-[560px]">
               {/* Chart area */}
               <div className="relative h-16 overflow-hidden">
                 <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full" preserveAspectRatio="none">
@@ -635,8 +634,8 @@ export function AnalyticsPanel({
 
         <TabsContent value="summary" className="flex-1 min-h-0 overflow-hidden">
           <div className="grid h-full min-h-0 gap-5 overflow-hidden xl:grid-cols-[minmax(0,1fr)_22rem]">
-            <div className="grid min-h-0 auto-rows-[minmax(14rem,auto)] items-stretch gap-4 overflow-y-auto custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
-              <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
+            <div className="grid min-h-0 min-w-0 auto-rows-[minmax(14rem,auto)] items-stretch gap-4 overflow-y-auto custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
+              <section className="flex min-h-[14rem] min-w-0 flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

@@ -3,18 +3,18 @@ import { IconChartBar, IconMessageCircle, IconMessages, IconSettings, IconUsers 
 import { useQuery } from "convex/react";
 import { Link, useLocation } from "react-router";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { NavSecondary } from "./nav-secondary";
@@ -61,7 +61,7 @@ export function AppSidebar({
 }) {
   const location = useLocation();
   const isChatPage = location.pathname === "/dashboard/chat";
-  const activeThreadKey = new URLSearchParams(location.search).get("thread") ?? "general";
+  const activeThreadKey = new URLSearchParams(location.search).get("thread");
   const chatThreads = useQuery(api.chat.listThreads, isChatPage ? {} : "skip");
 
   return (
@@ -91,7 +91,7 @@ export function AppSidebar({
                   <SidebarMenuSubItem key={thread.threadKey}>
                     <SidebarMenuSubButton asChild isActive={activeThreadKey === thread.threadKey}>
                       <Link
-                        to={thread.threadKey === "general" ? "/dashboard/chat" : `/dashboard/chat?thread=${encodeURIComponent(thread.threadKey)}`}
+                        to={`/dashboard/chat?thread=${encodeURIComponent(thread.threadKey)}`}
                         prefetch="intent"
                         title={thread.preview}
                       >

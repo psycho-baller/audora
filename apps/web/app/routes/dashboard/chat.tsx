@@ -5,12 +5,12 @@ import type { Id } from "@audora/backend/convex/_generated/dataModel";
 import { useAuth, useUser } from "@clerk/react-router";
 import { useMutation, useQuery } from "convex/react";
 import {
-  FolderOpen,
-  Loader2,
-  Mic,
-  Send,
-  Sparkles,
-  X,
+    FolderOpen,
+    Loader2,
+    Mic,
+    Send,
+    Sparkles,
+    X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
@@ -19,12 +19,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { getConversationDisplayTitle } from "~/lib/conversation-context";
@@ -95,6 +95,14 @@ function parseChatThreadKey(threadKey: string) {
   return [];
 }
 
+function createGeneralThreadKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${GENERAL_THREAD_KEY}:${crypto.randomUUID()}`;
+  }
+
+  return `${GENERAL_THREAD_KEY}:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export default function Chat() {
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
@@ -106,12 +114,18 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [draftSelectedConversationIds, setDraftSelectedConversationIds] = useState<string[]>([]);
+  const [draftThreadKey, setDraftThreadKey] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const activeThreadKey = searchParams.get("thread") ?? GENERAL_THREAD_KEY;
+  const threadParam = searchParams.get("thread");
+  const hasActiveThread = Boolean(threadParam || draftThreadKey);
+  const activeThreadKey = threadParam ?? draftThreadKey ?? GENERAL_THREAD_KEY;
   const selectedConversationIds = parseChatThreadKey(activeThreadKey);
-  const chatHistory = useQuery(api.chat.getMessages, { threadKey: activeThreadKey });
+  const chatHistory = useQuery(
+    api.chat.getMessages,
+    hasActiveThread ? { threadKey: activeThreadKey } : "skip"
+  );
 
   const firstName =
     user?.firstName ||
@@ -126,6 +140,18 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (threadParam && draftThreadKey) {
+      setDraftThreadKey(null);
+    }
+  }, [threadParam, draftThreadKey]);
+
+  useEffect(() => {
+    if (!hasActiveThread) {
+      setMessages([]);
+    }
+  }, [hasActiveThread]);
 
   useEffect(() => {
     setMessages([]);
@@ -158,6 +184,17 @@ export default function Chat() {
     setSearchParams(nextParams);
   };
 
+  const startFreshChat = () => {
+    setDraftThreadKey(null);
+    setDraftSelectedConversationIds([]);
+    setMessages([]);
+    setInput("");
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("thread");
+    setSearchParams(nextParams);
+  };
+
   const openConversationPicker = () => {
     setDraftSelectedConversationIds(selectedConversationIds);
     setIsPickerOpen(true);
@@ -172,12 +209,27 @@ export default function Chat() {
   };
 
   const applyConversationSelection = () => {
+    if (draftSelectedConversationIds.length === 0) {
+      startFreshChat();
+      setIsPickerOpen(false);
+      return;
+    }
+
+    setDraftThreadKey(null);
     setActiveThread(buildChatThreadKey(draftSelectedConversationIds));
     setIsPickerOpen(false);
   };
 
   const removeLinkedConversation = (conversationId: string) => {
-    setActiveThread(buildChatThreadKey(selectedConversationIds.filter((id) => id !== conversationId)));
+    const remainingConversationIds = selectedConversationIds.filter((id) => id !== conversationId);
+
+    if (remainingConversationIds.length === 0) {
+      startFreshChat();
+      return;
+    }
+
+    setDraftThreadKey(null);
+    setActiveThread(buildChatThreadKey(remainingConversationIds));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,6 +252,13 @@ export default function Chat() {
     setInput("");
     setIsLoading(true);
 
+    let threadKeyForRequest = threadParam ?? draftThreadKey;
+    if (!threadKeyForRequest) {
+      threadKeyForRequest = createGeneralThreadKey();
+      setDraftThreadKey(threadKeyForRequest);
+      setActiveThread(threadKeyForRequest);
+    }
+
     const singleConversationId =
       selectedConversationIds.length === 1
         ? (selectedConversationIds[0] as Id<"conversations">)
@@ -212,7 +271,7 @@ export default function Chat() {
     saveMessage({
       conversationId: singleConversationId,
       linkedConversationIds,
-      threadKey: activeThreadKey,
+      threadKey: threadKeyForRequest,
       role: "user",
       content: userInput,
     }).catch((error) => {
@@ -275,7 +334,7 @@ export default function Chat() {
         saveMessage({
           conversationId: singleConversationId,
           linkedConversationIds,
-          threadKey: activeThreadKey,
+          threadKey: threadKeyForRequest,
           role: "assistant",
           content: assistantContent,
         }).catch((error) => {
@@ -307,7 +366,7 @@ export default function Chat() {
   return (
     <>
       <div className="flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden bg-background">
-        {messages.length === 0 ? (
+        {!hasActiveThread ? (
           <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
             <div className="w-full max-w-3xl space-y-8">
               <div className="flex flex-col items-center gap-5 text-center">
@@ -564,20 +623,18 @@ function CoachComposer({
             </div>
           </div>
 
-          {compact ? (
-            <div className="flex h-11 shrink-0 items-center text-sm font-medium text-black dark:text-white">
-              {pickerButtonLabel}
-            </div>
-          ) : (
-            <Button
-              type="button"
-              onClick={onOpenConversationPicker}
-              className="h-11 shrink-0 rounded-xl"
-            >
-              <FolderOpen className="size-4" />
-              {pickerButtonLabel}
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant={compact ? "ghost" : "default"}
+            onClick={onOpenConversationPicker}
+            className={cn(
+              "h-11 shrink-0 rounded-xl",
+              compact && "px-3 text-sm font-medium text-foreground"
+            )}
+          >
+            <FolderOpen className="size-4" />
+            {pickerButtonLabel}
+          </Button>
         </div>
       ) : null}
 

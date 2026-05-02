@@ -4,6 +4,10 @@ import { mutation, query } from "./_generated/server";
 
 const GENERAL_THREAD_KEY = "general";
 
+function isGeneralThreadKey(threadKey: string) {
+  return threadKey === GENERAL_THREAD_KEY || threadKey.startsWith(`${GENERAL_THREAD_KEY}:`);
+}
+
 function buildThreadKey({
   conversationId,
   linkedConversationIds,
@@ -50,7 +54,7 @@ function normalizeThreadKey(message: {
 }
 
 function parseConversationIdsFromThreadKey(threadKey: string) {
-  if (threadKey === GENERAL_THREAD_KEY) {
+  if (isGeneralThreadKey(threadKey)) {
     return [];
   }
 
@@ -77,7 +81,7 @@ function getThreadTitle(
   threadKey: string,
   conversationsById: Map<string, { location?: string; _creationTime: number }>
 ) {
-  if (threadKey === GENERAL_THREAD_KEY) {
+  if (isGeneralThreadKey(threadKey)) {
     return "General chat";
   }
 
