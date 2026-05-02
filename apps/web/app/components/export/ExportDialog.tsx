@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { Download, FileText, FileJson, Share2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { getConversationDisplayTitle } from "~/lib/conversation-context";
+import { getConversationDurationMs } from "~/lib/conversation-duration";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -74,9 +75,7 @@ export function ExportDialog({ conversationId, trigger }: ExportDialogProps) {
         id: conversationId,
         date: conversation?._creationTime,
         location: conversation?.location,
-        duration: conversation?.startedAt && conversation?.endedAt
-          ? conversation.endedAt - conversation.startedAt
-          : null,
+        duration: getConversationDurationMs(conversation, transcript),
       },
       speakers: speakers,
       transcript: transcript.map((turn) => ({

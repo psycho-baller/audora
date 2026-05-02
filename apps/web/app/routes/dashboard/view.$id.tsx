@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AudioPlaybackProvider } from "~/hooks/use-audio-playback";
 import { getConversationDisplayTitle } from "~/lib/conversation-context";
+import { formatConversationDuration, getConversationDurationMs } from "~/lib/conversation-duration";
 
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: Id<"conversations"> }>();
@@ -171,13 +172,7 @@ export default function ConversationDetailPage() {
   };
 
   const formatDuration = () => {
-    if (conversation.startedAt && conversation.endedAt) {
-      const durationMs = conversation.endedAt - conversation.startedAt;
-      const minutes = Math.floor(durationMs / 60000);
-      const seconds = Math.floor((durationMs % 60000) / 1000);
-      return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-    }
-    return "N/A";
+    return formatConversationDuration(getConversationDurationMs(conversation, transcript));
   };
 
   const getConversationTitle = () => {

@@ -41,16 +41,16 @@ const OVERLAY_STYLE = `
     z-index: 2147483646;
     pointer-events: none;
     font-family: "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
-    color: #f2eee7;
-    --eloq-accent: #79afa3;
-    --eloq-accent-strong: #5d8f84;
-    --eloq-accent-soft: rgba(121, 175, 163, 0.14);
+    color: #f4f2f0;
+    --eloq-accent: #d9ef59;
+    --eloq-accent-strong: #f5ff78;
+    --eloq-accent-soft: rgba(217, 239, 89, 0.16);
     --eloq-danger: rgba(180, 110, 105, 0.95);
-    --eloq-surface: rgba(27, 33, 39, 0.98);
-    --eloq-surface-raised: rgba(35, 43, 50, 0.98);
-    --eloq-border: rgba(121, 175, 163, 0.16);
-    --eloq-muted: rgba(166, 176, 182, 0.8);
-    --eloq-copy: rgba(242, 238, 231, 0.95);
+    --eloq-surface: rgba(18, 24, 22, 0.98);
+    --eloq-surface-raised: rgba(28, 36, 33, 0.98);
+    --eloq-border: rgba(217, 239, 89, 0.14);
+    --eloq-muted: rgba(190, 184, 178, 0.8);
+    --eloq-copy: rgba(244, 242, 240, 0.95);
     --eloq-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
   }
 
@@ -87,8 +87,8 @@ const OVERLAY_STYLE = `
 
   .line.reward::after {
     background:
-      linear-gradient(90deg, rgba(121, 175, 163, 0.95), rgba(93, 143, 132, 0.95));
-    box-shadow: 0 0 0 1px rgba(121, 175, 163, 0.12);
+      linear-gradient(90deg, rgba(245, 255, 120, 0.95), rgba(217, 239, 89, 0.95));
+    box-shadow: 0 0 0 1px rgba(217, 239, 89, 0.14);
   }
 
   .line:hover::after {
@@ -158,9 +158,9 @@ const OVERLAY_STYLE = `
   }
 
   .action.primary {
-    color: rgba(17, 22, 26, 0.98);
+    color: rgba(12, 10, 8, 0.98);
     background: var(--eloq-accent);
-    box-shadow: 0 12px 30px rgba(93, 143, 132, 0.24);
+    box-shadow: 0 12px 30px rgba(217, 239, 89, 0.24);
   }
 
   .action.primary:hover {
