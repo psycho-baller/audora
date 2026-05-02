@@ -28,11 +28,6 @@ const data = {
       icon: IconMessages,
     },
     {
-      title: "Chat",
-      url: "/dashboard/chat",
-      icon: IconMessageCircle,
-    },
-    {
       title: "Network",
       url: "/dashboard/network",
       icon: IconUsers,
@@ -41,6 +36,11 @@ const data = {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: IconChartBar,
+    },
+    {
+      title: "Chat",
+      url: "/dashboard/chat",
+      icon: IconMessageCircle,
     },
   ],
   navSecondary: [
