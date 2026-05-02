@@ -486,23 +486,25 @@ export default function TranscriptPlayer({ conversationId, getUserName, children
                 ) : (
                   /* Timeline with markers */
                   <div className="relative h-10 flex items-center">
-                    {/* Timeline markers */}
-                    <div className="absolute inset-x-0 top-0 h-full flex items-center pointer-events-none">
-                      {timelineMarkers.map((marker, i) => {
-                        const position = (marker.time / (duration || 100)) * 100;
-                        let color = "bg-yellow-500";
-                        if (marker.type === "weak") color = "bg-orange-500";
-                        if (marker.type === "starter") color = "bg-blue-500";
+                    {/* Timeline markers (integrated into the bar) */}
+                    <div className="absolute inset-x-0 h-full flex items-center pointer-events-none z-20">
+                      <div className="relative w-full h-2">
+                        {timelineMarkers.map((marker, i) => {
+                          const position = (marker.time / (duration || 100)) * 100;
+                          let color = "bg-yellow-500";
+                          if (marker.type === "weak") color = "bg-orange-500";
+                          if (marker.type === "starter") color = "bg-blue-500";
 
-                        return (
-                          <div
-                            key={`${marker.time}-${i}`}
-                            className={`absolute w-0.5 h-3 ${color} rounded-full opacity-60 hover:opacity-100 transition-opacity`}
-                            style={{ left: `${position}%`, transform: 'translateX(-50%)', top: '4px' }}
-                            title={`${marker.type}: ${marker.word}`}
-                          />
-                        );
-                      })}
+                          return (
+                            <div
+                              key={`${marker.time}-${i}`}
+                              className={`absolute w-[1.5px] h-full ${color} opacity-90`}
+                              style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
+                              title={`${marker.type}: ${marker.word}`}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Progress bar */}
