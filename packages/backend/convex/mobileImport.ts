@@ -92,6 +92,8 @@ export const processImportedAudio = action({
     console.log("Creating conversation...");
     const conversation: { id: Id<"conversations">; inviteCode: string } = await ctx.runMutation(api.conversations.create, {
       location: args.location || "Imported from Mobile",
+      participantMode: args.friendId ? "linked" : "solo",
+      reusePending: false,
     });
 
     // Step 4: Link conversation to friend (if provided)
@@ -251,6 +253,8 @@ export const processImportedAudioInChunks = action({
     console.log("Creating conversation...");
     const conversation: { id: Id<"conversations">; inviteCode: string } = await ctx.runMutation(api.conversations.create, {
       location: args.location || "Imported from Mobile",
+      participantMode: args.friendId ? "linked" : "solo",
+      reusePending: false,
     });
 
     // Step 4: Link conversation to friend (if provided)
