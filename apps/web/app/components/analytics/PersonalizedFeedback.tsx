@@ -52,7 +52,7 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
 
   if (feedback === undefined) {
     return (
-      <div className="rounded-xl border border-primary/10 bg-primary/5 p-6">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-6 dark:border-primary/15 dark:bg-primary/[0.08]">
         <div className="flex items-center justify-center py-4">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
@@ -62,7 +62,7 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
 
   if (!feedback) {
     return (
-      <div className="rounded-xl border border-primary/10 bg-primary/5 p-6">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-6 dark:border-primary/15 dark:bg-primary/[0.08]">
         <div className="flex items-start gap-4">
           <div className="shrink-0 rounded-lg bg-primary/10 p-3">
             {generationFailed ? (
@@ -108,7 +108,7 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-primary/10 bg-background/70 p-4">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-lg bg-primary/10 p-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -122,7 +122,7 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
         </div>
       </div>
 
-      <div className="rounded-xl border border-red-500/10 bg-background/80 p-4">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-red-500/10 p-2">
             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -141,7 +141,7 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
         </div>
       </div>
 
-      <div className="rounded-xl border border-yellow-500/10 bg-background/80 p-4">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-yellow-500/10 p-2">
             <TrendingUp className="h-4 w-4 text-yellow-500" />
@@ -162,7 +162,7 @@ export function PersonalizedFeedback({ conversationId, userId }: PersonalizedFee
         </div>
       </div>
 
-      <div className="rounded-xl border border-green-500/10 bg-background/80 p-4">
+      <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 dark:border-primary/15 dark:bg-primary/[0.08]">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-green-500/10 p-2">
             <CheckCircle2 className="h-4 w-4 text-green-500" />

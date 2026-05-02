@@ -274,7 +274,7 @@ function PacingVariationChart({
 
   return (
     <div className="mt-2">
-      <div className="relative rounded-lg bg-muted/20 p-2">
+      <div className="relative p-2">
         <div className="flex items-start">
           {/* Y-axis labels */}
           <div className="flex-shrink-0 pb-4">
@@ -626,7 +626,7 @@ export function AnalyticsPanel({
 
         <TabsContent value="summary" className="flex-1 min-h-0 overflow-hidden">
           <div className="grid h-full min-h-0 gap-5 overflow-hidden xl:grid-cols-[minmax(0,1fr)_22rem]">
-            <div className="grid min-h-0 auto-rows-[minmax(14rem,auto)] items-stretch gap-4 overflow-y-auto pr-3 custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
+            <div className="grid min-h-0 auto-rows-[minmax(14rem,auto)] items-stretch gap-4 overflow-y-auto custom-scrollbar md:grid-cols-2 xl:grid-cols-6">
               <section className="flex min-h-[14rem] flex-col rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-3">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -736,7 +736,7 @@ export function AnalyticsPanel({
                 </p>
                 <div className="mt-4 pb-3">
                   {selectedWeakWordExample ? (
-                    <div className="rounded-lg bg-muted/35 p-3">
+                    <div className="p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-muted-foreground">
@@ -815,10 +815,11 @@ export function AnalyticsPanel({
                   ))}
                 </div>
               </section>
+
             </div>
 
-            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm">
-              <div className="shrink-0 border-b border-primary/20 pb-3">
+            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-sidebar p-5 shadow-sm dark:bg-card">
+              <div className="shrink-0 border-b border-border/70 pb-3">
                 <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Focus areas from this conversation.

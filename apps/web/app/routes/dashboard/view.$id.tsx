@@ -188,7 +188,7 @@ export default function ConversationDetailPage() {
     <AudioPlaybackProvider>
     <div className="flex flex-col h-full bg-background">
       {/* Enhanced Header */}
-      <div className="bg-card backdrop-blur-sm">
+      <div className="relative bg-sidebar backdrop-blur-sm before:absolute before:inset-y-0 before:-left-px before:w-px before:bg-sidebar dark:bg-card dark:before:bg-card">
         <div className="px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             {/* Left section */}
@@ -246,17 +246,17 @@ export default function ConversationDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 min-h-0 flex-col gap-0">
-        <div className="border-b-2 border-border bg-card px-4 sm:px-6">
+        <div className="relative border-b-2 border-border bg-sidebar px-4 before:absolute before:inset-y-0 before:-left-px before:w-px before:bg-sidebar dark:bg-card dark:before:bg-card sm:px-6">
           <TabsList className="h-auto w-full justify-start rounded-none bg-transparent p-0">
             <TabsTrigger
               value="analytics"
-              className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-0 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
+              className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-0 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 hover:bg-transparent focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-b-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-primary sm:px-4"
             >
               Summary
             </TabsTrigger>
             <TabsTrigger
               value="transcript"
-              className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-5 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:px-4"
+              className="h-12 flex-none rounded-none border-0 border-b-4 border-transparent bg-transparent px-5 pb-3 pt-4 text-base text-muted-foreground shadow-none outline-none ring-0 hover:bg-transparent focus-visible:border-x-0 focus-visible:border-t-0 focus-visible:border-b-primary focus-visible:outline-none focus-visible:ring-0 data-[state=active]:border-x-0 data-[state=active]:border-t-0 data-[state=active]:border-b-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-b-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-primary sm:px-4"
             >
               Transcript
             </TabsTrigger>
@@ -291,8 +291,8 @@ export default function ConversationDetailPage() {
               </TranscriptPlayer>
             </div>
 
-            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-primary/20 bg-primary/5 p-5 shadow-sm">
-              <div className="shrink-0 border-b border-primary/20 pb-3">
+            <aside className="flex h-full min-h-0 flex-col rounded-xl border border-border bg-sidebar p-5 shadow-sm dark:bg-card">
+              <div className="shrink-0 border-b border-border/70 pb-3">
                 <h3 className="text-base font-semibold text-foreground">Actionable Insights</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Focus areas from this conversation.
