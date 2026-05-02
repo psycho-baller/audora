@@ -623,6 +623,140 @@ export const getUserDashboard = query({
   },
 });
 
+export const getWeeklyProgress = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const tokenIdentifier = identity.tokenIdentifier.split("|")[1] ?? identity.subject;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+      .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const currentStart = now - weekMs;
+    const previousStart = currentStart - weekMs;
+
+    const conversationsAsInitiator = await ctx.db
+      .query("conversations")
+      .withIndex("by_initiator", (q) => q.eq("initiatorUserId", user._id))
+      .filter((q) => q.neq(q.field("status"), "pending"))
+      .collect();
+
+    const conversationsAsScanner = await ctx.db
+      .query("conversations")
+      .withIndex("by_scanner", (q) => q.eq("scannerUserId", user._id))
+      .filter((q) => q.neq(q.field("status"), "pending"))
+      .collect();
+
+    const conversationMap = new Map(
+      [...conversationsAsInitiator, ...conversationsAsScanner].map((conversation) => [
+        conversation._id,
+        conversation,
+      ])
+    );
+
+    const allConversations = Array.from(conversationMap.values());
+    const getConversationTime = (conversation: typeof allConversations[number]) =>
+      conversation.endedAt ?? conversation.startedAt ?? conversation._creationTime;
+
+    const currentConversations = allConversations.filter((conversation) => {
+      const time = getConversationTime(conversation);
+      return time >= currentStart && time <= now;
+    });
+
+    const previousConversations = allConversations.filter((conversation) => {
+      const time = getConversationTime(conversation);
+      return time >= previousStart && time < currentStart;
+    });
+
+    const allAnalytics = await ctx.db
+      .query("speechAnalytics")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const analyticsWithTimes = await Promise.all(
+      allAnalytics.map(async (analytics) => {
+        const conversation =
+          conversationMap.get(analytics.conversationId) ??
+          (await ctx.db.get(analytics.conversationId));
+
+        return {
+          analytics,
+          time: conversation
+            ? conversation.endedAt ?? conversation.startedAt ?? conversation._creationTime
+            : analytics._creationTime,
+        };
+      })
+    );
+
+    const currentAnalytics = analyticsWithTimes
+      .filter(({ time }) => time >= currentStart && time <= now)
+      .map(({ analytics }) => analytics);
+
+    const previousAnalytics = analyticsWithTimes
+      .filter(({ time }) => time >= previousStart && time < currentStart)
+      .map(({ analytics }) => analytics);
+
+    const average = (values: number[]) =>
+      values.length > 0
+        ? values.reduce((sum, value) => sum + value, 0) / values.length
+        : null;
+
+    const percentageChange = (current: number | null, previous: number | null) => {
+      if (current === null || previous === null || previous === 0) return null;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const currentConfidence = average(
+      currentAnalytics.map((analytics) => analytics.scores.confidence)
+    );
+    const previousConfidence = average(
+      previousAnalytics.map((analytics) => analytics.scores.confidence)
+    );
+
+    const currentFillerRate = average(
+      currentAnalytics.map((analytics) => analytics.fillerWords.ratePerMinute)
+    );
+    const previousFillerRate = average(
+      previousAnalytics.map((analytics) => analytics.fillerWords.ratePerMinute)
+    );
+
+    return {
+      conversations: {
+        current: currentConversations.length,
+        previous: previousConversations.length,
+        change: currentConversations.length - previousConversations.length,
+      },
+      confidence: {
+        current: currentConfidence === null ? null : Math.round(currentConfidence),
+        previous: previousConfidence === null ? null : Math.round(previousConfidence),
+        changePercent: percentageChange(currentConfidence, previousConfidence),
+      },
+      fillerWords: {
+        currentRate:
+          currentFillerRate === null ? null : Math.round(currentFillerRate * 10) / 10,
+        previousRate:
+          previousFillerRate === null ? null : Math.round(previousFillerRate * 10) / 10,
+        reductionPercent:
+          currentFillerRate === null || previousFillerRate === null || previousFillerRate === 0
+            ? null
+            : Math.round(((previousFillerRate - currentFillerRate) / previousFillerRate) * 100),
+      },
+    };
+  },
+});
+
 // Get personalized feedback for a conversation
 export const getPersonalizedFeedback = query({
   args: {

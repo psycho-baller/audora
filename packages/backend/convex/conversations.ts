@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
 import { action, internalMutation, mutation, query } from "./_generated/server";
 
 // Generate a random invite code
@@ -439,6 +440,14 @@ export const list = query({
       summary: v.optional(v.string()),
       audioStorageId: v.optional(v.id("_storage")),
       speakerMap: v.optional(v.any()),
+      participants: v.array(
+        v.object({
+          _id: v.id("users"),
+          name: v.optional(v.string()),
+          image: v.optional(v.string()),
+        })
+      ),
+      participantCount: v.number(),
     })
   ),
   handler: async (ctx) => {
@@ -467,12 +476,50 @@ export const list = query({
       .withIndex("by_scanner", (q) => q.eq("scannerUserId", user._id))
       .collect();
 
-    console.log("asInitiator", asInitiator);
-    console.log("asScanner", asScanner);
+    const userIds = new Set<string>();
+    for (const conversation of [...asInitiator, ...asScanner]) {
+      userIds.add(conversation.initiatorUserId);
+      if (conversation.scannerUserId) {
+        userIds.add(conversation.scannerUserId);
+      }
+    }
 
-    // Combine and sort by creation time
-    const all = [...asInitiator, ...asScanner];
-    return all.sort((a, b) => b._creationTime - a._creationTime);
+    const users = await Promise.all(
+      Array.from(userIds).map(async (userId) => {
+        const userDoc = await ctx.db.get(userId as Id<"users">);
+        return userDoc ? [userId, userDoc] : null;
+      })
+    );
+
+    const usersById = new Map(
+      users.filter((entry): entry is [string, Doc<"users">] => entry !== null)
+    );
+
+    const all = [...asInitiator, ...asScanner]
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .map((conversation) => {
+        const participantIds = [conversation.initiatorUserId, conversation.scannerUserId].filter(
+          (id): id is Id<"users"> => Boolean(id)
+        );
+
+        const participants = participantIds
+          .map((userId) => usersById.get(userId))
+          .filter((participant): participant is Doc<"users"> => Boolean(participant))
+          .map((participant) => ({
+            _id: participant._id,
+            name: participant.name,
+            image: participant.image,
+          }));
+
+        return {
+          ...conversation,
+          participants,
+          participantCount:
+            new Set(participantIds).size + (conversation.anonymousSpeakerCount ?? 0),
+        };
+      });
+
+    return all;
   },
 });
 

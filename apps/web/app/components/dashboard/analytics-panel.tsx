@@ -568,7 +568,7 @@ export function AnalyticsPanel({
     }
   }, [weakWordExampleIndex, weakWordExamples.length]);
 
-  const actionableInsightsContent = currentUser ? (
+  const actionableInsightsContent = currentUser && conversationId ? (
     <PersonalizedFeedback
       conversationId={conversationId}
       userId={currentUser._id}
