@@ -1,11 +1,10 @@
 "use client";
-import { useState } from "react";
 import { api } from "@audora/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Check } from "lucide-react";
 import SubscriptionStatus from "~/components/subscription-status";
-import ConnectionGraph from "~/components/network/ConnectionGraph";
 import { ThemeToggle } from "~/components/ThemeToggle";
 
 export default function Page() {
@@ -35,44 +34,58 @@ export default function Page() {
   };
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
-      <div className="@container/main flex min-h-full flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
-            {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 border-b border-border">
-              <button
-                onClick={() => setActiveTab("profile")}
-                className={`px-4 py-2 font-medium transition-colors ${
-                  activeTab === "profile"
-                    ? "text-blue-500 border-b-2 border-blue-500"
-                    : "text-gray-400 hover:text-gray-300"
-                }`}
-              >
-                Profile
-              </button>
-              <button
-                onClick={() => setActiveTab("network")}
-                className={`px-4 py-2 font-medium transition-colors ${
-                  activeTab === "network"
-                    ? "text-blue-500 border-b-2 border-blue-500"
-                    : "text-gray-400 hover:text-gray-300"
-                }`}
-              >
-                Network
-              </button>
-              <button
-                onClick={() => setActiveTab("subscription")}
-                className={`px-4 py-2 font-medium transition-colors ${
-                  activeTab === "subscription"
-                    ? "text-blue-500 border-b-2 border-blue-500"
-                    : "text-gray-400 hover:text-gray-300"
-                }`}
-              >
-                Subscription
-              </button>
-            </div>
+    <div className="flex h-[calc(100vh-4rem)] flex-col">
+      <div className="border-b border-border bg-sidebar backdrop-blur-sm dark:bg-card">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage your profile, network, and subscription preferences.
+            </p>
+          </div>
+        </div>
+      </div>
 
+      <div className="border-b border-border bg-sidebar backdrop-blur-sm dark:bg-card">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`border-0 border-b-2 border-transparent px-4 py-3 font-medium transition-colors ${
+                activeTab === "profile"
+                  ? "border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Profile
+            </button>
+            <button
+              onClick={() => setActiveTab("network")}
+              className={`border-0 border-b-2 border-transparent px-4 py-3 font-medium transition-colors ${
+                activeTab === "network"
+                  ? "border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Network
+            </button>
+            <button
+              onClick={() => setActiveTab("subscription")}
+              className={`border-0 border-b-2 border-transparent px-4 py-3 font-medium transition-colors ${
+                activeTab === "subscription"
+                  ? "border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Subscription
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto overflow-x-hidden custom-scrollbar">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <div className="flex flex-col gap-4 md:gap-6">
             {/* Tab Content */}
             {activeTab === "profile" && (
               <div className="space-y-6">

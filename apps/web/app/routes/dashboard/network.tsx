@@ -68,7 +68,7 @@ export default function NetworkPage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-sidebar backdrop-blur-sm dark:bg-card">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Network</h1>

@@ -85,11 +85,11 @@ export default function Page() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <div className="border-b border-border bg-sidebar dark:bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="border-b border-border bg-sidebar backdrop-blur-sm dark:bg-card">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">
+              <h1 className="text-2xl font-bold text-foreground">
                 Welcome back, {firstName}
               </h1>
               <p className="text-sm text-muted-foreground">
