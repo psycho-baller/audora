@@ -251,7 +251,7 @@ export default function DownloadPage() {
             </p>
             <div className="bg-muted/50 rounded p-4 text-left font-mono text-sm">
               <code className="text-xs">
-                git clone https://github.com/psycho-baller/audora-macos.git<br/>
+                git clone https://github.com/rami-maalouf/audora-macos.git<br/>
                 cd audora-macos<br/>
                 open audora.xcodeproj
               </code>
